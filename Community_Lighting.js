@@ -1,18 +1,18 @@
 //=============================================================================
 // Community Plugins - Lighting system
 // Community_Lighting.js
-// Version: 1.025
+// Version: 1.026
 /*=============================================================================
 Forked from Terrax Lighting
 =============================================================================*/
 var Community = Community || {};
 Community.Lighting = Community.Lighting || {};
 Community.Lighting.parameters = PluginManager.parameters('Community_Lighting');
-Community.Lighting.version = 1.025;
+Community.Lighting.version = 1.026;
 var Imported = Imported || {};
 Imported.Community_Lighting = true;
 /*:
-* @plugindesc v1.025 Creates an extra layer that darkens a map and adds lightsources! Released under the MIT license!
+* @plugindesc v1.026 Creates an extra layer that darkens a map and adds lightsources! Released under the MIT license!
 * @author Terrax, iVillain, Aesica, Eliaquim, Alexandre
 *
 * @param ---General Settings---
@@ -25,7 +25,7 @@ Imported.Community_Lighting = true;
 *
 * @param Reset Lights
 * @parent ---General Settings---
-* @desc Resets the light switches on map change
+* @desc Resets the conditional lights on map change
 * @type boolean
 * @default false
 *
@@ -240,10 +240,14 @@ Imported.Community_Lighting = true;
 * - Turn off light with matching id number
 *
 * Light color id c
-* - change the color (c) of lightsource with id (id)
+* - Change the color (c) of lightsource with id (id)
+* - Work even if the associated light is currently off.
+* - Will be in effect until conditional lights are resetted
+* - If c is set to 'defaultcolor' (without the quotes),
+*      it will reset the light back to its initial color.
 * 
 * Light switch reset
-* - Reset light switches
+* - Reset all conditional lights.
 * 
 * Light radius r c b
 * - Change player light radius (r), color (c), and brightness (b)
@@ -2352,7 +2356,7 @@ Imported.Community_Lighting = true;
 					lightarray_state[i] = true;
 				}
 			}
-			if (idfound == false) {
+			if (idfound === false) {
 				lightarray_id.push(lightid);
 				lightarray_state.push(true);
 				lightarray_color.push('defaultcolor');
@@ -2377,7 +2381,7 @@ Imported.Community_Lighting = true;
 					lightarray_state[i] = false;
 				}
 			}
-			if (idfound == false) {
+			if (idfound === false) {
 				lightarray_id.push(lightid);
 				lightarray_state.push(false);
 				lightarray_color.push('defaultcolor');
@@ -2392,6 +2396,9 @@ Imported.Community_Lighting = true;
 		if (args[0] === 'color') {
 
 			let newcolor = args[2];
+			if (newcolor && newcolor.toLowerCase() === 'defaultcolor') {
+				newcolor = 'defaultcolor';
+			}
 
 			let lightarray_id = $gameVariables.GetLightArrayId();
 			let lightarray_state = $gameVariables.GetLightArrayState();
@@ -2402,11 +2409,14 @@ Imported.Community_Lighting = true;
 			for (let i = 0, len = lightarray_id.length; i < len; i++) {
 				if (lightarray_id[i] == lightid) {
 					idfound = true;
-					//lightarray_state[i] = true;
 					lightarray_color[i] = newcolor;
 				}
 			}
-
+			if (idfound === false) {
+				lightarray_id.push(lightid);
+				lightarray_state.push(false);
+				lightarray_color.push(newcolor);
+			}
 			$gameVariables.SetLightArrayId(lightarray_id);
 			$gameVariables.SetLightArrayState(lightarray_state);
 			$gameVariables.SetLightArrayColor(lightarray_color);
