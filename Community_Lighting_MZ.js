@@ -1,7 +1,6 @@
 //=============================================================================
 // Community Plugins - MZ Lighting system
 // Community_Lighting.js
-// Version: 1.0
 /*=============================================================================
 Forked from Terrax Lighting
 =============================================================================*/
@@ -9,12 +8,12 @@ var Community = Community || {};
 Community.Lighting = Community.Lighting || {};
 Community.Lighting.name = "Community_Lighting_MZ";
 Community.Lighting.parameters = PluginManager.parameters(Community.Lighting.name);
-Community.Lighting.version = 1.0;
+Community.Lighting.version = 2;
 var Imported = Imported || {};
 Imported[Community.Lighting.name] = true;
 /*:
 * @target MZ
-* @plugindesc v1.025 Creates an extra layer that darkens a map and adds lightsources! Released under the MIT license!
+* @plugindesc v2 Creates an extra layer that darkens a map and adds lightsources! Released under the MIT license!
 * @author Terrax, iVillain, Aesica, Eliaquim, Alexandre
 *
 * @param ---General Settings---
@@ -697,7 +696,7 @@ Imported[Community.Lighting.name] = true;
 	let Community_tint_target = '#000000';
 	let colorcycle_count = [1000];
 	let colorcycle_timer = [1000];
-	let eventObj = [];
+	let eventObjId = [];
 	let event_id = [];
 	let event_x = [];
 	let event_y = [];
@@ -1146,7 +1145,7 @@ Imported[Community.Lighting.name] = true;
 	{
 		let color = args.color === "" ? $gameVariables.GetTintByTime() : $$.validateColor(args.color);
 		let speed = +args.fadeSpeed || 0;
-		if ($gameParty.inBattle());
+		if ($gameParty.inBattle())
 		{
 			$$._BattleTint = color;
 			$$._BattleTintSpeed = speed;
@@ -1378,7 +1377,7 @@ Imported[Community.Lighting.name] = true;
 						$$.ReloadMapEvents()
 					}
 
-					if (eventObj.length > 0) { // Are there lightsources on this map? If not, nothing to do.
+					if (eventObjId.length > 0) { // Are there lightsources on this map? If not, nothing to do.
 						this._addSprite(-20, 0, this._maskBitmap);
 						// ******** GROW OR SHRINK GLOBE PLAYER *********
 
@@ -1553,10 +1552,11 @@ Imported[Community.Lighting.name] = true;
 
 						// ********** OTHER LIGHTSOURCES ************** xxx
 						
-						for (let i = 0, len = eventObj.length; i < len; i++)
+						for (let i = 0, len = eventObjId.length; i < len; i++)
 						{
 							let evid = event_id[i];
-							let cur = eventObj[i];
+							let cur = $gameMap.events()[eventObjId[i]];
+							console.log(cur);
 							let lightType = cur.getLightType();
 							if (lightType === "light" || lightType === "fire" || lightType === "flashlight")
 							{
@@ -1876,8 +1876,8 @@ Imported[Community.Lighting.name] = true;
 						
 						/*
 
-						for (let i = 0, len = eventObj.length; i < len; i++) {
-							let note = eventObj[i];
+						for (let i = 0, len = eventObjId.length; i < len; i++) {
+							let note = eventObjId[i];
 							let evid = event_id[i];
 
 							let note_args = note.split(" ");
@@ -2805,7 +2805,7 @@ Imported[Community.Lighting.name] = true;
 		if (!DataManager.isBattleTest() && !DataManager.isEventTest() && $gameMap.mapId() >= 0) {			// If we went there from a map...
 			if ($gameVariables.GetStopScript() === false && $gameVariables.GetScriptActive() === true) {	// If the script is active...
 				if (options_lighting_on && lightInBattle) {																	// If configuration autorise using lighting effects
-					if (eventObj.length > 0) {															// If there is lightsource on this map...
+					if (eventObjId.length > 0) {															// If there is lightsource on this map...
 						$$._MapTint = $$.daynightset ? $gameVariables.GetTintByTime() : $gameVariables.GetTint();										// ... Use the tint of the map.
 					}
 				}
@@ -2873,7 +2873,7 @@ Imported[Community.Lighting.name] = true;
 			$$._MapTint = '#666666' // Prevent the battle scene from being too dark.
 		}
 		$$._BattleTintFade = $$._BattleTint = $$._MapTint
-		//this._maskBitmap.FillRect(-20, 0, maxX + 20, maxY, $$._BattleTint);
+		this._maskBitmap.FillRect(-20, 0, maxX + 20, maxY, $$._BattleTint);
 		$$._BattleTintSpeed = 0;
 		$$._BattleTintTimer = 0;
 	};
@@ -3028,7 +3028,7 @@ Imported[Community.Lighting.name] = true;
 
 	$$.ReloadMapEvents = function () {
 		//**********************fill up new map-array *************************
-		eventObj = [];
+		eventObjId = [];
 		event_id = [];
 		event_x = [];
 		event_y = [];
@@ -3047,7 +3047,7 @@ Imported[Community.Lighting.name] = true;
 
 					if (note_command == "light" || note_command == "fire" || note_command == "flashlight") {
 
-						eventObj.push($gameMap.events()[i]);
+						eventObjId.push(i);
 						event_id.push($gameMap.events()[i]._eventId);
 						event_x.push($gameMap.events()[i]._realX);
 						event_y.push($gameMap.events()[i]._realY);
