@@ -615,7 +615,7 @@ Imported[Community.Lighting.name] = true;
 * - Sets the light as a flashlight with beam length (bl) beam width (bw) color (c),
 *      0|1 (onoff), and 1=up, 2=right, 3=down, 4=left for static direction (sdir)
 * - bl:       Beam length:  Any number, optionally preceeded by "L", so 8, L8
-* - bl:       Beam width:  Any number, optionally preceeded by "W", so 12, W12
+* - bw:       Beam width:  Any number, optionally preceeded by "W", so 12, W12
 * - onoff:    Initial state:  0, 1, off, on
 * - sdir:     Forced direction (optional): 0:auto, 1:up, 2:right, 3:down, 4:left
 *             Can be preceeded by "D", so D4.  If omitted, defaults to 0
@@ -826,7 +826,6 @@ Imported[Community.Lighting.name] = true;
 		this._clBeamLength = this._clBeamLength || 0;
 		this._clOnOff = this._clOnOff || 0;
 		this._clFlashlightDirection = this._clFlashlightDirection || 0;
-		console.log("ev:" + this.eventId() + " lightId:" + this._clId + " type:" + this._clType);
 	};	
 	Game_Event.prototype.getLightType = function()
 	{
@@ -908,9 +907,7 @@ Imported[Community.Lighting.name] = true;
 
 			let lightid = args.id || 0;
 			let idfound;
-			console.log(lightarray_id);
 			for (let i = 0, len = lightarray_id.length; i < len; i++) {
-				console.log("arr:" + lightarray_id[i] + "lit:" + lightid);
 				if (lightarray_id[i] == lightid)
 				{
 					idfound = true;
@@ -1556,7 +1553,6 @@ Imported[Community.Lighting.name] = true;
 						{
 							let evid = event_id[i];
 							let cur = $gameMap.events()[eventObjId[i]];
-							console.log(cur);
 							let lightType = cur.getLightType();
 							if (lightType === "light" || lightType === "fire" || lightType === "flashlight")
 							{
@@ -2943,9 +2939,6 @@ Imported[Community.Lighting.name] = true;
 			$$._BattleTintFade = color1;
 		}	    		
 		this._maskBitmap.FillRect(-20, 0, maxX + 20, maxY, color1); // xxx
-		console.log(maxX + ", " + maxY + " :: " + color1);
-		console.log(this._maskBitmap);
-		
 	};
 	
 	/**
