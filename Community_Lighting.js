@@ -569,7 +569,6 @@ Imported.Community_Lighting = true;
 			} else if (args[0].toLowerCase() === 'set') {
 				$gameTemp._BattleTint = this.determineBattleTint(args[1]);
 				$gameTemp._BattleTintSpeed = 0;
-				this.checkBattleTintLuminosity
 			} else if (args[0].toLowerCase() === 'fade') { 
 				$gameTemp._BattleTintFade = $gameTemp._BattleTint;
 				$gameTemp._BattleTintTimer = 0;
