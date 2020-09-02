@@ -1,18 +1,18 @@
 //=============================================================================
 // Community Plugins - Lighting system
 // Community_Lighting.js
-// Version: 1.026
+// Version: 1.027
 /*=============================================================================
 Forked from Terrax Lighting
 =============================================================================*/
 var Community = Community || {};
 Community.Lighting = Community.Lighting || {};
 Community.Lighting.parameters = PluginManager.parameters('Community_Lighting');
-Community.Lighting.version = 1.026;
+Community.Lighting.version = 1.027;
 var Imported = Imported || {};
 Imported.Community_Lighting = true;
 /*:
-* @plugindesc v1.026 Creates an extra layer that darkens a map and adds lightsources! Released under the MIT license!
+* @plugindesc v1.027 Creates an extra layer that darkens a map and adds lightsources! Released under the MIT license!
 * @author Terrax, iVillain, Aesica, Eliaquim, Alexandre
 *
 * @param ---General Settings---
@@ -487,7 +487,7 @@ Imported.Community_Lighting = true;
 		const allCommands = { 
 			tileblock: 'tileType', regionblock: 'tileType', tilelight: 'tileType', regionlight: 'tileType', tilefire: 'tileType', regionfire: 'tileType', 
 			tileglow: 'tileType', regionglow: 'tileType', tint: 'tint', daynight: 'dayNight', flashlight: 'flashLight', setfire: 'setFire', fire: 'fire', light: 'light', 
-			effect_on_event: 'effectOnEvent', effect_on_xy: 'effectOnXy', script: 'scriptF', reload: 'reload' 
+			effect_on_event: 'effectOnEvent', effect_on_xy: 'effectOnXy', script: 'scriptF', reload: 'reload', tintbattle: 'tintbattle'
 		};
 		const result = allCommands[command];
 		if(result) {
@@ -560,6 +560,41 @@ Imported.Community_Lighting = true;
 			$$.ReloadMapEvents();
 		}
 	};
+	
+	Game_Interpreter.prototype.tintbattle = function (command, args) {
+		if ($gameParty.inBattle()) {					
+			if (args[0].toLowerCase() === 'reset') { 
+				$gameTemp._BattleTint = $gameTemp._MapTint;
+				$gameTemp._BattleTintSpeed = 0;
+			} else if (args[0].toLowerCase() === 'set') {
+				$gameTemp._BattleTint = this.determineBattleTint(args[1]);
+				$gameTemp._BattleTintSpeed = 0;
+				this.checkBattleTintLuminosity
+			} else if (args[0].toLowerCase() === 'fade') { 
+				$gameTemp._BattleTintFade = $gameTemp._BattleTint;
+				$gameTemp._BattleTintTimer = 0;
+				$gameTemp._BattleTint = this.determineBattleTint(args[1]);		
+				$gameTemp._BattleTintSpeed = args[2];
+			}
+		}
+	};
+	
+	Game_Interpreter.prototype.determineBattleTint = function (tintColor) {
+		if (!tintColor || tintColor.length < 7) {
+			return '#666666' // Not an hex color strintg
+		}
+		var redhex = tintColor.substring(1,3);
+		var greenhex = tintColor.substring(3,5);
+		var bluehex = tintColor.substring(5);
+		var red = parseInt(redhex, 16);
+		var green = parseInt(greenhex, 16);
+		var blue = parseInt(bluehex, 16);
+		var color = red + green + blue;
+		if (color < 300 && red < 100 && green < 100 && blue < 100) { // Check for NaN values or too dark colors
+			return '#666666' // The player have to see something
+		}
+		return tintColor;
+	}
 
 	Spriteset_Map.prototype.createLightmask = function () {
 		this._lightmask = new Lightmask();
@@ -1837,16 +1872,6 @@ Imported.Community_Lighting = true;
 	BattleLightmask.prototype._createBitmap = function() {
 		this._maskBitmap = new Bitmap(maxX + 20, maxY);   // one big bitmap to fill the intire screen with black
 	    var canvas = this._maskBitmap.canvas;          // a bit larger then setting to take care of screenshakes
-	};
-	
-	Bitmap.prototype.FillRect = function(x1, y1, x2, y2, color1) {
-		x1=x1+20;
-	    var context = this._context;
-	    context.save();
-	    context.fillStyle = color1;
-	    context.fillRect(x1, y1, x2, y2);
-	    context.restore();
-	    this._setDirty();
 	};
 	
 	BattleLightmask.prototype.update = function() {	 
