@@ -8,12 +8,12 @@ var Community = Community || {};
 Community.Lighting = Community.Lighting || {};
 Community.Lighting.name = "Community_Lighting_MZ";
 Community.Lighting.parameters = PluginManager.parameters(Community.Lighting.name);
-Community.Lighting.version = 2;
+Community.Lighting.version = 3;
 var Imported = Imported || {};
 Imported[Community.Lighting.name] = true;
 /*:
 * @target MZ
-* @plugindesc v2 Creates an extra layer that darkens a map and adds lightsources! Released under the MIT license!
+* @plugindesc v3 Creates an extra layer that darkens a map and adds lightsources! Released under the MIT license!
 * @author Terrax, iVillain, Aesica, Eliaquim, Alexandre
 *
 * @param ---General Settings---
@@ -380,7 +380,6 @@ Imported[Community.Lighting.name] = true;
 * @command setTint
 * @text Set Tint
 * @desc Sets the current map tint, or battle tint if in battle
-* Note:  Battle tinting is currently NYI
 *
 * @arg color
 * @text Tint Color
@@ -400,7 +399,15 @@ Imported[Community.Lighting.name] = true;
 *
 * @command resetBattleTint
 * @text Reset Battle Tint
-* @desc Resets the battle tint to its default value
+* @desc Reset the battle screen to its original color
+*
+* @arg fadeSpeed
+* @text Fade Speed
+* @desc Speed (0-20) in which the tint transitions (0=instant, 20=very slow)
+* @type number
+* @min 0
+* @max 20
+* @default 0
 * 
 * @----------------------------
 *
@@ -665,8 +672,9 @@ Imported[Community.Lighting.name] = true;
 * - Tint the battle screen to the color used as argument.
 * - Automatically set too dark color to '#666666' (dark gray).
 *
-* TintBattle reset
-* - Reset the battle screen to its original color. 
+* TintBattle reset [speed]
+* - Reset the battle screen to its original color.
+* - The argument is the speed of the fade (1 very fast, 20 more slow)
 *
 * TintBattle fade [color] [speed]
 * - Fade the battle screen to the color used as first argument.					     
@@ -1144,6 +1152,7 @@ Imported[Community.Lighting.name] = true;
 		let speed = +args.fadeSpeed || 0;
 		if ($gameParty.inBattle())
 		{
+			$$._BattleTintFade = $$._BattleTint;
 			$$._BattleTint = color;
 			$$._BattleTintSpeed = speed;
 			$$._BattleTintTimer = 0;
@@ -1156,9 +1165,16 @@ Imported[Community.Lighting.name] = true;
 		}
 	});
 	
-	PluginManager.registerCommand($$.name, "resetBatlteTint", args =>
+	PluginManager.registerCommand($$.name, "resetBattleTint", args =>
 	{
-		// this doesn't work yet?
+		if ($gameParty.inBattle())
+		{
+			let speed = args.fadeSpeed || 0;
+			$$._BattleTintFade = $$._BattleTint;
+			$$._BattleTint = $$._MapTint;
+			$$._BattleTintSpeed = speed;
+			$$._BattleTintTimer = 0;
+		}
 	});
 	
 	PluginManager.registerCommand($$.name, "tileLight", args => 
@@ -2937,8 +2953,9 @@ Imported[Community.Lighting.name] = true;
 			}
 			color1 = "#" + ((1 << 24) + (r3 << 16) + (g3 << 8) + b3).toString(16).slice(1);
 			$$._BattleTintFade = color1;
-		}	    		
-		this._maskBitmap.FillRect(-20, 0, maxX + 20, maxY, color1); // xxx
+		}
+		this._maskBitmap.FillRect(-20, 0, maxX + 20, maxY, color1);
+		this._maskBitmap._baseTexture.update();
 	};
 	
 	/**
