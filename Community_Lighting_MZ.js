@@ -607,7 +607,7 @@ Imported[Community.Lighting.name] = true;
 *               D5 n.+e. walls, D6 s.+e. walls, D7 s.+w. walls,
 *               D8 n.+w. walls, D9 n.-e. corner, D10 s.-e. corner
 *               D11 s.-w. corner, D12 n.-w. corner  [optional]
-* - id          1, 2, 2345, etc--an id number for plugin commands [optional]
+* - id          1, 2, potato, etc--an id (alphanumeric) for plugin commands [optional]
 *
 * Light radius cycle color dur color dur [color dur] [color dur]
 * Cycles the specified light colors and durations.  Min 2, max 4
@@ -618,7 +618,7 @@ Imported[Community.Lighting.name] = true;
 * Fire ...params
 * - Same as Light params above, but adds a subtle flicker
 *
-* Flashlight [bl] [bw] [c] [onoff] [sdir]
+* Flashlight [bl] [bw] [c] [onoff] [sdir] [id]
 * - Sets the light as a flashlight with beam length (bl) beam width (bw) color (c),
 *      0|1 (onoff), and 1=up, 2=right, 3=down, 4=left for static direction (sdir)
 * - bl:       Beam length:  Any number, optionally preceeded by "L", so 8, L8
@@ -626,6 +626,7 @@ Imported[Community.Lighting.name] = true;
 * - onoff:    Initial state:  0, 1, off, on
 * - sdir:     Forced direction (optional): 0:auto, 1:up, 2:right, 3:down, 4:left
 *             Can be preceeded by "D", so D4.  If omitted, defaults to 0
+* - id        1, 2, potato, etc--an id (alphanumeric) for plugin commands [optional]
 *
 * -------------------------------------------------------------------------------
 * Maps 
