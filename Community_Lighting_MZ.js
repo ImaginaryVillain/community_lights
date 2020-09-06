@@ -8,12 +8,12 @@ var Community = Community || {};
 Community.Lighting = Community.Lighting || {};
 Community.Lighting.name = "Community_Lighting_MZ";
 Community.Lighting.parameters = PluginManager.parameters(Community.Lighting.name);
-Community.Lighting.version = 3;
+Community.Lighting.version = 3.1;
 var Imported = Imported || {};
 Imported[Community.Lighting.name] = true;
 /*:
 * @target MZ
-* @plugindesc v3 Creates an extra layer that darkens a map and adds lightsources! Released under the MIT license!
+* @plugindesc v3.1 Creates an extra layer that darkens a map and adds lightsources! Released under the MIT license!
 * @author Terrax, iVillain, Aesica, Eliaquim, Alexandre
 *
 * @param ---General Settings---
@@ -607,7 +607,7 @@ Imported[Community.Lighting.name] = true;
 *               D5 n.+e. walls, D6 s.+e. walls, D7 s.+w. walls,
 *               D8 n.+w. walls, D9 n.-e. corner, D10 s.-e. corner
 *               D11 s.-w. corner, D12 n.-w. corner  [optional]
-* - id          1, 2, 2345, etc--an id number for plugin commands [optional]
+* - id          1, 2, potato, etc--an id (alphanumeric) for plugin commands [optional]
 *
 * Light radius cycle color dur color dur [color dur] [color dur]
 * Cycles the specified light colors and durations.  Min 2, max 4
@@ -618,7 +618,7 @@ Imported[Community.Lighting.name] = true;
 * Fire ...params
 * - Same as Light params above, but adds a subtle flicker
 *
-* Flashlight [bl] [bw] [c] [onoff] [sdir]
+* Flashlight [bl] [bw] [c] [onoff] [sdir] [id]
 * - Sets the light as a flashlight with beam length (bl) beam width (bw) color (c),
 *      0|1 (onoff), and 1=up, 2=right, 3=down, 4=left for static direction (sdir)
 * - bl:       Beam length:  Any number, optionally preceeded by "L", so 8, L8
@@ -626,6 +626,7 @@ Imported[Community.Lighting.name] = true;
 * - onoff:    Initial state:  0, 1, off, on
 * - sdir:     Forced direction (optional): 0:auto, 1:up, 2:right, 3:down, 4:left
 *             Can be preceeded by "D", so D4.  If omitted, defaults to 0
+* - id        1, 2, potato, etc--an id (alphanumeric) for plugin commands [optional]
 *
 * -------------------------------------------------------------------------------
 * Maps 
@@ -799,10 +800,10 @@ Imported[Community.Lighting.name] = true;
 			for (let x of tagData)
 			{
 				if (!isNaN(+x) && this._clRadius === undefined) this._clRadius = +x;
-				else if (x[0] === "#") this._clColor = $$.validateColor(x);
-				else if (x[0] === "b") this._clBrightness = Number(+(x.substr(1, x.length)) / 100).clamp(0, 1);
-				else if (x[0] === "d") this._clDirection = +(x.substr(1, x.length));
-				else this._clId = x.substr(1, x.length);
+				else if (x[0] === "#" && this._clColor === undefined) this._clColor = $$.validateColor(x);
+				else if (x[0] === "b" && this._clBrightness === undefined) this._clBrightness = Number(+(x.substr(1, x.length)) / 100).clamp(0, 1);
+				else if (x[0] === "d" && this._clDirection === undefined) this._clDirection = +(x.substr(1, x.length));
+				else if (x.length > 0 && this._clId === undefined) this._clId = x;
 			}
 		}
 		else if (this._clType === "flashlight")
@@ -811,18 +812,20 @@ Imported[Community.Lighting.name] = true;
 			this._clBeamWidth = undefined;
 			this._clOnOff = undefined;
 			this._clFlashlightDirection = undefined;
+			this._clRadius = 1;
 			for (let x of tagData)
 			{
 				if (!isNaN(+x) && this._clBeamLength === undefined) this._clBeamLength = +x;
 				else if (!isNaN(+x) && this._clBeamWidth === undefined) this._clBeamWidth = +x;
-				else if (x[0] === "l") this._clBeamLength = this._clBeamLength = +(x.substr(1, x.length));
-				else if (x[0] === "w") this._clBeamWidth = this._clBeamWidth = +(x.substr(1, x.length));
-				else if (x[0] === "#") this._clColor = $$.validateColor(x);
-				else if (!isNaN(+x) && this._clOnOff === undefined) this._clOnOff = +x; // xxx
+				else if (x[0] === "l" && this._clBeamLength === undefined) this._clBeamLength = this._clBeamLength = +(x.substr(1, x.length));
+				else if (x[0] === "w" && this._clBeamWidth === undefined) this._clBeamWidth = this._clBeamWidth = +(x.substr(1, x.length));
+				else if (x[0] === "#" && this._clBeamColor === undefined) this._clColor = $$.validateColor(x);
+				else if (!isNaN(+x) && this._clOnOff === undefined) this._clOnOff = +x;
 				else if (!isNaN(+x) && this._clFlashlightDirection === undefined) this._clFlashlightDirection = +x;
-				else if (x === "on") this._clOnOff = 1;
-				else if (x === "off") this._clOnOff = 0;
-				else if (x[0] === "d") this._clFlashlightDirection = +(x.substr(1, x.length));
+				else if (x === "on" && this._clOnOff === undefined) this._clOnOff = 1;
+				else if (x === "off" && this._clOnOff === undefined) this._clOnOff = 0;
+				else if (x[0] === "d" && this._clFlashlightDirection === undefined) this._clFlashlightDirection = +(x.substr(1, x.length));
+				else if (x.length > 0 && this._clId === undefined) this._clId = x;
 			}
 		}
 		this._clRadius = this._clRadius || 0;
@@ -868,12 +871,17 @@ Imported[Community.Lighting.name] = true;
 	Game_Event.prototype.getLightFlashlightLength = function()
 	{
 		if (this._clType === undefined) this.initLightData();
-		return this._clFlashlightLength;
+		return this._clBeamLength;
 	};
 	Game_Event.prototype.getLightFlashlightWidth = function()
 	{
 		if (this._clType === undefined) this.initLightData();
-		return this._clFlashlightWidth;
+		return this._clBeamWidth;
+	};
+	Game_Event.prototype.getLightFlashlightDirection = function()
+	{
+		if (this._clType === undefined) this.initLightData();
+		return this._clFlashlightDirection;
 	};
 /*
 	let _Game_Interpreter_pluginCommand = Game_Interpreter.prototype.pluginCommand;
@@ -1563,7 +1571,7 @@ Imported[Community.Lighting.name] = true;
 							}
 						}
 
-						// ********** OTHER LIGHTSOURCES ************** xxx
+						// ********** OTHER LIGHTSOURCES **************
 						
 						for (let i = 0, len = eventObjId.length; i < len; i++)
 						{
@@ -1818,7 +1826,7 @@ Imported[Community.Lighting.name] = true;
 
 											let walking = event_moving[i];
 											if (walking == false) {
-												let tldir = Number(note_args.shift());
+												let tldir = cur.getLightFlashlightDirection();
 												if (!isNaN(tldir)) {
 													if (tldir < 0 || ldir >= 5) {
 														ldir = 4
@@ -2755,7 +2763,7 @@ Imported[Community.Lighting.name] = true;
 		r1 = 1;
 		r2 = 40;
 		grad = context.createRadialGradient(x1, y1, r1, x1, y1, r2);
-		grad.addColorStop(0, '#999999');
+		grad.addColorStop(0, color1);
 		grad.addColorStop(1, color2);
 
 		context.fillStyle = grad;
