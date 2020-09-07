@@ -199,7 +199,7 @@ Imported[Community.Lighting.name] = true;
 *
 * @arg color
 * @text Color
-* @desc Light color in #RRGGBB format.
+* @desc Light color in #RRGGBB format. Use 'defaultcolor' to choose the event's original light color.
 * @type text
 * @default #ffffff
 *
@@ -970,7 +970,12 @@ Imported[Community.Lighting.name] = true;
 	{
 		// *********************** SET COLOR *********************
 		let lightid = args.id || 0;
-		let newcolor = $$.validateColor(args.color) || "#ffffff";
+		let newcolor;
+		if (args.color && args.color.toLowerCase() === 'defaultcolor') {
+			newcolor = 'defaultcolor';
+		} else {
+			newcolor = $$.validateColor(args.color) || "#ffffff";
+		}
 		let lightarray_id = $gameVariables.GetLightArrayId();
 		let lightarray_state = $gameVariables.GetLightArrayState();
 		let lightarray_color = $gameVariables.GetLightArrayColor();
