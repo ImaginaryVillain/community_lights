@@ -803,8 +803,18 @@ Imported[Community.Lighting.name] = true;
 			this._clRadius = undefined;
 			for (let x of tagData)
 			{
-				if (!isNaN(+x) && this._clRadius === undefined) this._clRadius = +x;
-				else if (x[0] === "#" && this._clColor === undefined) this._clColor = $$.validateColor(x);
+				if (!isNaN(+x)){
+					if (this._clRadius === undefined) this._clRadius = +x;
+					else if (this._cyCycle) continue;;
+				}
+				else if (x[0] === "c" && this._clCycle === undefined){
+					this._clColor = 'cycle';
+					this._clCycle = true;
+				}
+				else if (x[0] === "#"){
+					if (this._cyCycle) continue;
+					else if (this._clColor === undefined) this._clColor = $$.validateColor(x);
+				} 
 				else if (x[0] === "b" && this._clBrightness === undefined) this._clBrightness = Number(+(x.substr(1, x.length)) / 100).clamp(0, 1);
 				else if (x[0] === "d" && this._clDirection === undefined) this._clDirection = +(x.substr(1, x.length));
 				else if (x[0] === "x" && this._clXOffset === undefined) this._clXOffset = +(x.substr(1, x.length));
@@ -1613,10 +1623,12 @@ Imported[Community.Lighting.name] = true;
 									let colorvalue = cur.getLightColor();
 
 									// Cycle colors
-
-
+									
 									if (colorvalue == 'cycle' && evid < 1000) {
-
+										let note_args = String($$.getTag.call(cur.event())).toLowerCase().split(" ");
+										note_args.shift();
+										note_args.shift();
+										note_args.shift();
 										let cyclecolor0 = note_args.shift();
 										let cyclecount0 = Number(note_args.shift());
 										let cyclecolor1 = note_args.shift();
