@@ -1,18 +1,18 @@
 //=============================================================================
 // Community Plugins - Lighting system
 // Community_Lighting.js
-// Version: 1.027
+// Version: 1.03
 /*=============================================================================
 Forked from Terrax Lighting
 =============================================================================*/
 var Community = Community || {};
 Community.Lighting = Community.Lighting || {};
 Community.Lighting.parameters = PluginManager.parameters('Community_Lighting');
-Community.Lighting.version = 1.027;
+Community.Lighting.version = 1.03;
 var Imported = Imported || {};
 Imported.Community_Lighting = true;
 /*:
-* @plugindesc v1.027 Creates an extra layer that darkens a map and adds lightsources! Released under the MIT license!
+* @plugindesc v1.03 Creates an extra layer that darkens a map and adds lightsources! Released under the MIT license!
 * @author Terrax, iVillain, Aesica, Eliaquim, Alexandre
 *
 * @param ---General Settings---
@@ -45,7 +45,7 @@ Imported.Community_Lighting = true;
 * @desc If a conditional light is OFF(ON), lock the Kill Switch to ON(OFF)?
 * @type boolean
 * @default false
-* 
+*
 * @param Note Tag Key
 * @parent ---General Settings---
 * @desc Specify a key (<Key: Light 25 ...>) to be used with all note tags or leave blank for Terrax compatibility (Light 25 ...)
@@ -73,7 +73,7 @@ Imported.Community_Lighting = true;
 * @desc Game variable the time of day (0-59) can be stored in.  Disable: 0
 * @type number
 * @min 0
-* @default 0 
+* @default 0
 *
 * @param Save Night Switch
 * @parent ---DayNight Settings---
@@ -149,7 +149,7 @@ Imported.Community_Lighting = true;
 * @default Above
 *
 * @help
-* 
+*
 * --------------------------------------------------------------------------
 * Important info about note tags and the note tag key plugin paramter:  This
 * plugin features an optional note tag key that lets this plugin's note tags
@@ -160,7 +160,7 @@ Imported.Community_Lighting = true;
 *
 * This note tag key applies to anything this plugin would have placed inside
 * a note box, such as "DayNight" on a map or "Light/Fire/etc on an event.
-* 
+*
 * Examples:
 *
 * With the default note tag key, "CL" (not case sensitive):
@@ -180,7 +180,7 @@ Imported.Community_Lighting = true;
 * Lighting so they don't have to go back and change a bunch of event and map
 * notes.
 *
-* Notation characters: 
+* Notation characters:
 * []   Values are optional (the brightness parameter in light, etc)
 * |    Select the value from the specified list (on|off, etc)
 *
@@ -193,8 +193,8 @@ Imported.Community_Lighting = true;
 * DayNight
 * - Activates day/night cycle.  Put in map note or event note
 *
-* Light radius color [brightness] [direction] [id]
-* - Light		
+* Light radius color [brightness] [direction] [x] [y] [id]
+* - Light
 * - radius      100, 250, etc
 * - color       #ffffff, #ff0000, etc
 * - brightness  B50, B25, etc [optional]
@@ -204,7 +204,7 @@ Imported.Community_Lighting = true;
 *               D11 s.-w. corner, D12 n.-w. corner  [optional]
 * - id          1, 2, 2345, etc--an id number for plugin commands [optional]
 *
-* Light radius cycle color dur color dur [color dur] [color dur]
+* Light radius cycle color dur color dur [color dur]  [x] [y]  [color dur]
 * Cycles the specified light colors and durations.  Min 2, max 4
 * - radius      Same as standard Light command above
 * - color       Color (#ff8800, etc)
@@ -213,12 +213,12 @@ Imported.Community_Lighting = true;
 * Fire ...params
 * - Same as Light params above, but adds a subtle flicker
 *
-* Flashlight [bl] [bw] [c] [onoff] [sdir]
+* Flashlight [bl] [bw] [c] [onoff]  [x] [y]  [sdir]
 * - Sets the light as a flashlight with beam length (bl) beam width (bw) color (c),
 *      0|1 (onoff), and 1=up, 2=right, 3=down, 4=left for static direction (sdir)
 *
 * -------------------------------------------------------------------------------
-* Maps 
+* Maps
 * -------------------------------------------------------------------------------
 * DayNight [speed]
 * Activates day/night cycle.  Put in map note or event note
@@ -235,7 +235,7 @@ Imported.Community_Lighting = true;
 *
 * Light on id
 * - Turn on light with matching id number
-* 
+*
 * Light off id
 * - Turn off light with matching id number
 *
@@ -245,10 +245,10 @@ Imported.Community_Lighting = true;
 * - Will be in effect until conditional lights are resetted
 * - If c is set to 'defaultcolor' (without the quotes),
 *      it will reset the light back to its initial color.
-* 
+*
 * Light switch reset
 * - Reset all conditional lights.
-* 
+*
 * Light radius r c b
 * - Change player light radius (r), color (c), and brightness (b)
 *
@@ -279,7 +279,7 @@ Imported.Community_Lighting = true;
 *
 * Daynight debug
 * - Shows current ingame time
-* 
+*
 * Daynight hoursinday h
 * - Sets the number of hours in a day to [h] (set hour colors  if doing this)
 *
@@ -317,7 +317,7 @@ Imported.Community_Lighting = true;
 * - yoffset	y offset
 * - width		width of shape
 * - height		height of shape
-* 
+*
 * effect_on_event id radius color frames
 * - id			event id
 * - radius		radius
@@ -334,7 +334,7 @@ Imported.Community_Lighting = true;
 * --------------------------------------------------------------------------
 * Kill Switch and conditional lighting
 * --------------------------------------------------------------------------
-* 
+*
 * If the 'Kill Switch Auto' parameter has been set to true, any event with
 * a (non) active conditional light have their killswitch locked to ON(OFF).
 * You can use this difference to give alternate apparences to these events.
@@ -349,7 +349,7 @@ Imported.Community_Lighting = true;
 * If the plugin is active while a battle begin, the battle screen will
 * be tinted like it was on the map. Too dark color will be automatically set
 * to '#666666' (dark gray).
-* 
+*
 * If there is no map to take the tint from (ex: battle test),
 * the screen will not be tinted.
 *
@@ -358,7 +358,7 @@ Imported.Community_Lighting = true;
 * and will have no effect on the map.
 *
 * -------------------------------------------------------------------------------
-* Plugin Commands - Battle 
+* Plugin Commands - Battle
 * -------------------------------------------------------------------------------
 *
 * TintBattle set [color]
@@ -366,10 +366,10 @@ Imported.Community_Lighting = true;
 * - Automatically set too dark color to '#666666' (dark gray).
 *
 * TintBattle reset
-* - Reset the battle screen to its original color. 
+* - Reset the battle screen to its original color.
 *
 * TintBattle fade [color] [speed]
-* - Fade the battle screen to the color used as first argument.					     
+* - Fade the battle screen to the color used as first argument.
 * - The second argument is speed of the fade (1 very fast, 20 more slow)
 * - Still automatically set too dark color to '#666666' (dark gray).
 *
@@ -391,7 +391,7 @@ Imported.Community_Lighting = true;
 	let tiletype = 0;
 	let tile_lights = [];
 	let tile_blocks = [];
-	
+
 	let parameters = $$.parameters;
 	let player_radius = Number(parameters['Player radius']);
 	let reset_each_map = eval(String(parameters['Reset Lights']));
@@ -414,7 +414,7 @@ Imported.Community_Lighting = true;
 	if (battleMaskPosition !== 'Above' && battleMaskPosition !== 'Between') {
 		battleMaskPosition = 'Above'; //Get rid of any invalid value
 	}
-	
+
 	let options_lighting_on = true;
 	let maxX = Number(parameters['Screensize X'] || 866);
 	let maxY = Number(parameters['Screensize Y'] || 630);
@@ -479,14 +479,15 @@ Imported.Community_Lighting = true;
 		_Game_Interpreter_pluginCommand.call(this, command, args);
 		if (typeof command != 'undefined') {
 			this.communityLighting_Commands(command, args);
-		}	
+		}
 	};
 
 	Game_Interpreter.prototype.communityLighting_Commands = function(command, args){
 		command = command.toLowerCase();
-		const allCommands = { 
-			tileblock: 'tileType', regionblock: 'tileType', tilelight: 'tileType', regionlight: 'tileType', tilefire: 'tileType', regionfire: 'tileType', 
-			tileglow: 'tileType', regionglow: 'tileType', tint: 'tint', daynight: 'dayNight', flashlight: 'flashLight', setfire: 'setFire', fire: 'fire', light: 'light', 
+		args = args.map(x => x.toLowerCase());
+		const allCommands = {
+			tileblock: 'tileType', regionblock: 'tileType', tilelight: 'tileType', regionlight: 'tileType', tilefire: 'tileType', regionfire: 'tileType',
+			tileglow: 'tileType', regionglow: 'tileType', tint: 'tint', daynight: 'dayNight', flashlight: 'flashLight', setfire: 'setFire', fire: 'fire', light: 'light',
 			effect_on_event: 'effectOnEvent', effect_on_xy: 'effectOnXy', script: 'scriptF', reload: 'reload', tintbattle: 'tintbattle'
 		};
 		const result = allCommands[command];
@@ -494,90 +495,92 @@ Imported.Community_Lighting = true;
 			this[result](command, args);
 		}
 	};
-	
+
 	Game_Interpreter.prototype.tileType = function(command, args){
 		const cmdArr = ['', 'tileblock', 'regionblock', 'tilelight', 'regionlight', 'tilefire', 'regionfire', 'tileglow', 'regionglow'];
 		tiletype = cmdArr.indexOf(command);
 		if(tiletype > 0) $$.tile(args);
 	};
-	
+
 	Game_Interpreter.prototype.tint = function(command, args){
 		$$.tint(args);
 	};
-	
+
 	Game_Interpreter.prototype.dayNight = function(command, args){
 		$$.DayNight(args);
 	};
-	
+
 	Game_Interpreter.prototype.flashLight = function(command, args){
 		$$.flashlight(args);
 	};
-	
+
 	Game_Interpreter.prototype.setFire = function(command, args){
 		flickerradiusshift = args[0];
 		flickercolorshift = args[1];
 		$gameVariables.SetFireRadius(flickerradiusshift);
 		$gameVariables.SetFireColorshift(flickercolorshift);
 	};
-	
+
 	Game_Interpreter.prototype.fire = function(command, args){
-		if (args[0].toLowerCase() == 'deactivate') {
+		if (args.contains("radius") || args.contains("radiusgrow")) $gameVariables.SetFire(true);
+		if (args[0] === "deactivate") {
 			$gameVariables.SetScriptActive(false);
 		} else {
 			$gameVariables.SetScriptActive(true);
 		}
+		console.log(args);
 		$$.fireLight(args);
 	};
-	
+
 	Game_Interpreter.prototype.light = function(command, args){
-		$gameVariables.SetFire(false);
-		if (args[0].toLowerCase() == 'deactivate') {
+		if (args.contains("radius") || args.contains("radiusgrow")) $gameVariables.SetFire(false);
+		if (args[0] === "deactivate") {
 			$gameVariables.SetScriptActive(false);
 		} else {
 			$gameVariables.SetScriptActive(true);
 		}
 		$$.fireLight(args);
 	};
-	
+
 	Game_Interpreter.prototype.effectOnEvent = function(command, args){
 		$$.effectOnEvent(args);
 	};
-	
+
 	Game_Interpreter.prototype.effectOnXy = function(command, args){
 		$$.effectXy(args);
 	};
-	
+
 	Game_Interpreter.prototype.scriptF = function(command, args){
-		if (args[0].toLowerCase() == 'deactivate') {
+		if (args[0] === "deactivate") {
 			$gameVariables.SetStopScript(true);
 		} else {
 			$gameVariables.SetStopScript(false);
 		}
 	};
-	
+
 	Game_Interpreter.prototype.reload = function(command, args){
-		if (args[0].toLowerCase() == 'events') {
+		if (args[0] === "events") {
 			$$.ReloadMapEvents();
 		}
 	};
-	
+
 	Game_Interpreter.prototype.tintbattle = function (command, args) {
-		if ($gameParty.inBattle()) {					
-			if (args[0].toLowerCase() === 'reset') { 
+		if ($gameParty.inBattle()) {
+			if (args[0] === "reset") {
 				$gameTemp._BattleTint = $gameTemp._MapTint;
 				$gameTemp._BattleTintSpeed = 0;
-			} else if (args[0].toLowerCase() === 'set') {
+			} else if (args[0] === "set") {
 				$gameTemp._BattleTint = this.determineBattleTint(args[1]);
 				$gameTemp._BattleTintSpeed = 0;
-			} else if (args[0].toLowerCase() === 'fade') { 
+			} else if (args[0] === "fade") {
 				$gameTemp._BattleTintFade = $gameTemp._BattleTint;
 				$gameTemp._BattleTintTimer = 0;
-				$gameTemp._BattleTint = this.determineBattleTint(args[1]);		
+				$gameTemp._BattleTint = this.determineBattleTint(args[1]);
 				$gameTemp._BattleTintSpeed = args[2];
 			}
 		}
 	};
-	
+
 	Game_Interpreter.prototype.determineBattleTint = function (tintColor) {
 		if (!tintColor || tintColor.length < 7) {
 			return '#666666' // Not an hex color strintg
@@ -1065,9 +1068,13 @@ Imported.Community_Lighting = true;
 									}
 
 									// brightness and direction
-
 									let brightness = 0.0;
 									let direction = 0;
+
+									// offsets
+									let lightXOffset = 0.0;
+									let lightYOffset = 0.0;
+
 									let next_arg = note_args.shift();
 
 									if (typeof next_arg != 'undefined') {
@@ -1082,8 +1089,23 @@ Imported.Community_Lighting = true;
 										if (key == 'd' || key == 'D') {
 											direction = next_arg.substring(1);
 											next_arg = note_args.shift();
+											if (typeof next_arg != 'undefined') {
+												key = next_arg.substring(0, 1);
+											}
+										}
+										if (key == 'x' || key == 'X') {
+											lightXOffset = +next_arg.substring(1) / $gameMap.tileWidth();
+											next_arg = note_args.shift();
+											if (typeof next_arg != 'undefined') {
+												key = next_arg.substring(0, 1);
+											}
+										}
+										if (key == 'y' || key == 'Y') {
+											lightYOffset = +next_arg.substring(1) / $gameMap.tileHeight();
+											next_arg = note_args.shift();
 										}
 									}
+
 
 									// conditional lighting
 									let lightid = 0;
@@ -1111,7 +1133,7 @@ Imported.Community_Lighting = true;
 												}
 											}
 										}
-										
+
 										// Set kill switch to ON if the conditional light is deactivated,
 										// or to OFF if it is active.
 										if (killSwitchAuto && killswitch !== 'None') {
@@ -1148,6 +1170,10 @@ Imported.Community_Lighting = true;
 											lpy = event_y[i];
 											ldir = event_dir[i];
 										}
+
+										//apply offsets
+										lpx = lpx + lightXOffset;
+										lpy = lpy + lightYOffset;
 
 										// moving lightsources
 										let flashlight = false;
@@ -1805,7 +1831,7 @@ Imported.Community_Lighting = true;
 	};
 
 	// ALIASED Scene_Battle initialisation: create the light mask.
-	
+
 	let Community_Lighting_Spriteset_Battle_createLowerLayer = Spriteset_Battle.prototype.createLowerLayer;
 	Spriteset_Battle.prototype.createLowerLayer = function() {
 		Community_Lighting_Spriteset_Battle_createLowerLayer.call(this);
@@ -1813,7 +1839,7 @@ Imported.Community_Lighting = true;
 			this.createBattleLightmask();
 		}
 	};
-	
+
 	let Community_Lighting_Spriteset_Battle_createBattleback = Spriteset_Battle.prototype.createBattleback;
 	Spriteset_Battle.prototype.createBattleback = function() {
 		Community_Lighting_Spriteset_Battle_createBattleback.call(this);
@@ -1834,21 +1860,21 @@ Imported.Community_Lighting = true;
 			}
 		}
 	};
-	
+
 	function BattleLightmask() {
 	    this.initialize.apply(this, arguments);
 	};
-	
+
 	BattleLightmask.prototype = Object.create(PIXI.Container.prototype);
 	BattleLightmask.prototype.constructor = BattleLightmask;
-	
+
 	BattleLightmask.prototype.initialize = function() {
 	    PIXI.Container.call(this);
 	    this._width = Graphics.width;
 	    this._height = Graphics.height;
 	    this._sprites = [];
 	    this._createBitmap();
-		
+
 		//Initialize the bitmap
 		this._addSprite(-20,0,this._maskBitmap);
 		var redhex = $gameTemp._MapTint.substring(1, 3);
@@ -1865,32 +1891,32 @@ Imported.Community_Lighting = true;
 		this._maskBitmap.FillRect(-20, 0, maxX + 20, maxY, $gameTemp._BattleTint);
 		$gameTemp._BattleTintSpeed = 0;
 	};
-	
+
 	//@method _createBitmaps
-	
+
 	BattleLightmask.prototype._createBitmap = function() {
 		this._maskBitmap = new Bitmap(maxX + 20, maxY);   // one big bitmap to fill the intire screen with black
 	    var canvas = this._maskBitmap.canvas;          // a bit larger then setting to take care of screenshakes
 	};
-	
-	BattleLightmask.prototype.update = function() {	 
-				var color1 = $gameTemp._BattleTint;	
+
+	BattleLightmask.prototype.update = function() {
+				var color1 = $gameTemp._BattleTint;
 				if ($gameTemp._BattleTintSpeed > 0) {
-					
+
 					$gameTemp._BattleTintTimer += 1;
-				    							
+
 				    var r = hexToRgb($gameTemp._BattleTintFade).r;
 					var g = hexToRgb($gameTemp._BattleTintFade).g;
 					var b = hexToRgb($gameTemp._BattleTintFade).b;
-						    			
+
 					var r2 = hexToRgb($gameTemp._BattleTint).r;
 					var g2 = hexToRgb($gameTemp._BattleTint).g;
-					var b2 = hexToRgb($gameTemp._BattleTint).b;		    			
-						    			
+					var b2 = hexToRgb($gameTemp._BattleTint).b;
+
 					var stepR = (r2-r)/(60 * $gameTemp._BattleTintSpeed);
 					var stepG = (g2-g)/(60 * $gameTemp._BattleTintSpeed);
 					var stepB = (b2-b)/(60 * $gameTemp._BattleTintSpeed);
-						    						    					    			
+
 					var r3 = Math.floor(r + (stepR * $gameTemp._BattleTintTimer));
 					var g3 = Math.floor(g + (stepG * $gameTemp._BattleTintTimer));
 					var b3 = Math.floor(b + (stepB * $gameTemp._BattleTintTimer));
@@ -1899,28 +1925,28 @@ Imported.Community_Lighting = true;
 					if (b3 < 0) { b3 = 0 }
 					if (r3 > 255) { r3 = 255 }
 					if (g3 > 255) { g3 = 255 }
-					if (b3 > 255) { b3 = 255 }								
+					if (b3 > 255) { b3 = 255 }
 					var reddone = false;
 					var greendone = false;
 					var bluedone = false;
 					if (stepR >= 0 && r3 >= r2) {
-						reddone = true;	
+						reddone = true;
 					}
 					if (stepR <= 0 && r3 <= r2) {
-						reddone = true;	
+						reddone = true;
 					}
 					if (stepG >= 0 && g3 >= g2) {
-						greendone = true;	
+						greendone = true;
 					}
 					if (stepG <= 0 && g3 <= g2) {
-						greendone = true;	
-					}	
+						greendone = true;
+					}
 					if (stepB >= 0 && b3 >= b2) {
-						bluedone = true;	
+						bluedone = true;
 					}
 					if (stepB <= 0 && b3 <= b2) {
-						bluedone = true;	
-					}					
+						bluedone = true;
+					}
 					if (reddone == true && bluedone == true && greendone == true) {
 						$gameTemp._BattleTintFade = $gameTemp._BattleTint;
 						$gameTemp._BattleTintSpeed = 0;
@@ -1928,16 +1954,16 @@ Imported.Community_Lighting = true;
 					}
 					color1 = "#" + ((1 << 24) + (r3 << 16) + (g3 << 8) + b3).toString(16).slice(1);
 					$gameTemp._BattleTintFade = color1;
-				}	    					    							
+				}
 				this._maskBitmap.FillRect(-20, 0, maxX + 20, maxY, color1);
 	};
-	
+
 	/**
 	 * @method _addSprite
 	 * @private
 	 */
 	BattleLightmask.prototype._addSprite = function(x1, y1, selectedbitmap) {
-		
+
 	    var sprite = new Sprite(this.viewport);
 	    sprite.bitmap = selectedbitmap;
 	    sprite.opacity = 255;
@@ -1951,7 +1977,7 @@ Imported.Community_Lighting = true;
 	    sprite.ay = 0
 	 	sprite.opacity = 255;
 	};
-	
+
 	/**
 	 * @method _removeSprite
 	 * @private
@@ -2170,7 +2196,7 @@ Imported.Community_Lighting = true;
 		$gameVariables.SetLightTags(tile_lights);
 		$gameVariables.SetBlockTags(tile_blocks);
 	};
-	
+
 	$$.flashlight = function (args) {
 		if (args[0] == 'on') {
 
@@ -2459,7 +2485,7 @@ Imported.Community_Lighting = true;
 		let tilearray = $gameVariables.GetTileArray();
 		let tilenumber = Number(eval(args[0]));
 		let tile_on = 0;
-		if (args[1].toLowerCase() === 'on') {
+		if (args[1] === "on") {
 			tile_on = 1;
 		}
 		let tilecolor = args[2];
@@ -2644,11 +2670,11 @@ Imported.Community_Lighting = true;
 			}
 			$gameVariables.SetDaynightColorArray(daynightcolors);
 		}
-	};	
-	
-	
-	
-	
+	};
+
+
+
+
 })(Community.Lighting);
 
 Game_Variables.prototype.GetFirstRun = function () {
