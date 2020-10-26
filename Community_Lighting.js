@@ -1,18 +1,18 @@
 //=============================================================================
 // Community Plugins - Lighting system
 // Community_Lighting.js
-// Version: 1.027
+// Version: 1.03
 /*=============================================================================
 Forked from Terrax Lighting
 =============================================================================*/
 var Community = Community || {};
 Community.Lighting = Community.Lighting || {};
 Community.Lighting.parameters = PluginManager.parameters('Community_Lighting');
-Community.Lighting.version = 1.027;
+Community.Lighting.version = 1.03;
 var Imported = Imported || {};
 Imported.Community_Lighting = true;
 /*:
-* @plugindesc v1.027 Creates an extra layer that darkens a map and adds lightsources! Released under the MIT license!
+* @plugindesc v1.03 Creates an extra layer that darkens a map and adds lightsources! Released under the MIT license!
 * @author Terrax, iVillain, Aesica, Eliaquim, Alexandre
 *
 * @param ---General Settings---
@@ -484,6 +484,7 @@ Imported.Community_Lighting = true;
 
 	Game_Interpreter.prototype.communityLighting_Commands = function(command, args){
 		command = command.toLowerCase();
+
 		const allCommands = {
 			tileblock: 'tileType', regionblock: 'tileType', tilelight: 'tileType', regionlight: 'tileType', tilefire: 'tileType', regionfire: 'tileType',
 			tileglow: 'tileType', regionglow: 'tileType', tint: 'tint', daynight: 'dayNight', flashlight: 'flashLight', setfire: 'setFire', fire: 'fire', light: 'light',
@@ -521,17 +522,19 @@ Imported.Community_Lighting = true;
 	};
 
 	Game_Interpreter.prototype.fire = function(command, args){
-		if (args[0].toLowerCase() == 'deactivate') {
+		if (args.contains("radius") || args.contains("radiusgrow")) $gameVariables.SetFire(true);
+		if (args[0] === "deactivate") {
 			$gameVariables.SetScriptActive(false);
 		} else {
 			$gameVariables.SetScriptActive(true);
 		}
+		console.log(args);
 		$$.fireLight(args);
 	};
 
 	Game_Interpreter.prototype.light = function(command, args){
-		$gameVariables.SetFire(false);
-		if (args[0].toLowerCase() == 'deactivate') {
+		if (args.contains("radius") || args.contains("radiusgrow")) $gameVariables.SetFire(false);
+		if (args[0] === "deactivate") {
 			$gameVariables.SetScriptActive(false);
 		} else {
 			$gameVariables.SetScriptActive(true);
@@ -548,7 +551,7 @@ Imported.Community_Lighting = true;
 	};
 
 	Game_Interpreter.prototype.scriptF = function(command, args){
-		if (args[0].toLowerCase() == 'deactivate') {
+		if (args[0] === "deactivate") {
 			$gameVariables.SetStopScript(true);
 		} else {
 			$gameVariables.SetStopScript(false);
@@ -556,20 +559,23 @@ Imported.Community_Lighting = true;
 	};
 
 	Game_Interpreter.prototype.reload = function(command, args){
-		if (args[0].toLowerCase() == 'events') {
+		if (args[0] === "events") {
 			$$.ReloadMapEvents();
 		}
 	};
 
 	Game_Interpreter.prototype.tintbattle = function (command, args) {
 		if ($gameParty.inBattle()) {
+
 			if (args[0].toLowerCase() === 'reset') {
 				$gameTemp._BattleTint = $gameTemp._MapTint;
 				$gameTemp._BattleTintSpeed = 0;
-			} else if (args[0].toLowerCase() === 'set') {
+			} else if (args[0] === "set") {
 				$gameTemp._BattleTint = this.determineBattleTint(args[1]);
 				$gameTemp._BattleTintSpeed = 0;
+
 			} else if (args[0].toLowerCase() === 'fade') {
+
 				$gameTemp._BattleTintFade = $gameTemp._BattleTint;
 				$gameTemp._BattleTintTimer = 0;
 				$gameTemp._BattleTint = this.determineBattleTint(args[1]);
@@ -2482,7 +2488,7 @@ Imported.Community_Lighting = true;
 		let tilearray = $gameVariables.GetTileArray();
 		let tilenumber = Number(eval(args[0]));
 		let tile_on = 0;
-		if (args[1].toLowerCase() === 'on') {
+		if (args[1] === "on") {
 			tile_on = 1;
 		}
 		let tilecolor = args[2];
