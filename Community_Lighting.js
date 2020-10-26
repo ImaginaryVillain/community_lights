@@ -484,7 +484,7 @@ Imported.Community_Lighting = true;
 
 	Game_Interpreter.prototype.communityLighting_Commands = function(command, args){
 		command = command.toLowerCase();
-		args = args.map(x => x.toLowerCase());
+
 		const allCommands = {
 			tileblock: 'tileType', regionblock: 'tileType', tilelight: 'tileType', regionlight: 'tileType', tilefire: 'tileType', regionfire: 'tileType',
 			tileglow: 'tileType', regionglow: 'tileType', tint: 'tint', daynight: 'dayNight', flashlight: 'flashLight', setfire: 'setFire', fire: 'fire', light: 'light',
@@ -566,13 +566,16 @@ Imported.Community_Lighting = true;
 
 	Game_Interpreter.prototype.tintbattle = function (command, args) {
 		if ($gameParty.inBattle()) {
-			if (args[0] === "reset") {
+
+			if (args[0].toLowerCase() === 'reset') {
 				$gameTemp._BattleTint = $gameTemp._MapTint;
 				$gameTemp._BattleTintSpeed = 0;
 			} else if (args[0] === "set") {
 				$gameTemp._BattleTint = this.determineBattleTint(args[1]);
 				$gameTemp._BattleTintSpeed = 0;
-			} else if (args[0] === "fade") {
+
+			} else if (args[0].toLowerCase() === 'fade') {
+
 				$gameTemp._BattleTintFade = $gameTemp._BattleTint;
 				$gameTemp._BattleTintTimer = 0;
 				$gameTemp._BattleTint = this.determineBattleTint(args[1]);
