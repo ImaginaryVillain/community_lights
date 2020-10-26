@@ -8,12 +8,12 @@ var Community = Community || {};
 Community.Lighting = Community.Lighting || {};
 Community.Lighting.name = "Community_Lighting_MZ";
 Community.Lighting.parameters = PluginManager.parameters(Community.Lighting.name);
-Community.Lighting.version = 3.1;
+Community.Lighting.version = 3.2;
 var Imported = Imported || {};
 Imported[Community.Lighting.name] = true;
 /*:
 * @target MZ
-* @plugindesc v3.1 Creates an extra layer that darkens a map and adds lightsources! Released under the MIT license!
+* @plugindesc v3.2 Creates an extra layer that darkens a map and adds lightsources! Released under the MIT license!
 * @author Terrax, iVillain, Aesica, Eliaquim, Alexandre
 *
 * @param ---General Settings---
@@ -1837,24 +1837,14 @@ Imported[Community.Lighting.name] = true;
 									// show light
 									if (state == true)
 									{
-										let lpx = 0;
-										let lpy = 0;
 										let ldir = 0;
 										if (event_moving[i] > 0) {
-											lpx = $gameMap.events()[event_stacknumber[i]]._realX;
-											lpy = $gameMap.events()[event_stacknumber[i]]._realY;
 											ldir = $gameMap.events()[event_stacknumber[i]]._direction;
 										}
 										else
 										{
-											lpx = event_x[i];
-											lpy = event_y[i];
 											ldir = event_dir[i];
 										}
-
-										// apply offsets
-										lpx += xoffset/48;
-										lpy += yoffset/48;
 
 										// moving lightsources
 										let flashlight = false;
@@ -1886,45 +1876,14 @@ Imported[Community.Lighting.name] = true;
 
 
 										}
-										let lx1 = (pw / 2) + ((lpx - dx) * pw);
-										let ly1 = (ph / 2) + ((lpy - dy) * ph);
-										// paralaxloop does something weird with coordinates.. recalc needed
-
-										if ($dataMap.scrollType === 2 || $dataMap.scrollType === 3) {
-											if (dx - 10 > lpx) {
-												let lxjump = $gameMap.width() - (dx - lpx);
-												lx1 = (pw / 2) + (lxjump * pw);
-											}
-										}
-										if ($dataMap.scrollType === 1 || $dataMap.scrollType === 3) {
-											if (dy - 10 > lpy) {
-												let lyjump = $gameMap.height() - (dy - lpy);
-												ly1 = (ph / 2) + (lyjump * ph);
-											}
-										}
-
-										let visible = true;
-										if ($gameMap.useUltraMode7) {
-											let position = UltraMode7.mapToScreen(lx1, ly1 + ph / 2);
-											if ($gameMap.ultraMode7Fov > 0) {
-												let z = position.z;
-												if (z <= UltraMode7.NEAR_CLIP_Z && z >= UltraMode7.FAR_CLIP_Z) {
-													visible = false;
-												}
-											}
-											if (visible) {
-												let scale = UltraMode7.mapToScreenScale(lx1, ly1);
-												lx1 = position.x;
-												ly1 = position.y -= ph / 2 * scale;
-												light_radius *= scale;
-											}
-										}
-										if (visible) {
-											if (flashlight == true) {
-												this._maskBitmap.radialgradientFillRect2(lx1, ly1, 0, light_radius, colorvalue, '#000000', ldir, flashlength, flashwidth);
-											} else {
-												this._maskBitmap.radialgradientFillRect(lx1, ly1, 0, light_radius, colorvalue, '#000000', objectflicker, brightness, direction);
-											}
+										
+										let lx1 = $gameMap.events()[event_stacknumber[i]].screenX();
+										let ly1 = $gameMap.events()[event_stacknumber[i]].screenY() - 24;
+										
+										if (flashlight == true) {
+											this._maskBitmap.radialgradientFillRect2(lx1, ly1, 0, light_radius, colorvalue, '#000000', ldir, flashlength, flashwidth);
+										} else {
+											this._maskBitmap.radialgradientFillRect(lx1, ly1, 0, light_radius, colorvalue, '#000000', objectflicker, brightness, direction);
 										}
 									}
 								}
