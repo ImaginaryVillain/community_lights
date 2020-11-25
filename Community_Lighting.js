@@ -1,14 +1,14 @@
 //=============================================================================
 // Community Plugins - Lighting system
 // Community_Lighting.js
-// Version: 2.0
+// Version: 2.11
 /*=============================================================================
 Forked from Terrax Lighting
 =============================================================================*/
 var Community = Community || {};
 Community.Lighting = Community.Lighting || {};
 Community.Lighting.parameters = PluginManager.parameters('Community_Lighting');
-Community.Lighting.version = 2.0;
+Community.Lighting.version = 2.11;
 var Imported = Imported || {};
 Imported.Community_Lighting = true;
 /*:
@@ -379,6 +379,18 @@ Imported.Community_Lighting = true;
 * - The second argument is speed of the fade (1 very fast, 20 more slow)
 * - Still automatically set too dark color to '#666666' (dark gray).
 *
+* --------------------------------------------------------------------------
+* Lights Active Radius
+* --------------------------------------------------------------------------
+* This allows you to decide how far away from the player lights are active,
+* anything beyond this range will not light up until the player gets
+* closer to it.
+* 
+* It can be changed in the plugin parameters, or using the script call...
+*
+* $gameVariables.SetActiveRadius(#)
+*
+* ....where # is the max distance you want in tiles.
 */
 
 (function ($$) {
@@ -872,7 +884,7 @@ Imported.Community_Lighting = true;
 							let note_args = note.split(" ");
 							let note_command = note_args.shift().toLowerCase();
 
-							let lightsOnRadius = Number(Community.Lighting.parameters['Lights Active Radius']);
+							let lightsOnRadius = $gameVariables.GetActiveRadius();
 							let distanceApart = Math.round(Community.Lighting.distance($gamePlayer.x, $gamePlayer.y, $gameMap.events()[event_stacknumber[i]]._realX, $gameMap.events()[event_stacknumber[i]]._realY));
 							if (distanceApart <= lightsOnRadius) {
 								if (note_command == "light" || note_command == "fire" || note_command == "flashlight") {
@@ -2649,6 +2661,13 @@ Imported.Community_Lighting = true;
 Community.Lighting.distance = function(x1, y1, x2, y2) {
     return Math.abs(Math.sqrt(Math.pow(x1 - x2,2) + Math.pow(y1 - y2,2)));
 }; 
+
+Game_Variables.prototype.SetActiveRadius = function (value) {
+    this._Player_Light_Radius = value;
+};
+Game_Variables.prototype.GetActiveRadius = function () {
+    return this._Player_Light_Radius || Number(umc.Lighting.parameters['Lights Active Radius']);
+};
 
 Game_Variables.prototype.GetFirstRun = function () {
 	if (typeof this._Community_Lighting_FirstRun == 'undefined') {
