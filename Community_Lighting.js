@@ -2666,7 +2666,7 @@ Game_Variables.prototype.SetActiveRadius = function (value) {
     this._Player_Light_Radius = value;
 };
 Game_Variables.prototype.GetActiveRadius = function () {
-    return this._Player_Light_Radius || Number(umc.Lighting.parameters['Lights Active Radius']);
+    return this._Player_Light_Radius || Number(Community.Lighting.parameters['Lights Active Radius']);
 };
 
 Game_Variables.prototype.GetFirstRun = function () {
