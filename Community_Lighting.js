@@ -1,6 +1,7 @@
 //=============================================================================
 // Community Plugins - Lighting system
 // Community_Lighting.js
+
 /*=============================================================================
 Forked from Terrax Lighting
 =============================================================================*/
@@ -12,6 +13,7 @@ var Imported = Imported || {};
 Imported.Community_Lighting = true;
 /*:
 * @plugindesc v2.2 Creates an extra layer that darkens a map and adds lightsources! Released under the MIT license!
+
 * @author Terrax, iVillain, Aesica, Eliaquim, Alexandre
 *
 * @param ---General Settings---
@@ -1183,7 +1185,6 @@ Imported.Community_Lighting = true;
 											}
 										}
 
-
 										// show light
 										if (state == true) {
 											let ldir = 0;
@@ -1864,7 +1865,9 @@ Imported.Community_Lighting = true;
 		this._createBitmap();
 
 		//Initialize the bitmap
+
 		this._addSprite(-lightMaskPadding, 0, this._maskBitmap);
+
 		var redhex = $gameTemp._MapTint.substring(1, 3);
 		var greenhex = $gameTemp._MapTint.substring(3, 5);
 		var bluehex = $gameTemp._MapTint.substring(5);
@@ -1883,7 +1886,9 @@ Imported.Community_Lighting = true;
 	//@method _createBitmaps
 
 	BattleLightmask.prototype._createBitmap = function () {
-		this._maskBitmap = new Bitmap(maxX + lightMaskPadding, maxY);   // one big bitmap to fill the intire screen with black
+
+		this._maskBitmap = new Bitmap(maxX + lightMaskPadding, maxY);   // one big bitmap to fill the entire screen with black
+
 		var canvas = this._maskBitmap.canvas;          // a bit larger then setting to take care of screenshakes
 	};
 
@@ -1943,7 +1948,9 @@ Imported.Community_Lighting = true;
 			color1 = "#" + ((1 << 24) + (r3 << 16) + (g3 << 8) + b3).toString(16).slice(1);
 			$gameTemp._BattleTintFade = color1;
 		}
+
 		this._maskBitmap.FillRect(-lightMaskPadding, 0, maxX + lightMaskPadding, maxY, color1);
+
 	};
 
 	/**

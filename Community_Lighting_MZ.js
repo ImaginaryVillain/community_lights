@@ -8,12 +8,16 @@ var Community = Community || {};
 Community.Lighting = Community.Lighting || {};
 Community.Lighting.name = "Community_Lighting_MZ";
 Community.Lighting.parameters = PluginManager.parameters(Community.Lighting.name);
+
 Community.Lighting.version = 3.3;
+
 var Imported = Imported || {};
 Imported[Community.Lighting.name] = true;
 /*:
 * @target MZ
+
 * @plugindesc v3.3 Creates an extra layer that darkens a map and adds lightsources! Released under the MIT license!
+
 * @author Terrax, iVillain, Aesica, Eliaquim, Alexandre
 *
 * @param ---General Settings---
