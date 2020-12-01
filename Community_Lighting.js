@@ -14,7 +14,7 @@ Imported.Community_Lighting = true;
 /*:
 * @plugindesc v2.2 Creates an extra layer that darkens a map and adds lightsources! Released under the MIT license!
 
-* @author Terrax, iVillain, Aesica, Eliaquim, Alexandre
+* @author Terrax, iVillain, Aesica, Eliaquim, Alexandre, Nekohime1989
 *
 * @param ---General Settings---
 * @default
