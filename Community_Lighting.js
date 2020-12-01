@@ -1,18 +1,19 @@
 //=============================================================================
 // Community Plugins - Lighting system
 // Community_Lighting.js
-// Version: 2.11
+
 /*=============================================================================
 Forked from Terrax Lighting
 =============================================================================*/
 var Community = Community || {};
 Community.Lighting = Community.Lighting || {};
 Community.Lighting.parameters = PluginManager.parameters('Community_Lighting');
-Community.Lighting.version = 2.11;
+Community.Lighting.version = 2.2;
 var Imported = Imported || {};
 Imported.Community_Lighting = true;
 /*:
-* @plugindesc v2.0 Creates an extra layer that darkens a map and adds lightsources! Released under the MIT license!
+* @plugindesc v2.2 Creates an extra layer that darkens a map and adds lightsources! Released under the MIT license!
+
 * @author Terrax, iVillain, Aesica, Eliaquim, Alexandre
 *
 * @param ---General Settings---
@@ -134,6 +135,13 @@ Imported.Community_Lighting = true;
 * @default 630
 * @type number
 * @min 0
+*
+* @param Lightmask Padding
+* @parent ---Offset and Sizes---
+* @desc Offscreen x-padding size for the light mask
+* @type number
+* @min 0
+* @default 40
 *
 * @param ---Battle Settings---
 * @default
@@ -411,6 +419,7 @@ Imported.Community_Lighting = true;
 	let tile_blocks = [];
 
 	let parameters = $$.parameters;
+	let lightMaskPadding = +parameters["Lightmask Padding"] || 0;
 	let player_radius = Number(parameters['Player radius']);
 	let reset_each_map = eval(String(parameters['Reset Lights']));
 	let noteTagKey = parameters["Note Tag Key"] !== "" ? parameters["Note Tag Key"] : false;
@@ -648,7 +657,7 @@ Imported.Community_Lighting = true;
 	//@method _createBitmaps
 
 	Lightmask.prototype._createBitmap = function () {
-		this._maskBitmap = new Bitmap(maxX + 20, maxY);   // one big bitmap to fill the intire screen with black
+		this._maskBitmap = new Bitmap(maxX + lightMaskPadding, maxY);   // one big bitmap to fill the intire screen with black
 		let canvas = this._maskBitmap.canvas;             // a bit larger then setting to take care of screenshakes
 	};
 
@@ -703,7 +712,7 @@ Imported.Community_Lighting = true;
 					}
 
 					if (event_note.length > 0) { // Are there lightsources on this map? If not, nothing to do.
-						this._addSprite(-20, 0, this._maskBitmap);
+						this._addSprite(-lightMaskPadding, 0, this._maskBitmap);
 						// ******** GROW OR SHRINK GLOBE PLAYER *********
 
 						let firstrun = $gameVariables.GetFirstRun();
@@ -746,7 +755,7 @@ Imported.Community_Lighting = true;
 
 						let canvas = this._maskBitmap.canvas;
 						let ctx = canvas.getContext("2d");
-						this._maskBitmap.fillRect(0, 0, maxX + 20, maxY, '#000000');
+						this._maskBitmap.fillRect(0, 0, maxX + lightMaskPadding, maxY, '#000000');
 
 
 						ctx.globalCompositeOperation = 'lighter';
@@ -782,7 +791,7 @@ Imported.Community_Lighting = true;
 
 						if (iplayer_radius > 0) {
 							if (playerflashlight == true) {
-								this._maskBitmap.radialgradientFillRect2(x1, y1, 20, iplayer_radius, playercolor, '#000000', pd, flashlightlength, flashlightwidth);
+								this._maskBitmap.radialgradientFillRect2(x1, y1, lightMaskPadding, iplayer_radius, playercolor, '#000000', pd, flashlightlength, flashlightwidth);
 							}
 							y1 = y1 - flashlightoffset;
 							if (iplayer_radius < 100) {
@@ -806,7 +815,7 @@ Imported.Community_Lighting = true;
 
 								this._maskBitmap.radialgradientFillRect(x1, y1, 0, iplayer_radius, newcolor, '#000000', playerflicker, playerbrightness);
 							} else {
-								this._maskBitmap.radialgradientFillRect(x1, y1, 20, iplayer_radius, playercolor, '#000000', playerflicker, playerbrightness);
+								this._maskBitmap.radialgradientFillRect(x1, y1, lightMaskPadding, iplayer_radius, playercolor, '#000000', playerflicker, playerbrightness);
 							}
 
 						}
@@ -1176,7 +1185,6 @@ Imported.Community_Lighting = true;
 											}
 										}
 
-
 										// show light
 										if (state == true) {
 											let ldir = 0;
@@ -1410,7 +1418,7 @@ Imported.Community_Lighting = true;
 							}
 							color1 = "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
 
-							this._maskBitmap.FillRect(0, 0, maxX + 20, maxY, color1);
+							this._maskBitmap.FillRect(0, 0, maxX + lightMaskPadding, maxY, color1);
 						}
 						// *********************************** TINT **************************
 						else {
@@ -1500,7 +1508,7 @@ Imported.Community_Lighting = true;
 							} else {
 								tint_timer = 0;
 							}
-							this._maskBitmap.FillRect(-20, 0, maxX + 20, maxY, tcolor);
+							this._maskBitmap.FillRect(-lightMaskPadding, 0, maxX + lightMaskPadding, maxY, tcolor);
 						}
 
 						// reset drawmode to normal
@@ -1544,8 +1552,8 @@ Imported.Community_Lighting = true;
 	// *******************  NORMAL BOX SHAPE ***********************************
 
 	Bitmap.prototype.FillRect = function (x1, y1, x2, y2, color1) {
-		x1 = x1 + 20;
-		//x2=x2+20;
+		x1 = x1 + lightMaskPadding;
+		//x2=x2+lightMaskPadding;
 		let context = this._context;
 		context.save();
 		context.fillStyle = color1;
@@ -1557,7 +1565,7 @@ Imported.Community_Lighting = true;
 	// *******************  CIRCLE/OVAL SHAPE ***********************************
 	// from http://scienceprimer.com/draw-oval-html5-canvas
 	Bitmap.prototype.FillCircle = function (centerX, centerY, xradius, yradius, color1) {
-		centerX = centerX + 20;
+		centerX = centerX + lightMaskPadding;
 
 		let context = this._context;
 		context.save();
@@ -1596,7 +1604,7 @@ Imported.Community_Lighting = true;
 			color2 = '#000000'
 		}
 
-		x1 = x1 + 20;
+		x1 = x1 + lightMaskPadding;
 
 		// clipping
 		let nx1 = Number(x1);
@@ -1718,7 +1726,7 @@ Imported.Community_Lighting = true;
 	// Fill gradient Cone
 
 	Bitmap.prototype.radialgradientFillRect2 = function (x1, y1, r1, r2, color1, color2, direction, flashlength, flashwidth) {
-		x1 = x1 + 20;
+		x1 = x1 + lightMaskPadding;
 
 		let isValidColor = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)/i.test(color1);
 		if (!isValidColor) {
@@ -1857,7 +1865,9 @@ Imported.Community_Lighting = true;
 		this._createBitmap();
 
 		//Initialize the bitmap
-		this._addSprite(-20, 0, this._maskBitmap);
+
+		this._addSprite(-lightMaskPadding, 0, this._maskBitmap);
+
 		var redhex = $gameTemp._MapTint.substring(1, 3);
 		var greenhex = $gameTemp._MapTint.substring(3, 5);
 		var bluehex = $gameTemp._MapTint.substring(5);
@@ -1869,14 +1879,16 @@ Imported.Community_Lighting = true;
 			$gameTemp._MapTint = '#666666' // Prevent the battle scene from being too dark.
 		}
 		$gameTemp._BattleTint = $$.daynightset ? $gameVariables.GetTintByTime() : $gameTemp._MapTint;
-		this._maskBitmap.FillRect(-20, 0, maxX + 20, maxY, $gameTemp._BattleTint);
+		this._maskBitmap.FillRect(-lightMaskPadding, 0, maxX + lightMaskPadding, maxY, $gameTemp._BattleTint);
 		$gameTemp._BattleTintSpeed = 0;
 	};
 
 	//@method _createBitmaps
 
 	BattleLightmask.prototype._createBitmap = function () {
-		this._maskBitmap = new Bitmap(maxX + 20, maxY);   // one big bitmap to fill the intire screen with black
+
+		this._maskBitmap = new Bitmap(maxX + lightMaskPadding, maxY);   // one big bitmap to fill the entire screen with black
+
 		var canvas = this._maskBitmap.canvas;          // a bit larger then setting to take care of screenshakes
 	};
 
@@ -1936,7 +1948,9 @@ Imported.Community_Lighting = true;
 			color1 = "#" + ((1 << 24) + (r3 << 16) + (g3 << 8) + b3).toString(16).slice(1);
 			$gameTemp._BattleTintFade = color1;
 		}
-		this._maskBitmap.FillRect(-20, 0, maxX + 20, maxY, color1);
+
+		this._maskBitmap.FillRect(-lightMaskPadding, 0, maxX + lightMaskPadding, maxY, color1);
+
 	};
 
 	/**
