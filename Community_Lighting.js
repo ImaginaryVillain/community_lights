@@ -1,18 +1,18 @@
 //=============================================================================
 // Community Plugins - Lighting system
 // Community_Lighting.js
-// Version: 1.03
+// Version: 2.11
 /*=============================================================================
 Forked from Terrax Lighting
 =============================================================================*/
 var Community = Community || {};
 Community.Lighting = Community.Lighting || {};
 Community.Lighting.parameters = PluginManager.parameters('Community_Lighting');
-Community.Lighting.version = 1.03;
+Community.Lighting.version = 2.2;
 var Imported = Imported || {};
 Imported.Community_Lighting = true;
 /*:
-* @plugindesc v1.03 Creates an extra layer that darkens a map and adds lightsources! Released under the MIT license!
+* @plugindesc v2.2 Creates an extra layer that darkens a map and adds lightsources! Released under the MIT license!
 * @author Terrax, iVillain, Aesica, Eliaquim, Alexandre
 *
 * @param ---General Settings---
@@ -22,6 +22,12 @@ Imported.Community_Lighting = true;
 * @parent ---General Settings---
 * @desc Adds an option to disable this plugin's lighting effects to the options menu (leave blank to omit)
 * @default Lighting Effects
+*
+* @param Lights Active Radius
+* @parent ---Offset and Sizes---
+* @desc The number of grid spaces away from the player that lights are turned on.
+* Default: 20
+* @default 20
 *
 * @param Reset Lights
 * @parent ---General Settings---
@@ -129,6 +135,13 @@ Imported.Community_Lighting = true;
 * @type number
 * @min 0
 *
+* @param Lightmask Padding
+* @parent ---Offset and Sizes---
+* @desc Offscreen x-padding size for the light mask
+* @type number
+* @min 0
+* @default 40
+*
 * @param ---Battle Settings---
 * @default
 *
@@ -223,7 +236,7 @@ Imported.Community_Lighting = true;
 * DayNight [speed]
 * Activates day/night cycle.  Put in map note or event note
 * - speed     Optional parameter to alter the speed at which time passes.  10 is
-                 the default speed, higher numbers are slower, lower numbers are
+				 the default speed, higher numbers are slower, lower numbers are
 				 faster, and 0 stops the flow of time entirely.  If speed is not
 				 specified, then the current speed is used.
 *
@@ -373,6 +386,18 @@ Imported.Community_Lighting = true;
 * - The second argument is speed of the fade (1 very fast, 20 more slow)
 * - Still automatically set too dark color to '#666666' (dark gray).
 *
+* --------------------------------------------------------------------------
+* Lights Active Radius
+* --------------------------------------------------------------------------
+* This allows you to decide how far away from the player lights are active,
+* anything beyond this range will not light up until the player gets
+* closer to it.
+* 
+* It can be changed in the plugin parameters, or using the script call...
+*
+* $gameVariables.SetActiveRadius(#)
+*
+* ....where # is the max distance you want in tiles.
 */
 
 (function ($$) {
@@ -393,6 +418,7 @@ Imported.Community_Lighting = true;
 	let tile_blocks = [];
 
 	let parameters = $$.parameters;
+	let lightMaskPadding = +parameters["Lightmask Padding"] || 0;
 	let player_radius = Number(parameters['Player radius']);
 	let reset_each_map = eval(String(parameters['Reset Lights']));
 	let noteTagKey = parameters["Note Tag Key"] !== "" ? parameters["Note Tag Key"] : false;
@@ -463,7 +489,7 @@ Imported.Community_Lighting = true;
 		}
 		return result;
 	};
-	$$.getDayNightList = function() {
+	$$.getDayNightList = function () {
 		return dayNightList;
 	};
 	function saveTime(hh, mm, ss = null) {
@@ -482,7 +508,7 @@ Imported.Community_Lighting = true;
 		}
 	};
 
-	Game_Interpreter.prototype.communityLighting_Commands = function(command, args){
+	Game_Interpreter.prototype.communityLighting_Commands = function (command, args) {
 		command = command.toLowerCase();
 
 		const allCommands = {
@@ -491,37 +517,37 @@ Imported.Community_Lighting = true;
 			effect_on_event: 'effectOnEvent', effect_on_xy: 'effectOnXy', script: 'scriptF', reload: 'reload', tintbattle: 'tintbattle'
 		};
 		const result = allCommands[command];
-		if(result) {
+		if (result) {
 			this[result](command, args);
 		}
 	};
 
-	Game_Interpreter.prototype.tileType = function(command, args){
+	Game_Interpreter.prototype.tileType = function (command, args) {
 		const cmdArr = ['', 'tileblock', 'regionblock', 'tilelight', 'regionlight', 'tilefire', 'regionfire', 'tileglow', 'regionglow'];
 		tiletype = cmdArr.indexOf(command);
-		if(tiletype > 0) $$.tile(args);
+		if (tiletype > 0) $$.tile(args);
 	};
 
-	Game_Interpreter.prototype.tint = function(command, args){
+	Game_Interpreter.prototype.tint = function (command, args) {
 		$$.tint(args);
 	};
 
-	Game_Interpreter.prototype.dayNight = function(command, args){
+	Game_Interpreter.prototype.dayNight = function (command, args) {
 		$$.DayNight(args);
 	};
 
-	Game_Interpreter.prototype.flashLight = function(command, args){
+	Game_Interpreter.prototype.flashLight = function (command, args) {
 		$$.flashlight(args);
 	};
 
-	Game_Interpreter.prototype.setFire = function(command, args){
+	Game_Interpreter.prototype.setFire = function (command, args) {
 		flickerradiusshift = args[0];
 		flickercolorshift = args[1];
 		$gameVariables.SetFireRadius(flickerradiusshift);
 		$gameVariables.SetFireColorshift(flickercolorshift);
 	};
 
-	Game_Interpreter.prototype.fire = function(command, args){
+	Game_Interpreter.prototype.fire = function (command, args) {
 		if (args.contains("radius") || args.contains("radiusgrow")) $gameVariables.SetFire(true);
 		if (args[0] === "deactivate") {
 			$gameVariables.SetScriptActive(false);
@@ -532,7 +558,7 @@ Imported.Community_Lighting = true;
 		$$.fireLight(args);
 	};
 
-	Game_Interpreter.prototype.light = function(command, args){
+	Game_Interpreter.prototype.light = function (command, args) {
 		if (args.contains("radius") || args.contains("radiusgrow")) $gameVariables.SetFire(false);
 		if (args[0] === "deactivate") {
 			$gameVariables.SetScriptActive(false);
@@ -542,15 +568,15 @@ Imported.Community_Lighting = true;
 		$$.fireLight(args);
 	};
 
-	Game_Interpreter.prototype.effectOnEvent = function(command, args){
+	Game_Interpreter.prototype.effectOnEvent = function (command, args) {
 		$$.effectOnEvent(args);
 	};
 
-	Game_Interpreter.prototype.effectOnXy = function(command, args){
+	Game_Interpreter.prototype.effectOnXy = function (command, args) {
 		$$.effectXy(args);
 	};
 
-	Game_Interpreter.prototype.scriptF = function(command, args){
+	Game_Interpreter.prototype.scriptF = function (command, args) {
 		if (args[0] === "deactivate") {
 			$gameVariables.SetStopScript(true);
 		} else {
@@ -558,7 +584,7 @@ Imported.Community_Lighting = true;
 		}
 	};
 
-	Game_Interpreter.prototype.reload = function(command, args){
+	Game_Interpreter.prototype.reload = function (command, args) {
 		if (args[0] === "events") {
 			$$.ReloadMapEvents();
 		}
@@ -588,8 +614,8 @@ Imported.Community_Lighting = true;
 		if (!tintColor || tintColor.length < 7) {
 			return '#666666' // Not an hex color strintg
 		}
-		var redhex = tintColor.substring(1,3);
-		var greenhex = tintColor.substring(3,5);
+		var redhex = tintColor.substring(1, 3);
+		var greenhex = tintColor.substring(3, 5);
 		var bluehex = tintColor.substring(5);
 		var red = parseInt(redhex, 16);
 		var green = parseInt(greenhex, 16);
@@ -630,7 +656,7 @@ Imported.Community_Lighting = true;
 	//@method _createBitmaps
 
 	Lightmask.prototype._createBitmap = function () {
-		this._maskBitmap = new Bitmap(maxX + 20, maxY);   // one big bitmap to fill the intire screen with black
+		this._maskBitmap = new Bitmap(maxX + lightMaskPadding, maxY);   // one big bitmap to fill the intire screen with black
 		let canvas = this._maskBitmap.canvas;             // a bit larger then setting to take care of screenshakes
 	};
 
@@ -685,7 +711,7 @@ Imported.Community_Lighting = true;
 					}
 
 					if (event_note.length > 0) { // Are there lightsources on this map? If not, nothing to do.
-						this._addSprite(-20, 0, this._maskBitmap);
+						this._addSprite(-lightMaskPadding, 0, this._maskBitmap);
 						// ******** GROW OR SHRINK GLOBE PLAYER *********
 
 						let firstrun = $gameVariables.GetFirstRun();
@@ -728,7 +754,7 @@ Imported.Community_Lighting = true;
 
 						let canvas = this._maskBitmap.canvas;
 						let ctx = canvas.getContext("2d");
-						this._maskBitmap.fillRect(0, 0, maxX + 20, maxY, '#000000');
+						this._maskBitmap.fillRect(0, 0, maxX + lightMaskPadding, maxY, '#000000');
 
 
 						ctx.globalCompositeOperation = 'lighter';
@@ -764,7 +790,7 @@ Imported.Community_Lighting = true;
 
 						if (iplayer_radius > 0) {
 							if (playerflashlight == true) {
-								this._maskBitmap.radialgradientFillRect2(x1, y1, 20, iplayer_radius, playercolor, '#000000', pd, flashlightlength, flashlightwidth);
+								this._maskBitmap.radialgradientFillRect2(x1, y1, lightMaskPadding, iplayer_radius, playercolor, '#000000', pd, flashlightlength, flashlightwidth);
 							}
 							y1 = y1 - flashlightoffset;
 							if (iplayer_radius < 100) {
@@ -788,7 +814,7 @@ Imported.Community_Lighting = true;
 
 								this._maskBitmap.radialgradientFillRect(x1, y1, 0, iplayer_radius, newcolor, '#000000', playerflicker, playerbrightness);
 							} else {
-								this._maskBitmap.radialgradientFillRect(x1, y1, 20, iplayer_radius, playercolor, '#000000', playerflicker, playerbrightness);
+								this._maskBitmap.radialgradientFillRect(x1, y1, lightMaskPadding, iplayer_radius, playercolor, '#000000', playerflicker, playerbrightness);
 							}
 
 						}
@@ -866,393 +892,353 @@ Imported.Community_Lighting = true;
 							let note_args = note.split(" ");
 							let note_command = note_args.shift().toLowerCase();
 
+							let lightsOnRadius = $gameVariables.GetActiveRadius();
+							let distanceApart = Math.round(Community.Lighting.distance($gamePlayer.x, $gamePlayer.y, $gameMap.events()[event_stacknumber[i]]._realX, $gameMap.events()[event_stacknumber[i]]._realY));
+							if (distanceApart <= lightsOnRadius) {
+								if (note_command == "light" || note_command == "fire" || note_command == "flashlight") {
 
-							if (note_command == "light" || note_command == "fire" || note_command == "flashlight") {
-
-								let objectflicker = false;
-								if (note_command == "fire") {
-									objectflicker = true;
-								}
-
-								let light_radius = 1;
-								let flashlength = 8;
-								let flashwidth = 12;
-								if (note_command == "flashlight") {
-									flashlength = Number(note_args.shift());
-									flashwidth = Number(note_args.shift());
-									if (flashlength == 0) {
-										flashlightlength = 8
+									let objectflicker = false;
+									if (note_command == "fire") {
+										objectflicker = true;
 									}
-									if (flashwidth == 0) {
-										flashlightlength = 12
-									}
-								} else {
-									light_radius = note_args.shift();
-								}
-								// light radius
-								if (light_radius >= 0) {
 
-									// light color
-									let colorvalue = note_args.shift();
-
-									// Cycle colors
-
-
-									if (colorvalue == 'cycle' && evid < 1000) {
-
-										let cyclecolor0 = note_args.shift();
-										let cyclecount0 = Number(note_args.shift());
-										let cyclecolor1 = note_args.shift();
-										let cyclecount1 = Number(note_args.shift());
-										let cyclecolor2 = '#000000';
-										let cyclecount2 = 0;
-										let cyclecolor3 = '#000000';
-										let cyclecount3 = 0;
-
-										let morecycle = note_args.shift();
-										if (typeof morecycle != 'undefined') {
-											if (morecycle.substring(0, 1) == "#") {
-												cyclecolor2 = morecycle;
-												cyclecount2 = Number(note_args.shift());
-												morecycle = note_args.shift();
-												if (typeof morecycle != 'undefined') {
-													if (morecycle.substring(0, 1) == "#") {
-														cyclecolor3 = morecycle;
-														cyclecount3 = Number(note_args.shift());
-
-													} else {
-														note_args.unshift(morecycle);
-													}
-												}
-											} else {
-												note_args.unshift(morecycle);
-											}
+									let light_radius = 1;
+									let flashlength = 8;
+									let flashwidth = 12;
+									if (note_command == "flashlight") {
+										flashlength = Number(note_args.shift());
+										flashwidth = Number(note_args.shift());
+										if (flashlength == 0) {
+											flashlightlength = 8
 										}
+										if (flashwidth == 0) {
+											flashlightlength = 12
+										}
+									} else {
+										light_radius = note_args.shift();
+									}
+									// light radius
+									if (light_radius >= 0) {
 
-										let switch0 = '0';
-										let switch1 = '0';
-										let switch2 = '0';
-										let switch3 = '0';
+										// light color
+										let colorvalue = note_args.shift();
 
-										let switches = note_args.shift();
-										if (typeof switches != 'undefined') {
-											if (switches.length == 7) {
-												if (switches.substring(0, 3) == "SS:") {
-													switch0 = switches.substring(3, 4);
-													switch1 = switches.substring(4, 5);
-													switch2 = switches.substring(5, 6);
-													switch3 = switches.substring(6, 7);
+										// Cycle colors
+
+
+										if (colorvalue == 'cycle' && evid < 1000) {
+
+											let cyclecolor0 = note_args.shift();
+											let cyclecount0 = Number(note_args.shift());
+											let cyclecolor1 = note_args.shift();
+											let cyclecount1 = Number(note_args.shift());
+											let cyclecolor2 = '#000000';
+											let cyclecount2 = 0;
+											let cyclecolor3 = '#000000';
+											let cyclecount3 = 0;
+
+											let morecycle = note_args.shift();
+											if (typeof morecycle != 'undefined') {
+												if (morecycle.substring(0, 1) == "#") {
+													cyclecolor2 = morecycle;
+													cyclecount2 = Number(note_args.shift());
+													morecycle = note_args.shift();
+													if (typeof morecycle != 'undefined') {
+														if (morecycle.substring(0, 1) == "#") {
+															cyclecolor3 = morecycle;
+															cyclecount3 = Number(note_args.shift());
+
+														} else {
+															note_args.unshift(morecycle);
+														}
+													}
+												} else {
+													note_args.unshift(morecycle);
+												}
+											}
+
+											let switch0 = '0';
+											let switch1 = '0';
+											let switch2 = '0';
+											let switch3 = '0';
+
+											let switches = note_args.shift();
+											if (typeof switches != 'undefined') {
+												if (switches.length == 7) {
+													if (switches.substring(0, 3) == "SS:") {
+														switch0 = switches.substring(3, 4);
+														switch1 = switches.substring(4, 5);
+														switch2 = switches.substring(5, 6);
+														switch3 = switches.substring(6, 7);
+													} else {
+														note_args.unshift(switches);
+													}
 												} else {
 													note_args.unshift(switches);
 												}
-											} else {
-												note_args.unshift(switches);
-											}
-										}
-
-										// set cycle color
-										switch (colorcycle_count[evid]) {
-											case 0:
-												colorvalue = cyclecolor0;
-												break;
-											case 1:
-												colorvalue = cyclecolor1;
-												break;
-											case 2:
-												colorvalue = cyclecolor2;
-												break;
-											case 3:
-												colorvalue = cyclecolor3;
-												break;
-											default:
-												colorvalue = '#FFFFFF';
-										}
-
-										// cycle timing
-										//let datenow = new Date();
-										//let seconds = Math.floor(datenow.getTime() / 100);
-										cyclecolor_counter = cyclecolor_counter + 1;
-
-										if (cyclecolor_counter > 10) {
-											cyclecolor_counter = 0;
-
-											//reset all switches
-											if (switch0 != '0') {
-												key = [map_id, evid, switch0];
-												$gameSelfSwitches.setValue(key, false);
-											}
-											if (switch1 != '0') {
-												key = [map_id, evid, switch1];
-												$gameSelfSwitches.setValue(key, false);
-											}
-											if (switch2 != '0') {
-												key = [map_id, evid, switch2];
-												$gameSelfSwitches.setValue(key, false);
-											}
-											if (switch3 != '0') {
-												key = [map_id, evid, switch3];
-												$gameSelfSwitches.setValue(key, false);
 											}
 
+											// set cycle color
+											switch (colorcycle_count[evid]) {
+												case 0:
+													colorvalue = cyclecolor0;
+													break;
+												case 1:
+													colorvalue = cyclecolor1;
+													break;
+												case 2:
+													colorvalue = cyclecolor2;
+													break;
+												case 3:
+													colorvalue = cyclecolor3;
+													break;
+												default:
+													colorvalue = '#FFFFFF';
+											}
 
-											if (colorcycle_count[evid] == 0) {
-												colorcycle_timer[evid]++;
+											// cycle timing
+											//let datenow = new Date();
+											//let seconds = Math.floor(datenow.getTime() / 100);
+											cyclecolor_counter = cyclecolor_counter + 1;
 
-												if (colorcycle_timer[evid] > cyclecount0) {
-													colorcycle_count[evid] = 1;
-													colorcycle_timer[evid] = 0;
-													if (switch1 != '0') {
-														key = [map_id, evid, switch1];
-														$gameSelfSwitches.setValue(key, true);
-													}
-												} else {
-													if (switch0 != '0') {
-														key = [map_id, evid, switch0];
-														$gameSelfSwitches.setValue(key, true);
-													}
+											if (cyclecolor_counter > 10) {
+												cyclecolor_counter = 0;
+
+												//reset all switches
+												if (switch0 != '0') {
+													key = [map_id, evid, switch0];
+													$gameSelfSwitches.setValue(key, false);
+												}
+												if (switch1 != '0') {
+													key = [map_id, evid, switch1];
+													$gameSelfSwitches.setValue(key, false);
+												}
+												if (switch2 != '0') {
+													key = [map_id, evid, switch2];
+													$gameSelfSwitches.setValue(key, false);
+												}
+												if (switch3 != '0') {
+													key = [map_id, evid, switch3];
+													$gameSelfSwitches.setValue(key, false);
 												}
 
-											}
-											if (colorcycle_count[evid] == 1) {
-												colorcycle_timer[evid]++;
-												if (colorcycle_timer[evid] > cyclecount1) {
-													colorcycle_count[evid] = 2;
-													colorcycle_timer[evid] = 0;
-													if (switch2 != '0') {
-														key = [map_id, evid, switch2];
-														$gameSelfSwitches.setValue(key, true);
+
+												if (colorcycle_count[evid] == 0) {
+													colorcycle_timer[evid]++;
+
+													if (colorcycle_timer[evid] > cyclecount0) {
+														colorcycle_count[evid] = 1;
+														colorcycle_timer[evid] = 0;
+														if (switch1 != '0') {
+															key = [map_id, evid, switch1];
+															$gameSelfSwitches.setValue(key, true);
+														}
+													} else {
+														if (switch0 != '0') {
+															key = [map_id, evid, switch0];
+															$gameSelfSwitches.setValue(key, true);
+														}
 													}
-												} else {
-													if (switch1 != '0') {
-														key = [map_id, evid, switch1];
-														$gameSelfSwitches.setValue(key, true);
+
+												}
+												if (colorcycle_count[evid] == 1) {
+													colorcycle_timer[evid]++;
+													if (colorcycle_timer[evid] > cyclecount1) {
+														colorcycle_count[evid] = 2;
+														colorcycle_timer[evid] = 0;
+														if (switch2 != '0') {
+															key = [map_id, evid, switch2];
+															$gameSelfSwitches.setValue(key, true);
+														}
+													} else {
+														if (switch1 != '0') {
+															key = [map_id, evid, switch1];
+															$gameSelfSwitches.setValue(key, true);
+														}
 													}
 												}
-											}
-											if (colorcycle_count[evid] == 2) {
-												colorcycle_timer[evid]++;
-												if (colorcycle_timer[evid] > cyclecount2) {
-													colorcycle_count[evid] = 3;
-													colorcycle_timer[evid] = 0;
-													if (switch3 != '0') {
-														key = [map_id, evid, switch3];
-														$gameSelfSwitches.setValue(key, true);
-													}
-												} else {
-													if (switch2 != '0') {
-														key = [map_id, evid, switch2];
-														$gameSelfSwitches.setValue(key, true);
+												if (colorcycle_count[evid] == 2) {
+													colorcycle_timer[evid]++;
+													if (colorcycle_timer[evid] > cyclecount2) {
+														colorcycle_count[evid] = 3;
+														colorcycle_timer[evid] = 0;
+														if (switch3 != '0') {
+															key = [map_id, evid, switch3];
+															$gameSelfSwitches.setValue(key, true);
+														}
+													} else {
+														if (switch2 != '0') {
+															key = [map_id, evid, switch2];
+															$gameSelfSwitches.setValue(key, true);
+														}
 													}
 												}
-											}
-											if (colorcycle_count[evid] == 3) {
-												colorcycle_timer[evid]++;
-												if (colorcycle_timer[evid] > cyclecount3) {
-													colorcycle_count[evid] = 0;
-													colorcycle_timer[evid] = 0;
-													if (switch0 != '0') {
-														key = [map_id, evid, switch0];
-														$gameSelfSwitches.setValue(key, true);
-													}
-												} else {
-													if (switch3 != '0') {
-														key = [map_id, evid, switch3];
-														$gameSelfSwitches.setValue(key, true);
+												if (colorcycle_count[evid] == 3) {
+													colorcycle_timer[evid]++;
+													if (colorcycle_timer[evid] > cyclecount3) {
+														colorcycle_count[evid] = 0;
+														colorcycle_timer[evid] = 0;
+														if (switch0 != '0') {
+															key = [map_id, evid, switch0];
+															$gameSelfSwitches.setValue(key, true);
+														}
+													} else {
+														if (switch3 != '0') {
+															key = [map_id, evid, switch3];
+															$gameSelfSwitches.setValue(key, true);
+														}
 													}
 												}
 											}
-										}
-
-									} else {
-										let isValidColor = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)/i.test(colorvalue);
-										if (!isValidColor) {
-											colorvalue = '#FFFFFF'
-										}
-									}
-
-									// brightness and direction
-									let brightness = 0.0;
-									let direction = 0;
-
-									// offsets
-									let lightXOffset = 0.0;
-									let lightYOffset = 0.0;
-
-									let next_arg = note_args.shift();
-
-									if (typeof next_arg != 'undefined') {
-										let key = next_arg.substring(0, 1);
-										if (key == 'b' || key == 'B') {
-											brightness = Number(next_arg.substring(1)) / 100;
-											next_arg = note_args.shift();
-											if (typeof next_arg != 'undefined') {
-												key = next_arg.substring(0, 1);
-											}
-										}
-										if (key == 'd' || key == 'D') {
-											direction = next_arg.substring(1);
-											next_arg = note_args.shift();
-											if (typeof next_arg != 'undefined') {
-												key = next_arg.substring(0, 1);
-											}
-										}
-										if (key == 'x' || key == 'X') {
-											lightXOffset = +next_arg.substring(1) / $gameMap.tileWidth();
-											next_arg = note_args.shift();
-											if (typeof next_arg != 'undefined') {
-												key = next_arg.substring(0, 1);
-											}
-										}
-										if (key == 'y' || key == 'Y') {
-											lightYOffset = +next_arg.substring(1) / $gameMap.tileHeight();
-											next_arg = note_args.shift();
-										}
-									}
-
-
-									// conditional lighting
-									let lightid = 0;
-									if (typeof next_arg != 'undefined') {
-										lightid = next_arg;
-									}
-
-									let state = true;
-									if (lightid > 0) {
-										state = false;
-
-										let lightarray_id = $gameVariables.GetLightArrayId();
-										let lightarray_state = $gameVariables.GetLightArrayState();
-										let lightarray_color = $gameVariables.GetLightArrayColor();
-
-										for (let j = 0, jlen = lightarray_id.length; j < jlen; j++) {
-											if (lightarray_id[j] == lightid) {
-												// idfound = true;
-												state = lightarray_state[j];
-
-												let newcolor = lightarray_color[j];
-
-												if (newcolor != 'defaultcolor') {
-													colorvalue = newcolor;
-												}
-											}
-										}
-
-										// Set kill switch to ON if the conditional light is deactivated,
-										// or to OFF if it is active.
-										if (killSwitchAuto && killswitch !== 'None') {
-											key = [map_id, evid, killswitch];
-											if ($gameSelfSwitches.value(key) === state){
-												$gameSelfSwitches.setValue(key, !state);
-											}
-										}
-									}
-
-
-									// kill switch
-									if (killswitch !== 'None' && state) {
-										key = [map_id, evid, killswitch];
-										if ($gameSelfSwitches.value(key) === true) {
-											state = false;
-										}
-									}
-
-
-									// show light
-									if (state == true) {
-
-										let lpx = 0;
-										let lpy = 0;
-										let ldir = 0;
-										if (event_moving[i] > 0) {
-											lpx = $gameMap.events()[event_stacknumber[i]]._realX;
-											lpy = $gameMap.events()[event_stacknumber[i]]._realY;
-											ldir = $gameMap.events()[event_stacknumber[i]]._direction;
 
 										} else {
-											lpx = event_x[i];
-											lpy = event_y[i];
-											ldir = event_dir[i];
+											let isValidColor = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)/i.test(colorvalue);
+											if (!isValidColor) {
+												colorvalue = '#FFFFFF'
+											}
 										}
 
-										//apply offsets
-										lpx = lpx + lightXOffset;
-										lpy = lpy + lightYOffset;
+										// brightness and direction
+										let brightness = 0.0;
+										let direction = 0;
 
-										// moving lightsources
-										let flashlight = false;
-										if (note_command == "flashlight") {
-											flashlight = true;
+										// offsets
+										let lightXOffset = 0.0;
+										let lightYOffset = 0.0;
 
-											let walking = event_moving[i];
-											if (walking == false) {
-												let tldir = Number(note_args.shift());
-												if (!isNaN(tldir)) {
-													if (tldir < 0 || ldir >= 5) {
-														ldir = 4
-													}
-													if (tldir == 1) {
-														ldir = 8
-													}
-													if (tldir == 2) {
-														ldir = 6
-													}
-													if (tldir == 3) {
-														ldir = 2
-													}
-													if (tldir == 4) {
-														ldir = 4
+										let next_arg = note_args.shift();
+
+										if (typeof next_arg != 'undefined') {
+											let key = next_arg.substring(0, 1);
+											if (key == 'b' || key == 'B') {
+												brightness = Number(next_arg.substring(1)) / 100;
+												next_arg = note_args.shift();
+												if (typeof next_arg != 'undefined') {
+													key = next_arg.substring(0, 1);
+												}
+											}
+											if (key == 'd' || key == 'D') {
+												direction = next_arg.substring(1);
+												next_arg = note_args.shift();
+												if (typeof next_arg != 'undefined') {
+													key = next_arg.substring(0, 1);
+												}
+											}
+											if (key == 'x' || key == 'X') {
+												lightXOffset = +next_arg.substring(1) / $gameMap.tileWidth();
+												next_arg = note_args.shift();
+												if (typeof next_arg != 'undefined') {
+													key = next_arg.substring(0, 1);
+												}
+											}
+											if (key == 'y' || key == 'Y') {
+												lightYOffset = +next_arg.substring(1) / $gameMap.tileHeight();
+												next_arg = note_args.shift();
+											}
+										}
+
+
+										// conditional lighting
+										let lightid = 0;
+										if (typeof next_arg != 'undefined') {
+											lightid = next_arg;
+										}
+
+										let state = true;
+										if (lightid > 0) {
+											state = false;
+
+											let lightarray_id = $gameVariables.GetLightArrayId();
+											let lightarray_state = $gameVariables.GetLightArrayState();
+											let lightarray_color = $gameVariables.GetLightArrayColor();
+
+											for (let j = 0, jlen = lightarray_id.length; j < jlen; j++) {
+												if (lightarray_id[j] == lightid) {
+													// idfound = true;
+													state = lightarray_state[j];
+
+													let newcolor = lightarray_color[j];
+
+													if (newcolor != 'defaultcolor') {
+														colorvalue = newcolor;
 													}
 												}
 											}
 
-
-										}
-										let lx1 = (pw / 2) + ((lpx - dx) * pw);
-										let ly1 = (ph / 2) + ((lpy - dy) * ph);
-										// paralaxloop does something weird with coordinates.. recalc needed
-
-										if ($dataMap.scrollType === 2 || $dataMap.scrollType === 3) {
-											if (dx - 10 > lpx) {
-												let lxjump = $gameMap.width() - (dx - lpx);
-												lx1 = (pw / 2) + (lxjump * pw);
-											}
-										}
-										if ($dataMap.scrollType === 1 || $dataMap.scrollType === 3) {
-											if (dy - 10 > lpy) {
-												let lyjump = $gameMap.height() - (dy - lpy);
-												ly1 = (ph / 2) + (lyjump * ph);
-											}
-										}
-
-										let visible = true;
-										if ($gameMap.useUltraMode7) {
-											let position = UltraMode7.mapToScreen(lx1, ly1 + ph / 2);
-											if ($gameMap.ultraMode7Fov > 0) {
-												let z = position.z;
-												if (z <= UltraMode7.NEAR_CLIP_Z && z >= UltraMode7.FAR_CLIP_Z) {
-													visible = false;
+											// Set kill switch to ON if the conditional light is deactivated,
+											// or to OFF if it is active.
+											if (killSwitchAuto && killswitch !== 'None') {
+												key = [map_id, evid, killswitch];
+												if ($gameSelfSwitches.value(key) === state) {
+													$gameSelfSwitches.setValue(key, !state);
 												}
 											}
-											if (visible) {
-												let scale = UltraMode7.mapToScreenScale(lx1, ly1);
-												lx1 = position.x;
-												ly1 = position.y -= ph / 2 * scale;
-												light_radius *= scale;
+										}
+
+
+										// kill switch
+										if (killswitch !== 'None' && state) {
+											key = [map_id, evid, killswitch];
+											if ($gameSelfSwitches.value(key) === true) {
+												state = false;
 											}
 										}
-										if (visible) {
+
+
+										// show light
+										if (state == true) {
+											let ldir = 0;
+											if (event_moving[i] > 0) {
+												ldir = $gameMap.events()[event_stacknumber[i]]._direction;
+
+											} else {
+												ldir = event_dir[i];
+											}
+
+											// moving lightsources
+											let flashlight = false;
+											if (note_command == "flashlight") {
+												flashlight = true;
+
+												let walking = event_moving[i];
+												if (walking == false) {
+													let tldir = Number(note_args.shift());
+													if (!isNaN(tldir)) {
+														if (tldir < 0 || ldir >= 5) {
+															ldir = 4
+														}
+														if (tldir == 1) {
+															ldir = 8
+														}
+														if (tldir == 2) {
+															ldir = 6
+														}
+														if (tldir == 3) {
+															ldir = 2
+														}
+														if (tldir == 4) {
+															ldir = 4
+														}
+													}
+												}
+
+
+											}
+											let lx1 = $gameMap.events()[event_stacknumber[i]].screenX();
+											let ly1 = $gameMap.events()[event_stacknumber[i]].screenY() - 24;
+
 											if (flashlight == true) {
 												this._maskBitmap.radialgradientFillRect2(lx1, ly1, 0, light_radius, colorvalue, '#000000', ldir, flashlength, flashwidth);
 											} else {
 												this._maskBitmap.radialgradientFillRect(lx1, ly1, 0, light_radius, colorvalue, '#000000', objectflicker, brightness, direction);
 											}
+
+
 										}
 
 
+
 									}
-
-
-
 								}
 							}
 						}
@@ -1432,7 +1418,7 @@ Imported.Community_Lighting = true;
 							}
 							color1 = "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
 
-							this._maskBitmap.FillRect(0, 0, maxX + 20, maxY, color1);
+							this._maskBitmap.FillRect(0, 0, maxX + lightMaskPadding, maxY, color1);
 						}
 						// *********************************** TINT **************************
 						else {
@@ -1522,7 +1508,7 @@ Imported.Community_Lighting = true;
 							} else {
 								tint_timer = 0;
 							}
-							this._maskBitmap.FillRect(-20, 0, maxX + 20, maxY, tcolor);
+							this._maskBitmap.FillRect(-lightMaskPadding, 0, maxX + lightMaskPadding, maxY, tcolor);
 						}
 
 						// reset drawmode to normal
@@ -1566,8 +1552,8 @@ Imported.Community_Lighting = true;
 	// *******************  NORMAL BOX SHAPE ***********************************
 
 	Bitmap.prototype.FillRect = function (x1, y1, x2, y2, color1) {
-		x1 = x1 + 20;
-		//x2=x2+20;
+		x1 = x1 + lightMaskPadding;
+		//x2=x2+lightMaskPadding;
 		let context = this._context;
 		context.save();
 		context.fillStyle = color1;
@@ -1579,7 +1565,7 @@ Imported.Community_Lighting = true;
 	// *******************  CIRCLE/OVAL SHAPE ***********************************
 	// from http://scienceprimer.com/draw-oval-html5-canvas
 	Bitmap.prototype.FillCircle = function (centerX, centerY, xradius, yradius, color1) {
-		centerX = centerX + 20;
+		centerX = centerX + lightMaskPadding;
 
 		let context = this._context;
 		context.save();
@@ -1618,7 +1604,7 @@ Imported.Community_Lighting = true;
 			color2 = '#000000'
 		}
 
-		x1 = x1 + 20;
+		x1 = x1 + lightMaskPadding;
 
 		// clipping
 		let nx1 = Number(x1);
@@ -1740,7 +1726,7 @@ Imported.Community_Lighting = true;
 	// Fill gradient Cone
 
 	Bitmap.prototype.radialgradientFillRect2 = function (x1, y1, r1, r2, color1, color2, direction, flashlength, flashwidth) {
-		x1 = x1 + 20;
+		x1 = x1 + lightMaskPadding;
 
 		let isValidColor = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)/i.test(color1);
 		if (!isValidColor) {
@@ -1818,7 +1804,7 @@ Imported.Community_Lighting = true;
 	// ALIASED Begin battle: prepare battle lighting
 
 	let Community_Lighting_BattleManager_setup = BattleManager.setup;
-	BattleManager.setup = function(troopId, canEscape, canLose) {
+	BattleManager.setup = function (troopId, canEscape, canLose) {
 		$gameTemp._MapTint = '#FFFFFF';																		// By default, no darkness during battle
 		if (!DataManager.isBattleTest() && !DataManager.isEventTest() && $gameMap.mapId() >= 0) {			// If we went there from a map...
 			if ($gameVariables.GetStopScript() === false && $gameVariables.GetScriptActive() === true) {	// If the script is active...
@@ -1836,7 +1822,7 @@ Imported.Community_Lighting = true;
 	// ALIASED Scene_Battle initialisation: create the light mask.
 
 	let Community_Lighting_Spriteset_Battle_createLowerLayer = Spriteset_Battle.prototype.createLowerLayer;
-	Spriteset_Battle.prototype.createLowerLayer = function() {
+	Spriteset_Battle.prototype.createLowerLayer = function () {
 		Community_Lighting_Spriteset_Battle_createLowerLayer.call(this);
 		if (battleMaskPosition === 'Above') {
 			this.createBattleLightmask();
@@ -1844,15 +1830,15 @@ Imported.Community_Lighting = true;
 	};
 
 	let Community_Lighting_Spriteset_Battle_createBattleback = Spriteset_Battle.prototype.createBattleback;
-	Spriteset_Battle.prototype.createBattleback = function() {
+	Spriteset_Battle.prototype.createBattleback = function () {
 		Community_Lighting_Spriteset_Battle_createBattleback.call(this);
 		if (battleMaskPosition === 'Between') {
 			this.createBattleLightmask();
 		}
 	};
 
-	Spriteset_Battle.prototype.createBattleLightmask = function() {
-		if ($gameVariables.GetStopScript() === false && $gameVariables.GetScriptActive()){	// If the script is active
+	Spriteset_Battle.prototype.createBattleLightmask = function () {
+		if ($gameVariables.GetStopScript() === false && $gameVariables.GetScriptActive()) {	// If the script is active
 			if (lightInBattle) {															// If is active during battles.
 				this._battleLightmask = new BattleLightmask();								// ... Create the light mask.
 				if (battleMaskPosition === 'Above') {
@@ -1865,21 +1851,21 @@ Imported.Community_Lighting = true;
 	};
 
 	function BattleLightmask() {
-	    this.initialize.apply(this, arguments);
+		this.initialize.apply(this, arguments);
 	};
 
 	BattleLightmask.prototype = Object.create(PIXI.Container.prototype);
 	BattleLightmask.prototype.constructor = BattleLightmask;
 
-	BattleLightmask.prototype.initialize = function() {
-	    PIXI.Container.call(this);
-	    this._width = Graphics.width;
-	    this._height = Graphics.height;
-	    this._sprites = [];
-	    this._createBitmap();
+	BattleLightmask.prototype.initialize = function () {
+		PIXI.Container.call(this);
+		this._width = Graphics.width;
+		this._height = Graphics.height;
+		this._sprites = [];
+		this._createBitmap();
 
 		//Initialize the bitmap
-		this._addSprite(-20,0,this._maskBitmap);
+		this._addSprite(-lightMaskPadding, 0, this._maskBitmap);
 		var redhex = $gameTemp._MapTint.substring(1, 3);
 		var greenhex = $gameTemp._MapTint.substring(3, 5);
 		var bluehex = $gameTemp._MapTint.substring(5);
@@ -1887,106 +1873,106 @@ Imported.Community_Lighting = true;
 		var green = parseInt(greenhex, 16);
 		var blue = parseInt(bluehex, 16);
 		var color = red + green + blue;
-		if (color < 200 && red < 66 && green < 66 && blue < 66){
+		if (color < 200 && red < 66 && green < 66 && blue < 66) {
 			$gameTemp._MapTint = '#666666' // Prevent the battle scene from being too dark.
 		}
 		$gameTemp._BattleTint = $$.daynightset ? $gameVariables.GetTintByTime() : $gameTemp._MapTint;
-		this._maskBitmap.FillRect(-20, 0, maxX + 20, maxY, $gameTemp._BattleTint);
+		this._maskBitmap.FillRect(-lightMaskPadding, 0, maxX + lightMaskPadding, maxY, $gameTemp._BattleTint);
 		$gameTemp._BattleTintSpeed = 0;
 	};
 
 	//@method _createBitmaps
 
-	BattleLightmask.prototype._createBitmap = function() {
-		this._maskBitmap = new Bitmap(maxX + 20, maxY);   // one big bitmap to fill the intire screen with black
-	    var canvas = this._maskBitmap.canvas;          // a bit larger then setting to take care of screenshakes
+	BattleLightmask.prototype._createBitmap = function () {
+		this._maskBitmap = new Bitmap(maxX + lightMaskPadding, maxY);   // one big bitmap to fill the intire screen with black
+		var canvas = this._maskBitmap.canvas;          // a bit larger then setting to take care of screenshakes
 	};
 
-	BattleLightmask.prototype.update = function() {
-				var color1 = $gameTemp._BattleTint;
-				if ($gameTemp._BattleTintSpeed > 0) {
+	BattleLightmask.prototype.update = function () {
+		var color1 = $gameTemp._BattleTint;
+		if ($gameTemp._BattleTintSpeed > 0) {
 
-					$gameTemp._BattleTintTimer += 1;
+			$gameTemp._BattleTintTimer += 1;
 
-				    var r = hexToRgb($gameTemp._BattleTintFade).r;
-					var g = hexToRgb($gameTemp._BattleTintFade).g;
-					var b = hexToRgb($gameTemp._BattleTintFade).b;
+			var r = hexToRgb($gameTemp._BattleTintFade).r;
+			var g = hexToRgb($gameTemp._BattleTintFade).g;
+			var b = hexToRgb($gameTemp._BattleTintFade).b;
 
-					var r2 = hexToRgb($gameTemp._BattleTint).r;
-					var g2 = hexToRgb($gameTemp._BattleTint).g;
-					var b2 = hexToRgb($gameTemp._BattleTint).b;
+			var r2 = hexToRgb($gameTemp._BattleTint).r;
+			var g2 = hexToRgb($gameTemp._BattleTint).g;
+			var b2 = hexToRgb($gameTemp._BattleTint).b;
 
-					var stepR = (r2-r)/(60 * $gameTemp._BattleTintSpeed);
-					var stepG = (g2-g)/(60 * $gameTemp._BattleTintSpeed);
-					var stepB = (b2-b)/(60 * $gameTemp._BattleTintSpeed);
+			var stepR = (r2 - r) / (60 * $gameTemp._BattleTintSpeed);
+			var stepG = (g2 - g) / (60 * $gameTemp._BattleTintSpeed);
+			var stepB = (b2 - b) / (60 * $gameTemp._BattleTintSpeed);
 
-					var r3 = Math.floor(r + (stepR * $gameTemp._BattleTintTimer));
-					var g3 = Math.floor(g + (stepG * $gameTemp._BattleTintTimer));
-					var b3 = Math.floor(b + (stepB * $gameTemp._BattleTintTimer));
-					if (r3 < 0) { r3 = 0 }
-					if (g3 < 0) { g3 = 0 }
-					if (b3 < 0) { b3 = 0 }
-					if (r3 > 255) { r3 = 255 }
-					if (g3 > 255) { g3 = 255 }
-					if (b3 > 255) { b3 = 255 }
-					var reddone = false;
-					var greendone = false;
-					var bluedone = false;
-					if (stepR >= 0 && r3 >= r2) {
-						reddone = true;
-					}
-					if (stepR <= 0 && r3 <= r2) {
-						reddone = true;
-					}
-					if (stepG >= 0 && g3 >= g2) {
-						greendone = true;
-					}
-					if (stepG <= 0 && g3 <= g2) {
-						greendone = true;
-					}
-					if (stepB >= 0 && b3 >= b2) {
-						bluedone = true;
-					}
-					if (stepB <= 0 && b3 <= b2) {
-						bluedone = true;
-					}
-					if (reddone == true && bluedone == true && greendone == true) {
-						$gameTemp._BattleTintFade = $gameTemp._BattleTint;
-						$gameTemp._BattleTintSpeed = 0;
-						$gameTemp._BattleTintTimer = 0;
-					}
-					color1 = "#" + ((1 << 24) + (r3 << 16) + (g3 << 8) + b3).toString(16).slice(1);
-					$gameTemp._BattleTintFade = color1;
-				}
-				this._maskBitmap.FillRect(-20, 0, maxX + 20, maxY, color1);
+			var r3 = Math.floor(r + (stepR * $gameTemp._BattleTintTimer));
+			var g3 = Math.floor(g + (stepG * $gameTemp._BattleTintTimer));
+			var b3 = Math.floor(b + (stepB * $gameTemp._BattleTintTimer));
+			if (r3 < 0) { r3 = 0 }
+			if (g3 < 0) { g3 = 0 }
+			if (b3 < 0) { b3 = 0 }
+			if (r3 > 255) { r3 = 255 }
+			if (g3 > 255) { g3 = 255 }
+			if (b3 > 255) { b3 = 255 }
+			var reddone = false;
+			var greendone = false;
+			var bluedone = false;
+			if (stepR >= 0 && r3 >= r2) {
+				reddone = true;
+			}
+			if (stepR <= 0 && r3 <= r2) {
+				reddone = true;
+			}
+			if (stepG >= 0 && g3 >= g2) {
+				greendone = true;
+			}
+			if (stepG <= 0 && g3 <= g2) {
+				greendone = true;
+			}
+			if (stepB >= 0 && b3 >= b2) {
+				bluedone = true;
+			}
+			if (stepB <= 0 && b3 <= b2) {
+				bluedone = true;
+			}
+			if (reddone == true && bluedone == true && greendone == true) {
+				$gameTemp._BattleTintFade = $gameTemp._BattleTint;
+				$gameTemp._BattleTintSpeed = 0;
+				$gameTemp._BattleTintTimer = 0;
+			}
+			color1 = "#" + ((1 << 24) + (r3 << 16) + (g3 << 8) + b3).toString(16).slice(1);
+			$gameTemp._BattleTintFade = color1;
+		}
+		this._maskBitmap.FillRect(-lightMaskPadding, 0, maxX + lightMaskPadding, maxY, color1);
 	};
 
 	/**
 	 * @method _addSprite
 	 * @private
 	 */
-	BattleLightmask.prototype._addSprite = function(x1, y1, selectedbitmap) {
+	BattleLightmask.prototype._addSprite = function (x1, y1, selectedbitmap) {
 
-	    var sprite = new Sprite(this.viewport);
-	    sprite.bitmap = selectedbitmap;
-	    sprite.opacity = 255;
-	    sprite.blendMode = 2;
-	    sprite.x = x1;
-	 	sprite.y = y1;
-	    this._sprites.push(sprite);
-	    this.addChild(sprite);
-	    sprite.rotation = 0;
-	    sprite.ax = 0;
-	    sprite.ay = 0
-	 	sprite.opacity = 255;
+		var sprite = new Sprite(this.viewport);
+		sprite.bitmap = selectedbitmap;
+		sprite.opacity = 255;
+		sprite.blendMode = 2;
+		sprite.x = x1;
+		sprite.y = y1;
+		this._sprites.push(sprite);
+		this.addChild(sprite);
+		sprite.rotation = 0;
+		sprite.ax = 0;
+		sprite.ay = 0
+		sprite.opacity = 255;
 	};
 
 	/**
 	 * @method _removeSprite
 	 * @private
 	 */
-	BattleLightmask.prototype._removeSprite = function() {
-	    this.removeChild(this._sprites.pop());
+	BattleLightmask.prototype._removeSprite = function () {
+		this.removeChild(this._sprites.pop());
 	};
 
 	// ALLIASED Move event location => reload map.
@@ -2679,6 +2665,17 @@ Imported.Community_Lighting = true;
 
 
 })(Community.Lighting);
+
+Community.Lighting.distance = function(x1, y1, x2, y2) {
+    return Math.abs(Math.sqrt(Math.pow(x1 - x2,2) + Math.pow(y1 - y2,2)));
+}; 
+
+Game_Variables.prototype.SetActiveRadius = function (value) {
+    this._Player_Light_Radius = value;
+};
+Game_Variables.prototype.GetActiveRadius = function () {
+    return this._Player_Light_Radius || Number(Community.Lighting.parameters['Lights Active Radius']);
+};
 
 Game_Variables.prototype.GetFirstRun = function () {
 	if (typeof this._Community_Lighting_FirstRun == 'undefined') {
