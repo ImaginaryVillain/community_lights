@@ -8,15 +8,13 @@ var Community = Community || {};
 Community.Lighting = Community.Lighting || {};
 Community.Lighting.name = "Community_Lighting_MZ";
 Community.Lighting.parameters = PluginManager.parameters(Community.Lighting.name);
-
-Community.Lighting.version = 3.3;
-
+Community.Lighting.version = 3.4;
 var Imported = Imported || {};
 Imported[Community.Lighting.name] = true;
 /*:
 * @target MZ
 
-* @plugindesc v3.3 Creates an extra layer that darkens a map and adds lightsources! Released under the MIT license!
+* @plugindesc v3.4 Creates an extra layer that darkens a map and adds lightsources! Released under the MIT license!
 
 * @author Terrax, iVillain, Aesica, Eliaquim, Alexandre, Nekohime1989
 *
@@ -2455,7 +2453,7 @@ Imported[Community.Lighting.name] = true;
 							}
 							color1 = "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
 
-							this._maskBitmap.FillRect(0, 0, maxX + lightMaskPadding, maxY, color1);
+							this._maskBitmap.FillRect(-lightMaskPadding, 0, maxX + lightMaskPadding, maxY, color1);
 						}
 						// *********************************** TINT **************************
 						else {
