@@ -1,15 +1,15 @@
 //=============================================================================
 // Community Plugins - Ultra Mini Lighting system
 // umc_Lighting.js
-// Version: 1.46
+// Version: 1.47
 /*=============================================================================
 Forked from Terrax Lighting
 =============================================================================*/
 var umc = umc || {};
 umc.Lighting = umc.Lighting || {};
-umc.Lighting.version = 1.46;
+umc.Lighting.version = 1.47;
 /*:
-* @plugindesc v1.46 The smallest, fastest lighting plugin!
+* @plugindesc v1.47 The smallest, fastest lighting plugin!
 * @author Terrax, iVillain, Aesica
 *
 * @param Lights Active Radius
@@ -24,23 +24,11 @@ umc.Lighting.version = 1.46;
 * Default: 300
 * @default 300
 *
-* @param Screensize X
-* @parent ---Offset and Sizes---
-* @desc Increase if your using a higher screen resolution then the default
-* Default : 866
-* @default 866
-*
-* @param Screensize Y
-* @parent ---Offset and Sizes---
-* @desc Increase if your using a higher screen resolution then the default
-* Default : 630
-* @default 630
-*
 * @help
 * --------------------------------------------------------------------------
 * Script Commands
 * --------------------------------------------------------------------------
-* umc.Lighting.tint('#333333'); //Sets the tint. #333333 can be any color.
+* $gameVariables.tint('#333333'); //Sets the tint. #333333 can be any color.
 * --------------------------------------------------------------------------
 * Events Note Tag
 * --------------------------------------------------------------------------
@@ -98,10 +86,6 @@ Bitmap.prototype.radialgradientFillRect = function (x1, y1, r1, r2, color1, colo
     context.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
     context.restore();
     this._setDirty();
-};
-
-umc.Lighting.tint = function (color) {
-    $gameVariables.SetTint(color);
 };
 
 Game_Variables.prototype.SetActiveRadius = function (value) {
@@ -187,8 +171,8 @@ Lightmask.prototype.ReloadMapEvents = function () {
 };
 
 Lightmask.prototype._createBitmap = function () {
-    let screenX = umc.Lighting.parameters['Screensize X'];
-    let screenY = umc.Lighting.parameters['Screensize Y'];
+    let screenX = Graphics.width;
+    let screenY = Graphics.height;
     this._maskBitmap = new Bitmap(Number(screenX) + 20, Number(screenY));   // one big bitmap to fill the intire screen with black
 };
 
@@ -215,8 +199,8 @@ Lightmask.prototype._updateMask = function () {
     for (let i = 0, n = this._sprites.length; i < n; i++) {
         this.removeChild(this._sprites.pop());
     }
-    let maxX = Number(umc.Lighting.parameters['Screensize X'] + 24);
-    let maxY = Number(umc.Lighting.parameters['Screensize Y'] + 24);
+    let maxX = Graphics.width + 24;
+    let maxY = Graphics.height + 24;
 
     player_radius = $gameVariables.GetRadius();
     $gameVariables.SetRadius(player_radius);
