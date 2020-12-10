@@ -8,14 +8,12 @@ var Community = Community || {};
 Community.Lighting = Community.Lighting || {};
 Community.Lighting.name = "Community_Lighting_MZ";
 Community.Lighting.parameters = PluginManager.parameters(Community.Lighting.name);
-Community.Lighting.version = 3.4;
+Community.Lighting.version = 3.5;
 var Imported = Imported || {};
 Imported[Community.Lighting.name] = true;
 /*:
 * @target MZ
-
-* @plugindesc v3.4 Creates an extra layer that darkens a map and adds lightsources! Released under the MIT license!
-
+* @plugindesc v3.5 Creates an extra layer that darkens a map and adds lightsources! Released under the MIT license!
 * @author Terrax, iVillain, Aesica, Eliaquim, Alexandre, Nekohime1989
 *
 * @param ---General Settings---
@@ -616,7 +614,7 @@ Imported[Community.Lighting.name] = true;
 *               D5 n.+e. walls, D6 s.+e. walls, D7 s.+w. walls,
 *               D8 n.+w. walls, D9 n.-e. corner, D10 s.-e. corner
 *               D11 s.-w. corner, D12 n.-w. corner  [optional]
-* - x           x offset [optional]
+* - x           x offset [optional] (0.5: half tile, 1 = full tile, etc)
 * - y           y offset [optional]
 * - id          1, 2, potato, etc--an id (alphanumeric) for plugin commands [optional]
 *
@@ -1032,7 +1030,7 @@ Imported[Community.Lighting.name] = true;
 	PluginManager.registerCommand($$.name, "playerLightRadius", args =>
 	{
 		let newradius = +args.radius || 0;
-		let b_arg = (+args.brightness || 0) * 0.01;
+		let b_arg = ((+args.brightness || 0) * 0.01).clamp(0, 1);
 		let fadeSpeed = +args.fadeSpeed || 0;
 		playercolor = args.color;
 		// light radiusgrow
@@ -1624,8 +1622,8 @@ Imported[Community.Lighting.name] = true;
 								let light_radius = cur.getLightRadius();
 								let flashlength = cur.getLightFlashlightLength();
 								let flashwidth = cur.getLightFlashlightWidth();
-								let xoffset = cur.getLightXOffset();
-								let yoffset = cur.getLightYOffset();
+								let xoffset = cur.getLightXOffset() * $gameMap.tileWidth();
+								let yoffset = cur.getLightYOffset() * $gameMap.tileHeight();
 								if (light_radius >= 0)
 								{
 
@@ -1889,6 +1887,11 @@ Imported[Community.Lighting.name] = true;
 										
 										let lx1 = $gameMap.events()[event_stacknumber[i]].screenX();
 										let ly1 = $gameMap.events()[event_stacknumber[i]].screenY() - 24;
+										
+										// apply offsets
+										lx1 += +xoffset;
+										ly1 += +yoffset;
+										
 										
 										if (flashlight == true) {
 											this._maskBitmap.radialgradientFillRect2(lx1, ly1, 0, light_radius, colorvalue, '#000000', ldir, flashlength, flashwidth);
@@ -3366,8 +3369,8 @@ Game_Variables.prototype.GetPlayerColor = function () {
 Game_Variables.prototype.SetPlayerBrightness = function (value) {
 	this._Community_Lighting_PlayerBrightness = value;
 };
-Game_Variables.prototype.GetPlayerBrightness = function (value) {
-	this._Community_Lighting_PlayerBrightness = value || 0.0;
+Game_Variables.prototype.GetPlayerBrightness = function () {
+	return this._Community_Lighting_PlayerBrightness || 0.0;
 };
 Game_Variables.prototype.SetRadius = function (value) {
 	this._Community_Lighting_Radius = value;
