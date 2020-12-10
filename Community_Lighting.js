@@ -7,13 +7,11 @@ Forked from Terrax Lighting
 var Community = Community || {};
 Community.Lighting = Community.Lighting || {};
 Community.Lighting.parameters = PluginManager.parameters('Community_Lighting');
-Community.Lighting.version = 2.3;
+Community.Lighting.version = 2.4;
 var Imported = Imported || {};
 Imported.Community_Lighting = true;
 /*:
-
-* @plugindesc v2.3 Creates an extra layer that darkens a map and adds lightsources! Released under the MIT license!
-
+* @plugindesc v2.4 Creates an extra layer that darkens a map and adds lightsources! Released under the MIT license!
 * @author Terrax, iVillain, Aesica, Eliaquim, Alexandre, Nekohime1989
 *
 * @param ---General Settings---
@@ -216,7 +214,10 @@ Imported.Community_Lighting = true;
 *               D5 n.+e. walls, D6 s.+e. walls, D7 s.+w. walls,
 *               D8 n.+w. walls, D9 n.-e. corner, D10 s.-e. corner
 *               D11 s.-w. corner, D12 n.-w. corner  [optional]
+* - x           x offset [optional] (0.5: half tile, 1 = full tile, etc)
+* - y           y offset [optional]
 * - id          1, 2, 2345, etc--an id number for plugin commands [optional]
+
 *
 * Light radius cycle color dur color dur [color dur]  [x] [y]  [color dur]
 * Cycles the specified light colors and durations.  Min 2, max 4
@@ -1125,14 +1126,15 @@ Imported.Community_Lighting = true;
 												}
 											}
 											if (key == 'x' || key == 'X') {
-												lightXOffset = +next_arg.substring(1) / $gameMap.tileWidth();
+												lightXOffset = +next_arg.substring(1) * $gameMap.tileWidth();
 												next_arg = note_args.shift();
 												if (typeof next_arg != 'undefined') {
 													key = next_arg.substring(0, 1);
 												}
 											}
 											if (key == 'y' || key == 'Y') {
-												lightYOffset = +next_arg.substring(1) / $gameMap.tileHeight();
+												lightYOffset = +next_arg.substring(1) * $gameMap.tileHeight();
+												console.log("y offset confirmed: " + lightYOffset);
 												next_arg = note_args.shift();
 											}
 										}
@@ -1226,6 +1228,9 @@ Imported.Community_Lighting = true;
 											}
 											let lx1 = $gameMap.events()[event_stacknumber[i]].screenX();
 											let ly1 = $gameMap.events()[event_stacknumber[i]].screenY() - 24;
+											
+											lx1 += +lightXOffset;
+											ly1 += +lightYOffset;
 
 											if (flashlight == true) {
 												this._maskBitmap.radialgradientFillRect2(lx1, ly1, 0, light_radius, colorvalue, '#000000', ldir, flashlength, flashwidth);
@@ -1605,6 +1610,7 @@ Imported.Community_Lighting = true;
 		}
 
 		x1 = x1 + lightMaskPadding;
+		//y1 += 5; // What the fuck?  Seriously?
 
 		// clipping
 		let nx1 = Number(x1);
@@ -1671,6 +1677,7 @@ Imported.Community_Lighting = true;
 			direction = Number(direction);
 			let pw = $gameMap.tileWidth() / 2;
 			let ph = $gameMap.tileHeight() / 2;
+			let hackishFix = 0; // I'm not proud of having to do this...
 			switch (direction) {
 				case 0:
 					context.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
@@ -1682,7 +1689,7 @@ Imported.Community_Lighting = true;
 					context.fillRect(x1 - r2, y1 - r2, r2 * 1 + pw, r2 * 2);
 					break;
 				case 3:
-					context.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 1 + ph);
+					context.fillRect(x1 - r2, y1 - r2 + hackishFix, r2 * 2, r2 * 1 + ph);
 					break;
 				case 4:
 					context.fillRect(x1 - pw, y1 - r2, r2 * 2, r2 * 2);
@@ -1691,29 +1698,29 @@ Imported.Community_Lighting = true;
 					context.fillRect(x1 - r2, y1 - ph, r2 * 1 + pw, r2 * 1 + ph);
 					break;
 				case 6:
-					context.fillRect(x1 - r2, y1 - r2, r2 * 1 + pw, r2 * 1 + ph);
+					context.fillRect(x1 - r2, y1 - r2 + hackishFix, r2 * 1 + pw, r2 * 1 + ph);
 					break;
 				case 7:
-					context.fillRect(x1 - pw, y1 - r2, r2 * 1 + pw, r2 * 1 + ph);
+					context.fillRect(x1 - pw, y1 - r2 + hackishFix, r2 * 1 + pw, r2 * 1 + ph);
 					break;
 				case 8:
 					context.fillRect(x1 - pw, y1 - ph, r2 * 1 + pw, r2 * 1 + ph);
 					break;
 				case 9:
-					context.fillRect(x1 - r2, y1 - ph, r2 * 2, r2 * 2);
-					context.fillRect(x1 - r2, y1 - r2, r2 * 1 - pw, r2 * 1 - ph);
+					context.fillRect(x1 - r2, y1 - ph + hackishFix, r2 * 2, r2 * 2);
+					context.fillRect(x1 - r2, y1 - r2 + hackishFix, r2 * 1 - pw, r2 * 1 - ph);
 					break;
 				case 10:
-					context.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 1 + ph);
-					context.fillRect(x1 - r2, y1 + pw, r2 * 1 - pw, r2 * 1 - ph);
+					context.fillRect(x1 - r2, y1 - r2 + hackishFix, r2 * 2, r2 * 1 + ph);
+					context.fillRect(x1 - r2, y1 + pw + hackishFix, r2 * 1 - pw, r2 * 1 - ph);
 					break;
 				case 11:
-					context.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 1 + ph);
-					context.fillRect(x1 + pw, y1 + pw, r2 * 1 - pw, r2 * 1 - ph);
+					context.fillRect(x1 - r2, y1 - r2 + hackishFix, r2 * 2, r2 * 1 + ph);
+					context.fillRect(x1 + pw, y1 + pw + hackishFix, r2 * 1 - pw, r2 * 1 - ph);
 					break;
 				case 12:
-					context.fillRect(x1 - r2, y1 - ph, r2 * 2, r2 * 2);
-					context.fillRect(x1 + pw, y1 - r2, r2 * 1 - pw, r2 * 1 - ph);
+					context.fillRect(x1 - r2, y1 - ph + hackishFix, r2 * 2, r2 * 2);
+					context.fillRect(x1 + pw, y1 - r2 + hackishFix, r2 * 1 - pw, r2 * 1 - ph);
 					break;
 			}
 			context.restore();
@@ -2326,7 +2333,7 @@ Imported.Community_Lighting = true;
 				if (typeof b_arg != 'undefined') {
 					let key = b_arg.substring(0, 1);
 					if (key == 'b' || key == 'B') {
-						brightness = Number(b_arg.substring(1)) / 100;
+						brightness = ((+b_arg.substring(1) || 0) / 100).clamp(0, 1);
 						$gameVariables.SetPlayerBrightness(brightness);
 					}
 				}
@@ -2372,7 +2379,7 @@ Imported.Community_Lighting = true;
 				if (typeof b_arg != 'undefined') {
 					let key = b_arg.substring(0, 1);
 					if (key == 'b' || key == 'B') {
-						brightness = Number(b_arg.substring(1)) / 100;
+						brightness = ((+b_arg.substring(1) || 0) / 100).clamp(0, 1);
 						$gameVariables.SetPlayerBrightness(brightness);
 					}
 				}
@@ -2762,8 +2769,8 @@ Game_Variables.prototype.GetPlayerColor = function () {
 Game_Variables.prototype.SetPlayerBrightness = function (value) {
 	this._Community_Lighting_PlayerBrightness = value;
 };
-Game_Variables.prototype.GetPlayerBrightness = function (value) {
-	this._Community_Lighting_PlayerBrightness = value || 0.0;
+Game_Variables.prototype.GetPlayerBrightness = function () {
+	return this._Community_Lighting_PlayerBrightness || 0;
 };
 Game_Variables.prototype.SetRadius = function (value) {
 	this._Community_Lighting_Radius = value;
