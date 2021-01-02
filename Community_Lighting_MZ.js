@@ -1,4 +1,4 @@
-//=============================================================================
+	//=============================================================================
 // Community Plugins - MZ Lighting system
 // Community_Lighting.js
 /*=============================================================================
@@ -8,12 +8,12 @@ var Community = Community || {};
 Community.Lighting = Community.Lighting || {};
 Community.Lighting.name = "Community_Lighting_MZ";
 Community.Lighting.parameters = PluginManager.parameters(Community.Lighting.name);
-Community.Lighting.version = 3.5;
+Community.Lighting.version = 3.6;
 var Imported = Imported || {};
 Imported[Community.Lighting.name] = true;
 /*:
 * @target MZ
-* @plugindesc v3.5 Creates an extra layer that darkens a map and adds lightsources! Released under the MIT license!
+* @plugindesc v3.6 Creates an extra layer that darkens a map and adds lightsources! Released under the MIT license!
 * @author Terrax, iVillain, Aesica, Eliaquim, Alexandre, Nekohime1989
 *
 * @param ---General Settings---
@@ -905,6 +905,11 @@ Imported[Community.Lighting.name] = true;
 	{
 		if (this._clType === undefined) this.initLightData();
 		return this._clBeamWidth;
+	};
+	Game_Event.prototype.getLightFlashlightDirection = function()
+	{
+		if (this.clType === undefined) this.initLightData();
+		return this._clFlashlightDirection;
 	};
 	Game_Event.prototype.getLightXOffset = function()
 	{
