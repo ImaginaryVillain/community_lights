@@ -1,7 +1,59 @@
-# community_lights
+# Community Lighting
 A community driven lighting plugin for RPG Maker MV and MZ
 
-Help File:
+# Quickstart:
+
+**If you want to have the demo:**
+
+First download the demo zip corresponding to your rpg maker version (right-click on the desired item, Save Link As).
+In the mean time, create a new blank project in rpg maker.
+When the download is done, unzip the demo and paste the content of the zip in the blank project.
+Reopen the blank project, your demo is ready to go.
+
+**If you want just to use the script:**
+
+Download the Community_Lighting.js or Community_Lighting_MZ.js file corresponding to your rpg maker version (right-click on the desired item, Save Link As).
+Add it to your project as you will do with any other plugin.
+Create a map with a light source (an event with a notetag like <cl: light 250 #ffffff> by default), and see the result in game.
+
+# FAQ:
+
+**-I have the plugin activated, (I may even put a daylight notetag in the map's notes) but there is no light effect on my map.**
+
+The plugin will not do anything on maps who don't have at least one light source.
+An easy fix is to just add a notetag like this one to any existing event: <cl: light 0 #000000>.
+It will create the first light source (invisble, since it has a radius of 0) needed to activate the plugin.
+
+**-The demo doesn't work?**
+
+The demos zip don't contains music and graphics on their own, so you have to paste them in a blank project, as described in the quickstart.
+If you followed the instructions of the quickstart and still have problems with the demo,
+please report it on the related thread on rpgmakerweb: https://forums.rpgmakerweb.com/index.php?threads/community-lighting-mv-mz.124274/.
+
+**-Is the MV version of this plugin a direct update to Terrax Lighting? Can I migrate from Terrax Lighting to this plugin without additional effort?**
+
+Yes to both. All the syntax is the same, however note that by default it now uses proper note tags for events.
+This is so it can play better with other plugins that might also involve using note tags on events.
+
+<cl: light 250 #ffffff> // community lighting version
+light 250 #ffffff // original terrax version
+
+You can switch back to the terrax formatting in the plugin parameters. (Parameter 'Note Tag Key', leave it blank to use Terrax's synthax.)
+
+**-How would I make the black areas not be pitch black?**
+
+Use the set tint plugin command.
+
+**-Why does the demos don't contain music or graphics?**
+
+Github doesn't like files over 50Mb and even refuses files over 100Mb. A demo project with minimal assets can easily go over 50Mb.
+
+**-What if I have questions not answered there?**
+
+You can post your questions on the related thread on rpgmakerweb: https://forums.rpgmakerweb.com/index.php?threads/community-lighting-mv-mz.124274/.
+
+# Help File:
+
 * --------------------------------------------------------------------------
 * Important info about note tags and the note tag key plugin paramter:  This
 * plugin features an optional note tag key that lets this plugin's note tags
