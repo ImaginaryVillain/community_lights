@@ -4,12 +4,14 @@ A community driven lighting plugin for RPG Maker MV and MZ
 # Quickstart:
 
 **If you want to have the demo:**
+
 First download the demo zip corresponding to your rpg maker version (right-click on the desired item, Save Link As).
 In the mean time, create a new blank project in rpg maker.
 When the download is done, unzip the demo and paste the content of the zip in the blank project.
 Reopen the blank project, your demo is ready to go.
 
 **If you want just to use the script:**
+
 Download the Community_Lighting.js or Community_Lighting_MZ.js file corresponding to your rpg maker version (right-click on the desired item, Save Link As).
 Add it to your project as you will do with any other plugin.
 Create a map with a light source (an event with a notetag like <cl: light 250 #ffffff> by default), and see the result in game.
