@@ -36,6 +36,7 @@ Yes to both. All the syntax is the same, however note that by default it now use
 This is so it can play better with other plugins that might also involve using note tags on events.
 
 <cl: light 250 #ffffff> // community lighting version
+
 light 250 #ffffff // original terrax version
 
 You can switch back to the terrax formatting in the plugin parameters. (Parameter 'Note Tag Key', leave it blank to use Terrax's synthax.)
@@ -64,7 +65,7 @@ You can post your questions on the related thread on rpgmakerweb: https://forums
 *
 * This note tag key applies to anything this plugin would have placed inside
 * a note box, such as "DayNight" on a map or "Light/Fire/etc on an event.
-* 
+*
 * Examples:
 *
 * With the default note tag key, "CL" (not case sensitive):
@@ -84,7 +85,7 @@ You can post your questions on the related thread on rpgmakerweb: https://forums
 * Lighting so they don't have to go back and change a bunch of event and map
 * notes.
 *
-* Notation characters: 
+* Notation characters:
 * []   Values are optional (the brightness parameter in light, etc)
 * |    Select the value from the specified list (on|off, etc)
 *
@@ -97,8 +98,8 @@ You can post your questions on the related thread on rpgmakerweb: https://forums
 * DayNight
 * - Activates day/night cycle.  Put in map note or event note
 *
-* Light radius color [brightness] [direction] [id]
-* - Light		
+* Light radius color [brightness] [direction] [x] [y] [id]
+* - Light
 * - radius      100, 250, etc
 * - color       #ffffff, #ff0000, etc
 * - brightness  B50, B25, etc [optional]
@@ -106,9 +107,12 @@ You can post your questions on the related thread on rpgmakerweb: https://forums
 *               D5 n.+e. walls, D6 s.+e. walls, D7 s.+w. walls,
 *               D8 n.+w. walls, D9 n.-e. corner, D10 s.-e. corner
 *               D11 s.-w. corner, D12 n.-w. corner  [optional]
+* - x           x offset [optional] (0.5: half tile, 1 = full tile, etc)
+* - y           y offset [optional]
 * - id          1, 2, 2345, etc--an id number for plugin commands [optional]
+
 *
-* Light radius cycle color dur color dur [color dur] [color dur]
+* Light radius cycle color dur color dur [color dur]  [x] [y]  [color dur]
 * Cycles the specified light colors and durations.  Min 2, max 4
 * - radius      Same as standard Light command above
 * - color       Color (#ff8800, etc)
@@ -117,17 +121,17 @@ You can post your questions on the related thread on rpgmakerweb: https://forums
 * Fire ...params
 * - Same as Light params above, but adds a subtle flicker
 *
-* Flashlight [bl] [bw] [c] [onoff] [sdir]
+* Flashlight [bl] [bw] [c] [onoff]  [x] [y]  [sdir]
 * - Sets the light as a flashlight with beam length (bl) beam width (bw) color (c),
 *      0|1 (onoff), and 1=up, 2=right, 3=down, 4=left for static direction (sdir)
 *
 * -------------------------------------------------------------------------------
-* Maps 
+* Maps
 * -------------------------------------------------------------------------------
 * DayNight [speed]
 * Activates day/night cycle.  Put in map note or event note
 * - speed     Optional parameter to alter the speed at which time passes.  10 is
-                 the default speed, higher numbers are slower, lower numbers are
+				 the default speed, higher numbers are slower, lower numbers are
 				 faster, and 0 stops the flow of time entirely.  If speed is not
 				 specified, then the current speed is used.
 *
@@ -139,16 +143,20 @@ You can post your questions on the related thread on rpgmakerweb: https://forums
 *
 * Light on id
 * - Turn on light with matching id number
-* 
+*
 * Light off id
 * - Turn off light with matching id number
 *
 * Light color id c
-* - change the color (c) of lightsource with id (id)
-* 
+* - Change the color (c) of lightsource with id (id)
+* - Work even if the associated light is currently off.
+* - Will be in effect until conditional lights are resetted
+* - If c is set to 'defaultcolor' (without the quotes),
+*      it will reset the light back to its initial color.
+*
 * Light switch reset
-* - Reset light switches
-* 
+* - Reset all conditional lights.
+*
 * Light radius r c b
 * - Change player light radius (r), color (c), and brightness (b)
 *
@@ -179,7 +187,7 @@ You can post your questions on the related thread on rpgmakerweb: https://forums
 *
 * Daynight debug
 * - Shows current ingame time
-* 
+*
 * Daynight hoursinday h
 * - Sets the number of hours in a day to [h] (set hour colors  if doing this)
 *
@@ -217,7 +225,7 @@ You can post your questions on the related thread on rpgmakerweb: https://forums
 * - yoffset	y offset
 * - width		width of shape
 * - height		height of shape
-* 
+*
 * effect_on_event id radius color frames
 * - id			event id
 * - radius		radius
@@ -234,7 +242,7 @@ You can post your questions on the related thread on rpgmakerweb: https://forums
 * --------------------------------------------------------------------------
 * Kill Switch and conditional lighting
 * --------------------------------------------------------------------------
-* 
+*
 * If the 'Kill Switch Auto' parameter has been set to true, any event with
 * a (non) active conditional light have their killswitch locked to ON(OFF).
 * You can use this difference to give alternate apparences to these events.
@@ -249,7 +257,7 @@ You can post your questions on the related thread on rpgmakerweb: https://forums
 * If the plugin is active while a battle begin, the battle screen will
 * be tinted like it was on the map. Too dark color will be automatically set
 * to '#666666' (dark gray).
-* 
+*
 * If there is no map to take the tint from (ex: battle test),
 * the screen will not be tinted.
 *
@@ -258,7 +266,7 @@ You can post your questions on the related thread on rpgmakerweb: https://forums
 * and will have no effect on the map.
 *
 * -------------------------------------------------------------------------------
-* Plugin Commands - Battle 
+* Plugin Commands - Battle
 * -------------------------------------------------------------------------------
 *
 * TintBattle set [color]
@@ -266,9 +274,22 @@ You can post your questions on the related thread on rpgmakerweb: https://forums
 * - Automatically set too dark color to '#666666' (dark gray).
 *
 * TintBattle reset
-* - Reset the battle screen to its original color. 
+* - Reset the battle screen to its original color.
 *
 * TintBattle fade [color] [speed]
-* - Fade the battle screen to the color used as first argument.					     
+* - Fade the battle screen to the color used as first argument.
 * - The second argument is speed of the fade (1 very fast, 20 more slow)
 * - Still automatically set too dark color to '#666666' (dark gray).
+*
+* --------------------------------------------------------------------------
+* Lights Active Radius
+* --------------------------------------------------------------------------
+* This allows you to decide how far away from the player lights are active,
+* anything beyond this range will not light up until the player gets
+* closer to it.
+* 
+* It can be changed in the plugin parameters, or using the script call...
+*
+* $gameVariables.SetActiveRadius(#)
+*
+* ....where # is the max distance you want in tiles.
