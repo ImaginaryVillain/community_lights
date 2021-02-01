@@ -756,7 +756,6 @@ Imported.Community_Lighting = true;
 		}
 
 		$gameVariables.SetRadius(player_radius);
-		$gameVariables.SetRadiusTarget(lightgrow_target);
 
 		// ****** PLAYER LIGHTGLOBE ********
 
