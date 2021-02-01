@@ -5,14 +5,17 @@ A community driven lighting plugin for RPG Maker MV and MZ
 
 **If you want to have the demo:**
 
-First download the demo zip corresponding to your rpg maker version (right-click on the desired item, Save Link As).
+First download the demo zip corresponding to your rpg maker version:
+First select the desired item, then on the next screen, click the 'Download' button. Don't use Save Link As, you will save an empty zip.
 In the mean time, create a new blank project in rpg maker.
 When the download is done, unzip the demo and paste the content of the zip in the blank project.
 Reopen the blank project, your demo is ready to go.
 
 **If you want just to use the script:**
 
-Download the Community_Lighting.js or Community_Lighting_MZ.js file corresponding to your rpg maker version (right-click on the desired item, Save Link As).
+Download the Community_Lighting.js or Community_Lighting_MZ.js file corresponding to your rpg maker version:
+First select the desired item, then on the next screen, then right-click the 'Raw' button, and choose Save Link As.
+Don't use Save Link As on the front page, you will instead download a weird html version of the script.
 Add it to your project as you will do with any other plugin.
 Create a map with a light source (an event with a notetag like <cl: light 250 #ffffff> by default), and see the result in game.
 
@@ -26,7 +29,7 @@ It will create the first light source (invisble, since it has a radius of 0) nee
 
 **-The demo doesn't work?**
 
-The demos zip don't contains music and graphics on their own, so you have to paste them in a blank project, as described in the quickstart.
+Please make sure you downloaded the good file, as described in the quickstart.
 If you followed the instructions of the quickstart and still have problems with the demo,
 please report it on the related thread on rpgmakerweb: https://forums.rpgmakerweb.com/index.php?threads/community-lighting-mv-mz.124274/.
 
@@ -45,9 +48,9 @@ You can switch back to the terrax formatting in the plugin parameters. (Paramete
 
 Use the set tint plugin command.
 
-**-Why does the demos don't contain music or graphics?**
+**-Why is the MV demo way bigger than the MZ one?**
 
-Github doesn't like files over 50Mb and even refuses files over 100Mb. A demo project with minimal assets can easily go over 50Mb.
+MZ RTP graphics take very little disc space compared to the MV's ones.
 
 **-What if I have questions not answered there?**
 

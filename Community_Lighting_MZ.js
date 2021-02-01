@@ -1,4 +1,4 @@
-	//=============================================================================
+//=============================================================================
 // Community Plugins - MZ Lighting system
 // Community_Lighting.js
 /*=============================================================================
@@ -614,9 +614,11 @@ Imported[Community.Lighting.name] = true;
 *               D5 n.+e. walls, D6 s.+e. walls, D7 s.+w. walls,
 *               D8 n.+w. walls, D9 n.-e. corner, D10 s.-e. corner
 *               D11 s.-w. corner, D12 n.-w. corner  [optional]
-* - x           x offset [optional] (0.5: half tile, 1 = full tile, etc)
-* - y           y offset [optional]
-* - id          1, 2, potato, etc--an id (alphanumeric) for plugin commands [optional]
+* - x           x[offset] (0.5: half tile, 1 = full tile, etc), so x0.5, x-1,... [optional]
+* - y           y[offset] so y0.5, y1,... (Remember y-axis is top-down in rpgmz) [optional]
+* - id          1, 2, potato, etc. An id (alphanumeric) for plugin commands [optional]
+*               Those should not begin with 'b', 'd', 'x' or 'y' otherwise
+*               they will be mistaken for one of the previous optional parameters.
 *
 * Light radius cycle color dur color dur [color dur] [color dur]
 * Cycles the specified light colors and durations.  Min 2, max 4
@@ -635,19 +637,21 @@ Imported[Community.Lighting.name] = true;
 * - onoff:    Initial state:  0, 1, off, on
 * - sdir:     Forced direction (optional): 0:auto, 1:up, 2:right, 3:down, 4:left
 *             Can be preceeded by "D", so D4.  If omitted, defaults to 0
-* - x           x offset [optional]
-* - y           y offset [optional]
-* - id        1, 2, potato, etc--an id (alphanumeric) for plugin commands [optional]
+* - x         x[offset] Work the same as regular light [optional]
+* - y         y[offset] [optional]
+* - id        1, 2, potato, etc. An id (alphanumeric) for plugin commands [optional]
+*             Those should not begin with 'd', 'x' or 'y' otherwise
+*             they will be mistaken for one of the previous optional parameters.
 *
 * -------------------------------------------------------------------------------
 * Maps
 * -------------------------------------------------------------------------------
 * DayNight [speed]
 * Activates day/night cycle.  Put in map note or event note
-* - speed     Optional parameter to alter the speed at which time passes.  10 is
-                 the default speed, higher numbers are slower, lower numbers are
-				 faster, and 0 stops the flow of time entirely.  If speed is not
-				 specified, then the current speed is used.
+* - speed     Optional parameter to alter the speed at which time passes.
+*             10 is the default speed, higher numbers are slower, lower
+*             numbers are faster, and 0 stops the flow of time entirely. 
+*             If speed is not specified, then the current speed is used.
 *
 *
 * --------------------------------------------------------------------------
@@ -666,8 +670,8 @@ Imported[Community.Lighting.name] = true;
 * -------------------------------------------------------------------------------
 *
 * If the plugin is active while a battle begin, the battle screen will
-* be tinted like it was on the map. Too dark color will be automatically set
-* to '#666666' (dark gray).
+* be tinted like it was on the map. Too dark color will be automatically
+* set to '#666666' (dark gray).
 *
 * If there is no map to take the tint from (ex: battle test),
 * the screen will not be tinted.
@@ -811,18 +815,18 @@ Imported[Community.Lighting.name] = true;
 			this._clRadius = undefined;
 			for (let x of tagData)
 			{
-				if (!isNaN(+x)){
-					if (this._clRadius === undefined) this._clRadius = +x;
-					else if (this._cyCycle) continue;;
+				if (!isNaN(+x) && this._clRadius === undefined){
+					this._clRadius = +x;
 				}
-				else if (x[0] === "c" && this._clCycle === undefined){
+				else if (x === "cycle" && this._clColor === undefined){
 					this._clColor = 'cycle';
-					this._clCycle = true;
 				}
-				else if (x[0] === "#"){
-					if (this._cyCycle) continue;
-					else if (this._clColor === undefined) this._clColor = $$.validateColor(x);
-				} 
+				else if (this._clColor === 'cycle' && (x[0] === "#" || !isNaN(+x))){
+					continue; //Cycle color or duration
+				}
+				else if (x[0] === "#" && this._clColor === undefined){
+					this._clColor = $$.validateColor(x);
+				}
 				else if (x[0] === "b" && this._clBrightness === undefined) this._clBrightness = Number(+(x.substr(1, x.length)) / 100).clamp(0, 1);
 				else if (x[0] === "d" && this._clDirection === undefined) this._clDirection = +(x.substr(1, x.length));
 				else if (x[0] === "x" && this._clXOffset === undefined) this._clXOffset = +(x.substr(1, x.length));
