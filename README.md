@@ -4,32 +4,25 @@ A community driven lighting plugin for RPG Maker MV and MZ
 # Quickstart:
 
 **If you want to have the demo:**
+On the front Github page, click on CommunityLightingMVDemo.zip or CommunityLightingMZDemo.zip.
+On the next screen, click the 'Download' button.
+Don't use Save Link As, you will instead save an empty zip.
 
-First download the demo zip corresponding to your rpg maker version:
-First select the desired item, then on the next screen, click the 'Download' button. Don't use Save Link As, you will save an empty zip.
-In the mean time, create a new blank project in rpg maker.
-When the download is done, unzip the demo and paste the content of the zip in the blank project.
-Reopen the blank project, your demo is ready to go.
+When the download is done, you can open as any MV/MZ project.
 
 **If you want just to use the script:**
 
-Download the Community_Lighting.js or Community_Lighting_MZ.js file corresponding to your rpg maker version:
-First select the desired item, then on the next screen, then right-click the 'Raw' button, and choose Save Link As.
+On the front Github page, click on Community_Lighting.js or Community_Lighting_MZ.js.
+On the next screen, right-click the 'Raw' button, and choose Save Link As.
 Don't use Save Link As on the front page, you will instead download a weird html version of the script.
+
 Add it to your project as you will do with any other plugin.
-Create a map with a light source (an event with a notetag like <cl: light 250 #ffffff> by default), and see the result in game.
 
 # FAQ:
 
-**-I have the plugin activated, (I may even put a daylight notetag in the map's notes) but there is no light effect on my map.**
-
-The plugin will not do anything on maps who don't have at least one light source.
-An easy fix is to just add a notetag like this one to any existing event: <cl: light 0 #000000>.
-It will create the first light source (invisble, since it has a radius of 0) needed to activate the plugin.
-
 **-The demo doesn't work?**
 
-Please make sure you downloaded the good file, as described in the quickstart.
+Please make sure you downloaded the good file corresponding to you rpgmaker version, as described in the quickstart.
 If you followed the instructions of the quickstart and still have problems with the demo,
 please report it on the related thread on rpgmakerweb: https://forums.rpgmakerweb.com/index.php?threads/community-lighting-mv-mz.124274/.
 
@@ -43,6 +36,10 @@ This is so it can play better with other plugins that might also involve using n
 light 250 #ffffff // original terrax version
 
 You can switch back to the terrax formatting in the plugin parameters. (Parameter 'Note Tag Key', leave it blank to use Terrax's synthax.)
+
+**-Do I still have to put at least one light event in order to activate the script on a map?**
+
+There is now a plugin paramater ('Light event required') who allows you to have the plugin active even with no lightsource on a map.
 
 **-How would I make the black areas not be pitch black?**
 
