@@ -409,22 +409,6 @@ Imported.Community_Lighting = true;
 */
 
 (function ($$) {
-	$$.parseDayNightParams = function(dayNight, nightHours) {
-		let result = [];
-		try {
-			dayNight = JSON.parse(dayNight);
-			nightHours = nightHours.split(",").map(x => x = +x);
-			result = [];
-			for (let i = 0; i < dayNight.length; i++)
-				result[i] = { "color": dayNight[i], "isNight": nightHours.contains(i) };
-		}
-		catch (e) {
-			console.log("CommunitiyLighting: Night Hours and/or DayNight Colors contain invalid JSON data - cannot parse.");
-			result = new Array(24).fill(undefined).map(x => x = { "color": "#000000", "isNight": false });
-		}
-		return result;
-	};
-	
 	let Community_tint_speed = 60;
 	let Community_tint_target = '#000000';
 	let colorcycle_count = [1000];
@@ -485,7 +469,7 @@ Imported.Community_Lighting = true;
 	//let averagetimecount = 0;
 	let notetag_reg = RegExp("<" + noteTagKey + ":[ ]*([^>]+)>", "i");
 
-	$$.getTag = function() {
+	function getTag() {
 		let result;
 		let note = this.note;
 		if (typeof note === "string") {
@@ -497,10 +481,25 @@ Imported.Community_Lighting = true;
 		}
 		return result;
 	};
+	function parseDayNightParams(dayNight, nightHours) {
+		let result = [];
+		try {
+			dayNight = JSON.parse(dayNight);
+			nightHours = nightHours.split(",").map(x => x = +x);
+			result = [];
+			for (let i = 0; i < dayNight.length; i++)
+				result[i] = { "color": dayNight[i], "isNight": nightHours.contains(i) };
+		}
+		catch (e) {
+			console.log("CommunitiyLighting: Night Hours and/or DayNight Colors contain invalid JSON data - cannot parse.");
+			result = new Array(24).fill(undefined).map(x => x = { "color": "#000000", "isNight": false });
+		}
+		return result;
+	};
 	$$.getDayNightList = function () {
 		return dayNightList;
 	};
-	$$.saveTime = function(hh, mm, ss = null) {
+	function saveTime(hh, mm, ss = null) {
 		let dayNightList = $gameVariables.GetDaynightColorArray();
 		if (dayNightSaveHours > 0) $gameVariables.setValue(dayNightSaveHours, hh);
 		if (dayNightSaveMinutes > 0) $gameVariables.setValue(dayNightSaveMinutes, mm);
@@ -652,8 +651,8 @@ Imported.Community_Lighting = true;
 		this._width = Graphics.width;
 		this._height = Graphics.height;
 		this._sprites = [];
-		this._oldMap = 0;
 		this._createBitmap();
+		this._oldMap = 0;
 	};
 
 	//Updates the Lightmask for each frame.
