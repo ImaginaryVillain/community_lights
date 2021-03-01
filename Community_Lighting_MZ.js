@@ -8,12 +8,12 @@ var Community = Community || {};
 Community.Lighting = Community.Lighting || {};
 Community.Lighting.name = "Community_Lighting_MZ";
 Community.Lighting.parameters = PluginManager.parameters(Community.Lighting.name);
-Community.Lighting.version = 3.7;
+Community.Lighting.version = 3.8;
 var Imported = Imported || {};
 Imported[Community.Lighting.name] = true;
 /*:
 * @target MZ
-* @plugindesc v3.7 Creates an extra layer that darkens a map and adds lightsources! Released under the MIT license!
+* @plugindesc v3.8 Creates an extra layer that darkens a map and adds lightsources! Released under the MIT license!
 * @author Terrax, iVillain, Aesica, Eliaquim, Alexandre, Nekohime1989
 7
 * @param ---General Settings---
@@ -1450,7 +1450,7 @@ Imported[Community.Lighting.name] = true;
 			$$.ReloadMapEvents()
 		}
 		
-		if (light_event_required && event_note.length <= 0) return; // If no lightsources on this map, no lighting if light_event_required set to true.
+		if (light_event_required && eventObjId.length <= 0) return; // If no lightsources on this map, no lighting if light_event_required set to true.
 		
 		this._addSprite(-lightMaskPadding, 0, this._maskBitmap);
 		
