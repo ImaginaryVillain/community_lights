@@ -1450,7 +1450,7 @@ Imported[Community.Lighting.name] = true;
 			$$.ReloadMapEvents()
 		}
 		
-		if (light_event_required && event_note.length <= 0) return; // If no lightsources on this map, no lighting if light_event_required set to true.
+		if (light_event_required && eventObjId.length <= 0) return; // If no lightsources on this map, no lighting if light_event_required set to true.
 		
 		this._addSprite(-lightMaskPadding, 0, this._maskBitmap);
 		
