@@ -8,12 +8,12 @@ var Community = Community || {};
 Community.Lighting = Community.Lighting || {};
 Community.Lighting.name = "Community_Lighting_MZ";
 Community.Lighting.parameters = PluginManager.parameters(Community.Lighting.name);
-Community.Lighting.version = 3.8;
+Community.Lighting.version = 3.9;
 var Imported = Imported || {};
 Imported[Community.Lighting.name] = true;
 /*:
 * @target MZ
-* @plugindesc v3.8 Creates an extra layer that darkens a map and adds lightsources! Released under the MIT license!
+* @plugindesc v3.9 Creates an extra layer that darkens a map and adds lightsources! Released under the MIT license!
 * @author Terrax, iVillain, Aesica, Eliaquim, Alexandre, Nekohime1989
 7
 * @param ---General Settings---
@@ -1385,7 +1385,6 @@ Imported[Community.Lighting.name] = true;
 		this._width = Graphics.width;
 		this._height = Graphics.height;
 		this._sprites = [];
-		this._oldMap = 0;
 		this._createBitmap();
 	};
 
@@ -1409,8 +1408,8 @@ Imported[Community.Lighting.name] = true;
 	Lightmask.prototype._updateMask = function () {
 		// ****** DETECT MAP CHANGES ********
 		let map_id = $gameMap.mapId();
-		if (map_id != this._oldMap) {
-			this._oldMap = map_id;
+		if (map_id != $gameVariables.GetOldMapId()) {
+			$gameVariables.SetOldMapId(map_id);
 
 			// recalc tile and region tags.
 			$$.ReloadTagArea();
@@ -3310,6 +3309,16 @@ Game_Variables.prototype.GetScriptActive = function () {
 };
 Game_Variables.prototype.SetScriptActive = function (value) {
 	this._Community_Lighting_ScriptActive = value;
+};
+
+Game_Variables.prototype.GetOldMapId = function () {
+	if (typeof this._Community_Lighting_OldMapId == 'undefined') {
+		this._Community_Lighting_OldMapId = 0;
+	}
+	return this._Community_Lighting_OldMapId;
+};
+Game_Variables.prototype.SetOldMapId = function (value) {
+	this._Community_Lighting_OldMapId = value;
 };
 
 Game_Variables.prototype.SetTint = function (value) {
