@@ -3311,6 +3311,7 @@ Game_Variables.prototype.SetScriptActive = function (value) {
 	this._Community_Lighting_ScriptActive = value;
 };
 
+Game_Variables.prototype.GetOldMapId = function () {
 	if (typeof this._Community_Lighting_OldMapId == 'undefined') {
 		this._Community_Lighting_OldMapId = 0;
 	}
