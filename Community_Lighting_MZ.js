@@ -8,12 +8,12 @@ var Community = Community || {};
 Community.Lighting = Community.Lighting || {};
 Community.Lighting.name = "Community_Lighting_MZ";
 Community.Lighting.parameters = PluginManager.parameters(Community.Lighting.name);
-Community.Lighting.version = 3.9;
+Community.Lighting.version = 4.0;
 var Imported = Imported || {};
 Imported[Community.Lighting.name] = true;
 /*:
 * @target MZ
-* @plugindesc v3.9 Creates an extra layer that darkens a map and adds lightsources! Released under the MIT license!
+* @plugindesc v4.0 Creates an extra layer that darkens a map and adds lightsources! Released under the MIT license!
 * @author Terrax, iVillain, Aesica, Eliaquim, Alexandre, Nekohime1989
 7
 * @param ---General Settings---
@@ -378,11 +378,19 @@ Imported[Community.Lighting.name] = true;
 *
 * @command showTime
 * @text Show Time
-* @desc Displays the current time of day (mostly for debugging)
+* @desc Displays the current time in the upper right corner of the map screen
 *
 * @arg enabled
 * @text Enabled
-* @desc Show/hide the time (debug/experimental feature)
+* @desc Show/hide the time
+* @type boolean
+* @on Show
+* @off Hide
+* @default false
+*
+* @arg showSeconds
+* @text Show Seconds
+* @desc Show/hide the seconds digit
 * @type boolean
 * @on Show
 * @off Hide
@@ -622,6 +630,8 @@ Imported[Community.Lighting.name] = true;
 *               D11 s.-w. corner, D12 n.-w. corner  [optional]
 * - x           x[offset] (0.5: half tile, 1 = full tile, etc), so x0.5, x-1,... [optional]
 * - y           y[offset] so y0.5, y1,... (Remember y-axis is top-down in rpgmz) [optional]
+* - day         Sets the event's light to only show during the day [optional]
+* - night       Sets the event's light to only show during night time [optional]
 * - id          1, 2, potato, etc. An id (alphanumeric) for plugin commands [optional]
 *               Those should not begin with 'b', 'd', 'x' or 'y' otherwise
 *               they will be mistaken for one of the previous optional parameters.
@@ -645,6 +655,8 @@ Imported[Community.Lighting.name] = true;
 *             Can be preceeded by "D", so D4.  If omitted, defaults to 0
 * - x         x[offset] Work the same as regular light [optional]
 * - y         y[offset] [optional]
+* - day       Sets the event's light to only show during the day [optional]
+* - night     Sets the event's light to only show during night time [optional]
 * - id        1, 2, potato, etc. An id (alphanumeric) for plugin commands [optional]
 *             Those should not begin with 'd', 'x' or 'y' otherwise
 *             they will be mistaken for one of the previous optional parameters.
@@ -747,7 +759,22 @@ Imported[Community.Lighting.name] = true;
 	let dayNightSaveMinutes = Number(parameters['Save DaynightMinutes'] || 0);
 	let dayNightSaveSeconds = Number(parameters['Save DaynightSeconds'] || 0);
 	let dayNightSaveNight = +parameters["Save Night Switch"] || 0;
-	let dayNightList = $$.parseDayNightParams(parameters["DayNight Colors"], parameters["Night Hours"]);
+	let dayNightList = (function(dayNight, nightHours)
+	{
+		let result = [];
+		try {
+			dayNight = JSON.parse(dayNight);
+			nightHours = nightHours.split(",").map(x => x = +x);
+			result = [];
+			for (let i = 0; i < dayNight.length; i++)
+				result[i] = { "color": dayNight[i], "isNight": nightHours.contains(i) };
+		}
+		catch (e) {
+			console.log("CommunitiyLighting: Night Hours and/or DayNight Colors contain invalid JSON data - cannot parse.");
+			result = new Array(24).fill(undefined).map(x => x = { "color": "#000000", "isNight": false });
+		}
+		return result;
+	})(parameters["DayNight Colors"], parameters["Night Hours"]);
 	let flashlightoffset = Number(parameters['Flashlight offset'] || 0);
 	let killswitch = parameters['Kill Switch'] || 'None';
 	if (killswitch !== 'A' && killswitch !== 'B' && killswitch !== 'C' && killswitch !== 'D') {
@@ -768,7 +795,6 @@ Imported[Community.Lighting.name] = true;
 	let tint_oldseconds = 0;
 	let tint_timer = 0;
 	let oldseconds = 0;
-	let daynightdebug = false;
 	let event_reload_counter = 0;
 	let Community_tint_speed_old = 60;
 	let Community_tint_target_old = '#000000';
@@ -782,7 +808,8 @@ Imported[Community.Lighting.name] = true;
 	//let averagetimecount = 0;
 	let notetag_reg = RegExp("<" + noteTagKey + ":[ ]*([^>]+)>", "i");
 
-	$$.getTag = function() {
+	$$.getTag = function()
+	{
 		let result;
 		let note = this.note;
 		if (typeof note === "string") {
@@ -811,6 +838,32 @@ Imported[Community.Lighting.name] = true;
 		if (dayNightSaveSeconds > 0 && ss !== null) $gameVariables.setValue(dayNightSaveSeconds, ss);
 		if (dayNightSaveNight > 0 && dayNightList[hh] instanceof Object) $gameSwitches.setValue(dayNightSaveNight, dayNightList[hh].isNight);
 	};
+	$$.isNight = function()
+	{
+		let hour = $gameVariables.GetDaynightCycle();
+		return dayNightList[hour] instanceof Object ? dayNightList[hour].isNight : false;
+	};
+	$$.hours = function()
+	{
+		return $gameVariables.GetDaynightCycle();
+	};
+	$$.minutes = function()
+	{
+					return Math.floor($gameVariables.GetDaynightTimer() / $gameVariables.GetDaynightSpeed());
+	};
+	$$.seconds = function()
+	{
+		let speed = $gameVariables.GetDaynightSpeed();
+		let value = Math.floor($gameVariables.GetDaynightTimer() - speed * $$.minutes());
+		return Math.floor(value / speed * 60);
+	};
+	
+	$$.time = function(showSeconds)
+	{
+		let result = $$.hours() + ":" + $$.minutes().padZero(2);
+		if (showSeconds) result = result + ":" + $$.seconds().padZero(2);
+		return result;
+	};
 	// Event note tag caching
 	Game_Event.prototype.initLightData = function()
 	{
@@ -834,6 +887,7 @@ Imported[Community.Lighting.name] = true;
 					this._clColor = $$.validateColor(x);
 				}
 				else if (x[0] === "b" && this._clBrightness === undefined) this._clBrightness = Number(+(x.substr(1, x.length)) / 100).clamp(0, 1);
+				else if ((x === "night" || x === "day") && this._clSwitch === undefined) this._clSwitch = x;
 				else if (x[0] === "d" && this._clDirection === undefined) this._clDirection = +(x.substr(1, x.length));
 				else if (x[0] === "x" && this._clXOffset === undefined) this._clXOffset = +(x.substr(1, x.length));
 				else if (x[0] === "y" && this._clYOffset === undefined) this._clYOffset = +(x.substr(1, x.length));
@@ -858,6 +912,7 @@ Imported[Community.Lighting.name] = true;
 				else if (!isNaN(+x) && this._clFlashlightDirection === undefined) this._clFlashlightDirection = +x;
 				else if (x === "on" && this._clOnOff === undefined) this._clOnOff = 1;
 				else if (x === "off" && this._clOnOff === undefined) this._clOnOff = 0;
+				else if ((x === "night" || x === "day") && this._clSwitch === undefined) this._clSwitch = x;
 				else if (x[0] === "d" && this._clFlashlightDirection === undefined) this._clFlashlightDirection = +(x.substr(1, x.length));
 				else if (x[0] === "x" && this._clXOffset === undefined) this._clXOffset = +(x.substr(1, x.length));
 				else if (x[0] === "y" && this._clYOffset === undefined) this._clYOffset = +(x.substr(1, x.length));
@@ -931,28 +986,20 @@ Imported[Community.Lighting.name] = true;
 		if (this._clType === undefined) this.initLightData();
 		return this._clYOffset;
 	};
-/*
-	let _Game_Interpreter_pluginCommand = Game_Interpreter.prototype.pluginCommand;
-	Game_Interpreter.prototype.pluginCommand = function (command, args) {
-		_Game_Interpreter_pluginCommand.call(this, command, args);
-		if (typeof command != 'undefined') {
-			this.communityLighting_Commands(command, args);
+	Game_Event.prototype.getLightEnabled = function()
+	{
+		let type = this.getLightType();
+		let result = false;
+		if (this._clSwitch === undefined)
+		{
+			if (type === "flashlight" && this._clOnOff === 1) result = true;
+			else result = true;
 		}
+		else (result = this._clSwitch === "night" && $$.isNight())
+			|| (result = this._clSwitch === "day" && !$$.isNight())
+		return result;
 	};
 
-	$$.communityLighting_Commands = function(command, args){
-		command = command.toLowerCase();
-		const allCommands = {
-			tileblock: 'tileType', regionblock: 'tileType', tilelight: 'tileType', regionlight: 'tileType', tilefire: 'tileType', regionfire: 'tileType',
-			tileglow: 'tileType', regionglow: 'tileType', tint: 'tint', daynight: 'dayNight', flashlight: 'flashLight', setfire: 'setFire', fire: 'fire', light: 'light',
-			effect_on_event: 'effectOnEvent', effect_on_xy: 'effectOnXy', script: 'scriptF', reload: 'reload'
-		};
-		const result = allCommands[command];
-		if(result) {
-			this[result](command, args);
-		}
-	};
-*/
 	PluginManager.registerCommand($$.name, "masterSwitch", args => $gameVariables.SetScriptActive(args.enabled === "true"));
 	PluginManager.registerCommand($$.name, "resetLightSwitches", args =>
 	{
@@ -1205,8 +1252,11 @@ Imported[Community.Lighting.name] = true;
 		$gameVariables.SetDaynightHoursinDay(daynighthoursinday);
 	});
 
-	PluginManager.registerCommand($$.name, "showTime", args => daynightdebug = args.enabled === "true");
-
+	PluginManager.registerCommand($$.name, "showTime", args =>
+	{
+		$gameVariables._clShowTimeWindow = args.enabled === "true"
+		$gameVariables._clShowTimeWindowSeconds = args.showSeconds === "true";
+	});
 	PluginManager.registerCommand($$.name, "setTint", args =>
 	{
 		let color = args.color === "" ? $gameVariables.GetTintByTime() : $$.validateColor(args.color);
@@ -1578,39 +1628,7 @@ Imported[Community.Lighting.name] = true;
 				let daynightminutes = Math.floor(daynighttimer / daynightspeed);
 				let daynighttimeover = daynighttimer - (daynightspeed * daynightminutes);
 				let daynightseconds = Math.floor(daynighttimeover / daynightspeed * 60);
-				if (daynightdebug == true) {
-					let daynightseconds2 = daynightseconds;
-					if (daynightseconds < 10) {
-						daynightseconds2 = '0' + daynightseconds;
-					}
-					let hourvalue = '-';
-					let hourset = 'Not set';
-					if (daynightsavehours > 0) {
-						hourvalue = $gameVariables.value(daynightsavehours);
-						hourset = daynightsavehours
-					}
-					let minutevalue = '-';
-					let minuteset = 'Not set';
-					if (daynightsavemin > 0) {
-						minutevalue = $gameVariables.value(daynightsavemin);
-						minuteset = daynightsavemin
-					}
-					let secondvalue = '-';
-					let secondset = 'Not set';
-					if (daynightsavesec > 0) {
-						secondvalue = $gameVariables.value(daynightsavesec);
-						secondset = daynightsavesec
-					}
-
-					minutecounter = $gameVariables.value(daynightsavemin);
-					secondcounter = $gameVariables.value(daynightsavesec);
-					Graphics.Debug('Debug Daynight system', daynightcycle + ' ' + daynightminutes + ' ' + daynightseconds2 +
-						'<br>' + 'Hours  -> Variable: ' + hourset + '  Value: ' + hourvalue +
-						'<br>' + 'Minutes-> Variable: ' + minuteset + '  Value: ' + minutevalue +
-						'<br>' + 'Seconds-> Variable: ' + secondset + '  Value: ' + secondvalue);
-
-				}
-
+				
 				if (daynighttimer >= (daynightspeed * 60)) {
 					daynightcycle = daynightcycle + 1;
 					if (daynightcycle >= daynighthoursinday) daynightcycle = 0;
@@ -1821,7 +1839,7 @@ Imported[Community.Lighting.name] = true;
 					let direction = cur.getLightDirection();
 					// conditional lighting
 					let lightid = cur.getLightId();
-					let state = true;
+					let state = cur.getLightEnabled();
 					if (lightid)
 					{
 						state = false;
@@ -3512,7 +3530,48 @@ Game_Variables.prototype.GetBlockTags = function () {
 	let default_TA = [];
 	return this._Community_Lighting_BlockTags || default_TA;
 };
-
+function Window_TimeOfDay()
+{
+	this.initialize(...arguments);
+};
+Window_TimeOfDay.prototype = Object.create(Window_Selectable.prototype);
+Window_TimeOfDay.prototype.constructor = Window_TimeOfDay;
+Window_TimeOfDay.prototype.initialize = function(rect)
+{
+    Window_Selectable.prototype.initialize.call(this, rect);
+	this.setBackgroundType(0);
+};
+Window_TimeOfDay.prototype.update = function()
+{
+	this.visible = $gameVariables._clShowTimeWindow;
+	if (this.visible)
+	{
+		let time = Community.Lighting.time(!!$gameVariables._clShowTimeWindowSeconds);
+		let rect = this.itemLineRect(0);
+		let size = this.textSizeEx(time);
+		this.contents.clear();
+		this.drawTextEx(time, rect.x + rect.width - size.width, rect.y, size.width);
+	}
+	Window_Selectable.prototype.update.call(this);
+};
+Community.Lighting.Scene_Map_createAllWindows = Scene_Map.prototype.createAllWindows;
+Scene_Map.prototype.createAllWindows = function()
+{
+	Community.Lighting.Scene_Map_createAllWindows.call(this);
+	this.createTimeWindow();
+};
+Scene_Map.prototype.createTimeWindow = function()
+{
+    this._timeWindow = new Window_TimeOfDay(this.timeWindowRect());
+    this.addWindow(this._timeWindow);
+};
+Scene_Map.prototype.timeWindowRect = function() {
+    const ww = 150;
+    const wh = this.calcWindowHeight(1, true);
+    const wx = Graphics.boxWidth - ww;
+    const wy = 0;
+    return new Rectangle(wx, wy, ww, wh);
+};
 Community.Lighting.Spriteset_Map_prototype_createLowerLayer = Spriteset_Map.prototype.createLowerLayer;
 Spriteset_Map.prototype.createLowerLayer = function () {
 	Community.Lighting.Spriteset_Map_prototype_createLowerLayer.call(this);
