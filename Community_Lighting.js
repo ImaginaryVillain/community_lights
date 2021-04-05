@@ -310,6 +310,9 @@ Imported.Community_Lighting = true;
 * Tint fade c s
 * - Same as above, but fades (1 = fast, 20 = very slow)
 *
+* Tint daylight
+* - Set to the daylight corresponding to the current time
+*
 * TileLight   id ON c r
 * RegionLight id ON c r
 * - Turns on lights for tile tag or region tag (id) using color (c) and radius (r)
