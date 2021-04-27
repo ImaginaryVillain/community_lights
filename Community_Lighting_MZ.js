@@ -962,7 +962,6 @@ Imported[Community.Lighting.name] = true;
 		let tagData = this.getCLTag().toLowerCase().split(" ");
 		let needsCycleDuration = false;
 		this._clType = tagData.shift();
-
 		if (this._clType === "light" || this._clType === "fire")
 		{
 			this._clRadius = undefined;
@@ -1082,7 +1081,7 @@ Imported[Community.Lighting.name] = true;
 	};
 	Game_Event.prototype.getLightFlashlightDirection = function()
 	{
-		if (this.clType === undefined) this.initLightData();
+		if (this._clType === undefined) this.initLightData();
 		return this._clFlashlightDirection;
 	};
 	Game_Event.prototype.getLightXOffset = function()
