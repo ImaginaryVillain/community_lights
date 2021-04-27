@@ -8,11 +8,11 @@ var Community = Community || {};
 Community.Lighting = Community.Lighting || {};
 Community.Lighting.name = "Community_Lighting";
 Community.Lighting.parameters = PluginManager.parameters(Community.Lighting.name);
-Community.Lighting.version = 4.1;
+Community.Lighting.version = 4.2;
 var Imported = Imported || {};
 Imported[Community.Lighting.name] = true;
 /*:
-* @plugindesc v4.1 Creates an extra layer that darkens a map and adds lightsources! Released under the MIT license!
+* @plugindesc v4.2 Creates an extra layer that darkens a map and adds lightsources! Released under the MIT license!
 * @author Terrax, iVillain, Aesica, Eliaquim, Alexandre, Nekohime1989
 *
 * @param ---General Settings---
@@ -170,12 +170,13 @@ Imported[Community.Lighting.name] = true;
 * @help
 *
 * --------------------------------------------------------------------------
-* Important info about note tags and the note tag key plugin paramter:  This
-* plugin features an optional note tag key that lets this plugin's note tags
-* work alongside those of other plugins--a feature not found in the original
-* Terrax Lighting plugin. If a note tag key is set in the plugin paramters,
-* all of these commands must be enclosed in a note tag with that particular
-* key in in order to be recognized.
+* Important info about note tags and the note tag key plugin paramter:
+*
+* 1. This plugin features an optional note tag key that lets this plugin's
+* note tags work alongside those of other plugins--a feature not found in the
+* original Terrax Lighting plugin. If a note tag key is set in the plugin
+* paramters, all of these commands must be enclosed in a note tag with that
+* particular key in in order to be recognized.
 *
 * This note tag key applies to anything this plugin would have placed inside
 * a note box, such as "DayNight" on a map or "Light/Fire/etc on an event.
@@ -183,29 +184,53 @@ Imported[Community.Lighting.name] = true;
 * Examples:
 *
 * With the default note tag key, "CL" (not case sensitive):
-* <CL: Light 250 #ffffff>
-* <CL: Daynight>
+* <cl: light 250 #ffffff>
+* <cl: daynight>
 * ...etc
 *
 * Without a note tag key set:
-* Light 250 #ffffff
-* Daynight
+* light 250 #ffffff
+* daynight
 * ...etc
 *
 * Using a note tag key is recommended since it allows for other things
-* (plugins, or even you rown personal notes) to make use of the note box
+* (plugins, or even your own personal notes) to make use of the note box
 * without breaking things.  Omiting the key is intended primarily as legacy
-* support, allowing this plugin to be used with older projects that use Terrax
-* Lighting so they don't have to go back and change a bunch of event and map
-* notes.
+* support, allowing this plugin to be used with older projects that have
+* been upgraded from Terrax Lighting so you don't have to go back and
+* change a bunch of event and map notes.
+
 *
-* Notation characters:
-* []   Values are optional (the brightness parameter in light, etc)
-* |    Select the value from the specified list (on|off, etc)
+* 2. New with version 4.2+ is the option to place the lighting note tag 
+* anywhere in an event page's comment field instead of the note box, as
+* long as the comment field is the first thing on the page.  This allows
+* for more advanced lighting tricks to be done on a per-page basis.  Page
+* Comment note tags will be prioritized over general note tags, allowing
+* tags in the general note box to serve as a default that 1 or more pages
+* can override.
 *
-* Do not include these in the actual plugin commands.
+* It's important to note that active lighting events are only updated
+* periodically to avoid needlessly looping through events on the map
+* that have nothing to do with lighting.  As such, if your event's note
+* box is empty and page 1 has no lighting tag set, but page 2 does, there
+* will be a brief delay before the light comes on when you switch to page
+* 2.  You can get around this by setting a default empty light note tag
+* <cl: light 0 #000> in the general note box.
+*
+* Finally, this feature isn't available in Terrax compatibility mode (when
+* there's no note tag key set).  This is to avoid conflicts when a comment
+* appears at the top of a page that has nothing to do with this plugin.
+*
 * --------------------------------------------------------------------------
 * List of Note Tags
+* --------------------------------------------------------------------------
+*
+* Notation legend:
+* []   These values are optional (the brightness parameter in light, etc)
+* |    Select the value from the specified list (on|off, etc)
+*
+* Do not include these in the actual note tags or plugin commands.
+*
 * --------------------------------------------------------------------------
 * Events
 * --------------------------------------------------------------------------
@@ -215,9 +240,11 @@ Imported[Community.Lighting.name] = true;
 * Light radius [cycle] color [day|night] [brightness] [direction] [x] [y] [id]
 * - Light
 * - radius      100, 250, etc
-* - cycle       Enables light cycling based on any following color/duration
-*               pairs:  #ff0000 30 #00ff00 45 etc.  Duration is in frames,
-*               with 60 being equal to 1 second at 60 fps [optional]
+* - cycle       Allows any number of color + duration pairs to follow that will be
+*               cycled through before repeating from the beginning:
+*               <cl: light 100 cycle #f00 15 #0f0 15 #00f 15 ...etc>
+*               In Terrax Lighting, there was a hard limit of 4, but now you can use
+*               as many as you want. [optional]
 * - color       #ffffff, #ff0000, etc
 * - day         Causes the light to only come on during the day [optional]
 * - night       Causes the light to only come on during the night [optional]
@@ -233,9 +260,25 @@ Imported[Community.Lighting.name] = true;
 * Fire ...params
 * - Same as Light params above, but adds a subtle flicker
 *
-* Flashlight [bl] [bw] [c] [onoff]  [x] [y]  [sdir]
+* Flashlight [bl] [bw] [c] [onoff] [sdir] [x] [y] [id]
 * - Sets the light as a flashlight with beam length (bl) beam width (bw) color (c),
 *      0|1 (onoff), and 1=up, 2=right, 3=down, 4=left for static direction (sdir)
+* - bl:       Beam length:  Any number, optionally preceeded by "L", so 8, L8
+* - bw:       Beam width:  Any number, optionally preceeded by "W", so 12, W12
+* - cycle     Allows any number of color + duration pairs to follow that will be
+*             cycled through before repeating from the beginning:
+*             <cl: Flashlight l8 w12 cycle #f00 15 #ff0 15 #0f0 15 on someId d3>
+*             There's no limit to how many colors can cycled. [optional]
+* - onoff:    Initial state:  0, 1, off, on
+* - sdir:     Forced direction (optional): 0:auto, 1:up, 2:right, 3:down, 4:left
+*             Can be preceeded by "D", so D4.  If omitted, defaults to 0
+* - x         x[offset] Work the same as regular light [optional]
+* - y         y[offset] [optional]
+* - day       Sets the event's light to only show during the day [optional]
+* - night     Sets the event's light to only show during night time [optional]
+* - id        1, 2, potato, etc. An id (alphanumeric) for plugin commands [optional]
+*             Those should not begin with 'd', 'x' or 'y' otherwise
+*             they will be mistaken for one of the previous optional parameters.
 *
 * Example note tags:
 *
@@ -328,6 +371,9 @@ Imported[Community.Lighting.name] = true;
 *
 * Tint fade c s
 * - Same as above, but fades (1 = fast, 20 = very slow)
+*
+* Tint daylight
+* - Sets the tint based on the current hour.
 *
 * TileLight   id ON c r
 * RegionLight id ON c r
@@ -502,19 +548,46 @@ Imported[Community.Lighting.name] = true;
 	//let averagetime = [];
 	//let averagetimecount = 0;
 	let notetag_reg = RegExp("<" + noteTagKey + ":[ ]*([^>]+)>", "i");
-
-	$$.getTag = function()
+	
+	$$.getFirstComment = function()
 	{
-		let result;
-		let note = this.note;
-		if (typeof note === "string") {
-			if (noteTagKey) {
-				result = note.match(notetag_reg);
-				result = result ? result[1].trim() : "";
-			}
-			else result = note.trim();
+		let result = null;
+		let page = this.page();
+		if (page)
+		{
+			if (page.list[0].code === 108)
+			{
+				result = page.list[0].parameters[0] || "";
+				let line = 1;
+				while (page.list[line].code === 408)
+				{
+					result += "\n" + (page.list[line].parameters[0] || "");
+					line++;
+				}
+			}					
 		}
 		return result;
+	};
+	$$.getCLTag = function(note)
+	{
+		let result = false;
+		note = String(note);
+		if (noteTagKey)
+		{
+			result = note.match(notetag_reg);
+			result = result ? result[1].trim() : "";
+		}
+		else result = note.trim();
+		return result;
+	};
+	Game_Event.prototype.getCLTag = function()
+	{
+		let result;
+		let pageNote = noteTagKey ? $$.getFirstComment.call(this) : null;
+		let note = this.event().note;
+		if (pageNote) result = $$.getCLTag(pageNote);
+		if (!result) result = $$.getCLTag(note);
+		return result || "";
 	};
 	$$.validateColor = function(color, defaultColor="#ffffff")
 	{
@@ -559,9 +632,32 @@ Imported[Community.Lighting.name] = true;
 		return result;
 	};
 	// Event note tag caching
+	Game_Event.prototype.resetLightData = function()
+	{
+		this._clType = undefined;
+		this._lastLightPage = undefined;
+		this._clRadius = undefined;
+		this._clColor = undefined;
+		this._clCycle = undefined;
+		this._clBrightness = undefined;
+		this._clSwitch = undefined;
+		this._clDirection = undefined;
+		this._clXOffset = undefined;
+		this._clYOffset = undefined;
+		this._clId = undefined;
+		this._clBeamColor = undefined;
+		this._clBeamLength = undefined;
+		this._clBeamWidth = undefined;
+		this._clFlashlightDirection = undefined;
+		this._clOnOff = undefined;
+		this._clCycleTimer = undefined;
+		this._clCycleIndex = undefined;
+		this.initLightData();
+	};
 	Game_Event.prototype.initLightData = function()
 	{
-		let tagData = String($$.getTag.call(this.event())).toLowerCase().split(" ");
+		this._lastLightPage = this._pageIndex;
+		let tagData = this.getCLTag().toLowerCase().split(" ");
 		let needsCycleDuration = false;
 		this._clType = tagData.shift();
 		if (this._clType === "light" || this._clType === "fire")
@@ -930,8 +1026,10 @@ Imported[Community.Lighting.name] = true;
 		if ($gameVariables.GetScriptActive() !== true) return;	// Plugin deactivated by plugin command
 		
 
-		event_reload_counter++;  // reload map events every 200 cycles just in case.
-		if (event_reload_counter > 200) {
+		// reload map events every 200 cycles just in case or when a refresh is requested
+		event_reload_counter++;
+		if (event_reload_counter > 200)
+		{
 			event_reload_counter = 0;
 			$$.ReloadMapEvents()
 		}
@@ -1082,6 +1180,7 @@ Imported[Community.Lighting.name] = true;
 		{
 			let evid = event_id[i];
 			let cur = $gameMap.events()[eventObjId[i]];
+			if (cur._lastLightPage !== cur._pageIndex) cur.resetLightData();
 			let lightType = cur.getLightType();
 			if (lightType === "light" || lightType === "fire" || lightType === "flashlight")
 			{
@@ -1994,7 +2093,7 @@ Imported[Community.Lighting.name] = true;
 		for (let i = 0; i < event_eventcount; i++) {
 			if ($gameMap.events()[i]) {
 				if ($gameMap.events()[i].event()) {
-					let note = $$.getTag.call($gameMap.events()[i].event());
+					let note = $gameMap.events()[i].getCLTag();
 
 					let note_args = note.split(" ");
 					let note_command = note_args.shift().toLowerCase();
@@ -2016,7 +2115,7 @@ Imported[Community.Lighting.name] = true;
 		}
 		// *********************************** DAY NIGHT Setting **************************
 		$$.daynightset = false;
-		let mapnote = $$.getTag.call($dataMap);
+		let mapnote = $$.getCLTag($dataMap.note);
 		if (mapnote) {
 			mapnote = mapnote.toLowerCase();
 			if (mapnote.match(/^daynight/i)) {
