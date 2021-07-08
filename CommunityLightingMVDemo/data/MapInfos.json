@@ -1,0 +1,12 @@
+[
+null,
+{"id":1,"expanded":true,"name":"Overworld","order":1,"parentId":0,"scrollX":1345.3333333333333,"scrollY":904},
+{"id":2,"expanded":false,"name":"Volcano","order":2,"parentId":1,"scrollX":893,"scrollY":904},
+{"id":3,"expanded":false,"name":"Faerie Spring","order":3,"parentId":1,"scrollX":821,"scrollY":790},
+{"id":4,"expanded":true,"name":"Bobo's Camp","order":4,"parentId":1,"scrollX":821,"scrollY":695},
+{"id":5,"expanded":false,"name":"Bobo's Tent","order":5,"parentId":4,"scrollX":1081.3333333333333,"scrollY":633.3333333333334},
+{"id":6,"expanded":false,"name":"Lightless Tower","order":6,"parentId":1,"scrollX":1081.3333333333333,"scrollY":790.6666666666666},
+{"id":7,"expanded":false,"name":"Time-Lost Island","order":9,"parentId":0,"scrollX":1638,"scrollY":922},
+{"id":8,"expanded":false,"name":"Light gallery","order":7,"parentId":1,"scrollX":1092,"scrollY":614.6666666666666},
+{"id":9,"expanded":false,"name":"Conditional light hall","order":8,"parentId":1,"scrollX":1092,"scrollY":614.6666666666666}
+]

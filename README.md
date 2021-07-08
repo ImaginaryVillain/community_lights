@@ -293,3 +293,10 @@ You can post your questions on the related thread on rpgmakerweb: https://forums
 * $gameVariables.SetActiveRadius(#)
 *
 * ....where # is the max distance you want in tiles.
+
+# Dev Notes
+Automatically Pretty JSON data files for pre-commit
+**This will make json files more readable for easier code reviews**
+
+Used below Tutorial 
+https://forums.rpgmakerweb.com/index.php?threads/automatically-pretty-json-files-for-clean-git-commit-diffs-using-git-hooks.108122/
