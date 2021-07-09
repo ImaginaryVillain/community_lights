@@ -301,4 +301,4 @@ Automatically Pretty JSON data files for pre-commit
 Used below Tutorial 
 https://forums.rpgmakerweb.com/index.php?threads/automatically-pretty-json-files-for-clean-git-commit-diffs-using-git-hooks.108122/
 
-test commit
+test another commit
