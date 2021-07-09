@@ -298,7 +298,9 @@ You can post your questions on the related thread on rpgmakerweb: https://forums
 Automatically Pretty JSON data files for pre-commit
 **This will make json files more readable for easier code reviews**
 
-Used below Tutorial 
+Used below Tutorial and modified script to suit this project.
 https://forums.rpgmakerweb.com/index.php?threads/automatically-pretty-json-files-for-clean-git-commit-diffs-using-git-hooks.108122/
 
-test another commit
+When updates are needed the hook can be found here. 
+.git/hooks/pre-commit
+
