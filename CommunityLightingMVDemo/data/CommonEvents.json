@@ -1,7 +1,167 @@
 [
-null,
-{"id":1,"list":[{"code":108,"indent":0,"parameters":["Turn off player's flashlight if it's on"]},{"code":356,"indent":0,"parameters":["Flashlight off"]},{"code":108,"indent":0,"parameters":["Activate a radius-based light using these parameters"]},{"code":356,"indent":0,"parameters":["Fire radius 150 #887722"]},{"code":0,"indent":0,"parameters":[]}],"name":"Use Torch","switchId":1,"trigger":0},
-{"id":2,"list":[{"code":108,"indent":0,"parameters":["Turn off player's other light source(s)"]},{"code":356,"indent":0,"parameters":["Light radius 1 #ffffff"]},{"code":108,"indent":0,"parameters":["Turn on a flashlight using these parameters"]},{"code":356,"indent":0,"parameters":["Flashlight on 6 8 #ffffff 3"]},{"code":0,"indent":0,"parameters":[]}],"name":"Use Flashlight","switchId":1,"trigger":0},
-{"id":3,"list":[{"code":108,"indent":0,"parameters":["Turn off player's flashlight if it's on"]},{"code":356,"indent":0,"parameters":["Flashlight off"]},{"code":108,"indent":0,"parameters":["Activate a radius-based light using these parameters"]},{"code":356,"indent":0,"parameters":["Light radius 300 #aaaaaa"]},{"code":0,"indent":0,"parameters":[]}],"name":"Use Radiance Spell","switchId":1,"trigger":0},
-{"id":4,"list":[{"code":108,"indent":0,"parameters":["Turn off player's flashlight if it's on"]},{"code":356,"indent":0,"parameters":["Flashlight off"]},{"code":108,"indent":0,"parameters":["Turn off player's other light source(s)"]},{"code":356,"indent":0,"parameters":["Light radius 0 #000000"]},{"code":0,"indent":0,"parameters":[]}],"name":"Lights Out!","switchId":1,"trigger":0}
+  null,
+  {
+    "id": 1,
+    "list": [
+      {
+        "code": 108,
+        "indent": 0,
+        "parameters": [
+          "Turn off player's flashlight if it's on"
+        ]
+      },
+      {
+        "code": 356,
+        "indent": 0,
+        "parameters": [
+          "Flashlight off"
+        ]
+      },
+      {
+        "code": 108,
+        "indent": 0,
+        "parameters": [
+          "Activate a radius-based light using these parameters"
+        ]
+      },
+      {
+        "code": 356,
+        "indent": 0,
+        "parameters": [
+          "Fire radius 150 #887722"
+        ]
+      },
+      {
+        "code": 0,
+        "indent": 0,
+        "parameters": []
+      }
+    ],
+    "name": "Use Torch",
+    "switchId": 1,
+    "trigger": 0
+  },
+  {
+    "id": 2,
+    "list": [
+      {
+        "code": 108,
+        "indent": 0,
+        "parameters": [
+          "Turn off player's other light source(s)"
+        ]
+      },
+      {
+        "code": 356,
+        "indent": 0,
+        "parameters": [
+          "Light radius 1 #ffffff"
+        ]
+      },
+      {
+        "code": 108,
+        "indent": 0,
+        "parameters": [
+          "Turn on a flashlight using these parameters"
+        ]
+      },
+      {
+        "code": 356,
+        "indent": 0,
+        "parameters": [
+          "Flashlight on 6 8 #ffffff 3"
+        ]
+      },
+      {
+        "code": 0,
+        "indent": 0,
+        "parameters": []
+      }
+    ],
+    "name": "Use Flashlight",
+    "switchId": 1,
+    "trigger": 0
+  },
+  {
+    "id": 3,
+    "list": [
+      {
+        "code": 108,
+        "indent": 0,
+        "parameters": [
+          "Turn off player's flashlight if it's on"
+        ]
+      },
+      {
+        "code": 356,
+        "indent": 0,
+        "parameters": [
+          "Flashlight off"
+        ]
+      },
+      {
+        "code": 108,
+        "indent": 0,
+        "parameters": [
+          "Activate a radius-based light using these parameters"
+        ]
+      },
+      {
+        "code": 356,
+        "indent": 0,
+        "parameters": [
+          "Light radius 300 #aaaaaa"
+        ]
+      },
+      {
+        "code": 0,
+        "indent": 0,
+        "parameters": []
+      }
+    ],
+    "name": "Use Radiance Spell",
+    "switchId": 1,
+    "trigger": 0
+  },
+  {
+    "id": 4,
+    "list": [
+      {
+        "code": 108,
+        "indent": 0,
+        "parameters": [
+          "Turn off player's flashlight if it's on"
+        ]
+      },
+      {
+        "code": 356,
+        "indent": 0,
+        "parameters": [
+          "Flashlight off"
+        ]
+      },
+      {
+        "code": 108,
+        "indent": 0,
+        "parameters": [
+          "Turn off player's other light source(s)"
+        ]
+      },
+      {
+        "code": 356,
+        "indent": 0,
+        "parameters": [
+          "Light radius 0 #000000"
+        ]
+      },
+      {
+        "code": 0,
+        "indent": 0,
+        "parameters": []
+      }
+    ],
+    "name": "Lights Out!",
+    "switchId": 1,
+    "trigger": 0
+  }
 ]
