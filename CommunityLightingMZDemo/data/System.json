@@ -81,10 +81,10 @@
     "pitch": 100,
     "volume": 90
   },
-  "battleback1Name": "Grassland",
+  "battleback1Name": "Meadow",
   "battleback2Name": "Forest",
   "battlerHue": 0,
-  "battlerName": "Goblin",
+  "battlerName": "Bat",
   "boat": {
     "bgm": {
       "name": "",
@@ -105,7 +105,7 @@
     "pitch": 100,
     "volume": 90
   },
-  "editMapId": 7,
+  "editMapId": 9,
   "elements": [
     "",
     "Physical",
@@ -176,7 +176,7 @@
   ],
   "sounds": [
     {
-      "name": "Cursor1",
+      "name": "Cursor2",
       "pan": 0,
       "pitch": 100,
       "volume": 90
@@ -206,13 +206,13 @@
       "volume": 90
     },
     {
-      "name": "Save1",
+      "name": "Save",
       "pan": 0,
       "pitch": 100,
       "volume": 90
     },
     {
-      "name": "Load1",
+      "name": "Load",
       "pan": 0,
       "pitch": 100,
       "volume": 90
@@ -322,7 +322,7 @@
   ],
   "startMapId": 2,
   "startX": 19,
-  "startY": 17,
+  "startY": 18,
   "switches": [
     "",
     "Night Time",
@@ -450,9 +450,7 @@
       "substitute": "%1 protected %2!",
       "surprise": "%1 was surprised!",
       "useItem": "%1 uses %2!",
-      "victory": "%1 was victorious!",
-      "touchUI": "Interface utilisateur tactile",
-      "autosave": "Sauvegarde automatique"
+      "victory": "%1 was victorious!"
     }
   },
   "testBattlers": [
@@ -502,7 +500,7 @@
     }
   ],
   "testTroopId": 4,
-  "title1Name": "Universe",
+  "title1Name": "Volcano",
   "title2Name": "",
   "titleBgm": {
     "name": "Town2",
@@ -533,7 +531,7 @@
     "",
     ""
   ],
-  "versionId": 29126177,
+  "versionId": 75267799,
   "victoryMe": {
     "name": "Victory1",
     "pan": 0,
@@ -560,30 +558,5 @@
     0,
     0,
     0
-  ],
-  "advanced": {
-    "gameId": 14691258,
-    "screenWidth": 816,
-    "screenHeight": 624,
-    "uiAreaWidth": 816,
-    "uiAreaHeight": 624,
-    "mainFontFilename": "mplus-1m-regular.woff",
-    "numberFontFilename": "mplus-2p-bold-sub.woff",
-    "fallbackFonts": "Verdana, sans-serif",
-    "fontSize": 26
-  },
-  "battleSystem": 0,
-  "itemCategories": [
-    true,
-    true,
-    true,
-    true
-  ],
-  "optAutosave": true,
-  "optKeyItemsNumber": false,
-  "titleCommandWindow": {
-    "background": 0,
-    "offsetX": 0,
-    "offsetY": 0
-  }
+  ]
 }
