@@ -301,6 +301,11 @@ Automatically Pretty JSON data files for pre-commit
 Used below Tutorial and modified script to suit this project.
 https://forums.rpgmakerweb.com/index.php?threads/automatically-pretty-json-files-for-clean-git-commit-diffs-using-git-hooks.108122/
 
-When updates are needed the hook can be found here. 
+This is a client side hook so all developers need to update their `.git/hooks/pre-commit` with what I have provided. 
+hooks/pre-commit-1.0.js
+
+Developers can just rename to `pre-commit` (no extension) then copy and paste in .git/hooks/
+
+When updates are needed the shared hook should be updated and the local .git hook can be found here and also be updated.  
 .git/hooks/pre-commit
 
