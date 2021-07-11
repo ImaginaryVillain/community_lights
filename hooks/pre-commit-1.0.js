@@ -6,23 +6,15 @@ const mzPath = './CommunityLightingMZDemo/data/'
 const mvFiles = fs.readdirSync(`${mvPath}`)
 const mzFiles = fs.readdirSync(`${mzPath}`)
 const { exec } = require('child_process')
+let command = '';
+
 try {
     mvFiles.forEach(file => {
         // Load file, pretty the JSON, and write it back
         const mvFilePath = `${mvPath}${file}`
         const json = fs.readFileSync(mvFilePath)
         fs.writeFileSync(mvFilePath, JSON.stringify(JSON.parse(json), null, 2))
-        // Add the file back to the staging since it changed
-        exec(`git add ${mvFilePath}`, (err, stdout, stderr) => {
-            if (err) {
-                console.error(err)
-                process.exit(1)
-            }
-
-            console.log(`stdout: ${stdout}`)
-            console.log(`stderr: ${stderr}`)
-            process.exit(0)
-        })
+        command += ` ${mvFilePath}`
     })
 
     mzFiles.forEach(file => {
@@ -30,17 +22,19 @@ try {
         const mzFilePath = `${mzPath}${file}`
         const json = fs.readFileSync(mzFilePath)
         fs.writeFileSync(mzFilePath, JSON.stringify(JSON.parse(json), null, 2))
-        // Add the file back to the staging since it changed
-        exec(`git add ${mzFilePath}`, (err, stdout, stderr) => {
-            if (err) {
-                console.error(err)
-                process.exit(1)
-            }
+        command += ` ${mzFilePath}`
+    })
+    
+    // Add the files back to the staging since they changed
+    exec(`git add ${command}`, (err, stdout, stderr) => {
+        if (err) {
+            console.error(err)
+            process.exit(1)
+        }
 
-            console.log(`stdout: ${stdout}`)
-            console.log(`stderr: ${stderr}`)
-            process.exit(0)
-        })
+        console.log(`stdout: ${stdout}`)
+        console.log(`stderr: ${stderr}`)
+        process.exit(0)
     })
 } catch (err) {
     console.error(err)
