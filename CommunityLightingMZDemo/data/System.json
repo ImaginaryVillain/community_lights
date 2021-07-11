@@ -105,7 +105,7 @@
     "pitch": 100,
     "volume": 90
   },
-  "editMapId": 7,
+  "editMapId": 1,
   "elements": [
     "",
     "Physical",
@@ -533,7 +533,7 @@
     "",
     ""
   ],
-  "versionId": 29126177,
+  "versionId": 50363844,
   "victoryMe": {
     "name": "Victory1",
     "pan": 0,
@@ -570,7 +570,8 @@
     "mainFontFilename": "mplus-1m-regular.woff",
     "numberFontFilename": "mplus-2p-bold-sub.woff",
     "fallbackFonts": "Verdana, sans-serif",
-    "fontSize": 26
+    "fontSize": 26,
+    "windowOpacity": 192
   },
   "battleSystem": 0,
   "itemCategories": [

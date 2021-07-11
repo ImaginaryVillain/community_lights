@@ -1456,14 +1456,15 @@
                 "",
                 0,
                 0,
-                0
+                0,
+                ""
               ]
             },
             {
               "code": 401,
               "indent": 0,
               "parameters": [
-                "The switch on the left allow you to change"
+                "The switch on the left will allow you to change"
               ]
             },
             {
@@ -3684,7 +3685,7 @@
               "code": 401,
               "indent": 1,
               "parameters": [
-                "to activate or desactivate the conditional light."
+                "to activate or deactivate the conditional light."
               ]
             },
             {
@@ -3831,7 +3832,8 @@
                 "",
                 0,
                 0,
-                2
+                2,
+                ""
               ]
             },
             {
@@ -3852,7 +3854,7 @@
               "code": 401,
               "indent": 1,
               "parameters": [
-                "desactivate conditional lights while changing map,"
+                "deactivate conditional lights while changing map,"
               ]
             },
             {

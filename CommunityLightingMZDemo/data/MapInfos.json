@@ -6,8 +6,8 @@
     "name": "Overworld",
     "order": 1,
     "parentId": 0,
-    "scrollX": 1228.8,
-    "scrollY": 1140
+    "scrollX": 1229,
+    "scrollY": 1140.5
   },
   {
     "id": 2,
@@ -15,8 +15,8 @@
     "name": "Volcano",
     "order": 2,
     "parentId": 1,
-    "scrollX": 973.1999999999999,
-    "scrollY": 811.1999999999999
+    "scrollX": 917,
+    "scrollY": 811.5
   },
   {
     "id": 3,
@@ -24,8 +24,8 @@
     "name": "Faerie Spring",
     "order": 3,
     "parentId": 1,
-    "scrollX": 973.1999999999999,
-    "scrollY": 680.4
+    "scrollX": 821,
+    "scrollY": 680.5
   },
   {
     "id": 4,
@@ -33,8 +33,8 @@
     "name": "Bobo's Camp",
     "order": 4,
     "parentId": 1,
-    "scrollX": 973.1999999999999,
-    "scrollY": 679.1999999999999
+    "scrollX": 821,
+    "scrollY": 679.5
   },
   {
     "id": 5,
@@ -51,8 +51,8 @@
     "name": "Lightless Tower",
     "order": 6,
     "parentId": 1,
-    "scrollX": 973.1999999999999,
-    "scrollY": 553.1999999999999
+    "scrollX": 821,
+    "scrollY": 553.5
   },
   {
     "id": 7,
@@ -61,7 +61,7 @@
     "order": 9,
     "parentId": 0,
     "scrollX": 819,
-    "scrollY": 634
+    "scrollY": 634.5
   },
   {
     "id": 8,
@@ -69,8 +69,8 @@
     "name": "Light gallery",
     "order": 7,
     "parentId": 1,
-    "scrollX": 973.1999999999999,
-    "scrollY": 553.1999999999999
+    "scrollX": 811,
+    "scrollY": 461.5
   },
   {
     "id": 9,
