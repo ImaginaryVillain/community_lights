@@ -1,10 +1,10 @@
 {
-  "autoplayBgm": true,
+  "autoplayBgm": false,
   "autoplayBgs": false,
   "battleback1Name": "",
   "battleback2Name": "",
   "bgm": {
-    "name": "Town2",
+    "name": "",
     "pan": 0,
     "pitch": 100,
     "volume": 90
@@ -32,26 +32,26 @@
   "tilesetId": 4,
   "width": 17,
   "data": [
-    6656,
-    6656,
-    6660,
-    6684,
-    6684,
-    6684,
-    6684,
-    6684,
-    6684,
-    6684,
-    6684,
-    6684,
-    6684,
-    6684,
-    6664,
-    6656,
-    6656,
-    6656,
-    6660,
-    6694,
+    6896,
+    6896,
+    6900,
+    6924,
+    6924,
+    6924,
+    6924,
+    6924,
+    6924,
+    6924,
+    6924,
+    6924,
+    6924,
+    6924,
+    6904,
+    6896,
+    6896,
+    6896,
+    6900,
+    6934,
     7282,
     7282,
     7282,
@@ -63,11 +63,11 @@
     7282,
     7282,
     7282,
-    6696,
-    6664,
-    6656,
-    6660,
-    6694,
+    6936,
+    6904,
+    6896,
+    6900,
+    6934,
     7286,
     7288,
     7288,
@@ -81,178 +81,178 @@
     7288,
     7288,
     7283,
-    6696,
-    6664,
-    6680,
+    6936,
+    6904,
+    6920,
     7286,
     7292,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
     7289,
     7283,
-    6672,
-    6680,
+    6912,
+    6920,
     7292,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
     7289,
-    6672,
-    6680,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    6672,
-    6680,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    6672,
-    6680,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    6672,
-    6680,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    6672,
-    6680,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    6672,
-    6658,
-    6692,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    6690,
-    6657,
-    6656,
-    6658,
-    6692,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    1590,
-    6690,
-    6657,
-    6656,
-    6656,
-    6656,
-    6686,
-    6689,
-    6678,
-    6676,
-    6676,
-    6692,
-    1590,
-    6690,
-    6676,
-    6676,
-    6676,
-    6689,
-    6685,
-    6656,
-    6656,
+    6912,
+    6920,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    6912,
+    6920,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    6912,
+    6920,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    6912,
+    6920,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    6912,
+    6920,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    6912,
+    6898,
+    6932,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    6930,
+    6897,
+    6896,
+    6898,
+    6932,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    1568,
+    6930,
+    6897,
+    6896,
+    6896,
+    6896,
+    6898,
+    6916,
+    6916,
+    6916,
+    6916,
+    6932,
+    1568,
+    6930,
+    6916,
+    6916,
+    6916,
+    6916,
+    6897,
+    6896,
+    6896,
     0,
     0,
     0,
@@ -597,7 +597,7 @@
     0,
     0,
     0,
-    90,
+    106,
     0,
     0,
     0,
@@ -605,7 +605,7 @@
     0,
     0,
     0,
-    90,
+    106,
     0,
     0,
     0,
@@ -732,7 +732,7 @@
     0,
     0,
     0,
-    168,
+    64,
     0,
     0,
     0,
@@ -742,14 +742,14 @@
     0,
     0,
     0,
-    168,
+    64,
     0,
     0,
     0,
     0,
     0,
     0,
-    176,
+    72,
     0,
     0,
     0,
@@ -759,7 +759,7 @@
     0,
     0,
     0,
-    176,
+    72,
     0,
     0,
     0,
@@ -801,15 +801,15 @@
     0,
     0,
     0,
-    82,
+    98,
     0,
     0,
-    170,
-    171,
-    172,
+    66,
+    67,
+    68,
     0,
     0,
-    82,
+    98,
     0,
     0,
     0,
@@ -818,15 +818,15 @@
     0,
     0,
     0,
-    168,
+    64,
     0,
     0,
-    178,
-    179,
-    180,
+    74,
+    75,
+    76,
     0,
     0,
-    168,
+    64,
     0,
     0,
     0,
@@ -835,7 +835,7 @@
     0,
     0,
     0,
-    176,
+    72,
     0,
     0,
     0,
@@ -843,7 +843,7 @@
     0,
     0,
     0,
-    176,
+    72,
     0,
     0,
     0,
@@ -1384,13 +1384,47 @@
           },
           "directionFix": true,
           "image": {
-            "tileId": 182,
+            "tileId": 78,
             "characterName": "",
             "characterIndex": 0,
             "direction": 2,
             "pattern": 0
           },
           "list": [
+            {
+              "code": 111,
+              "indent": 0,
+              "parameters": [
+                6,
+                -1,
+                8
+              ]
+            },
+            {
+              "code": 0,
+              "indent": 1,
+              "parameters": []
+            },
+            {
+              "code": 411,
+              "indent": 0,
+              "parameters": []
+            },
+            {
+              "code": 115,
+              "indent": 1,
+              "parameters": []
+            },
+            {
+              "code": 0,
+              "indent": 1,
+              "parameters": []
+            },
+            {
+              "code": 412,
+              "indent": 0,
+              "parameters": []
+            },
             {
               "code": 101,
               "indent": 0,
@@ -1522,6 +1556,40 @@
           },
           "list": [
             {
+              "code": 111,
+              "indent": 0,
+              "parameters": [
+                6,
+                -1,
+                8
+              ]
+            },
+            {
+              "code": 0,
+              "indent": 1,
+              "parameters": []
+            },
+            {
+              "code": 411,
+              "indent": 0,
+              "parameters": []
+            },
+            {
+              "code": 115,
+              "indent": 1,
+              "parameters": []
+            },
+            {
+              "code": 0,
+              "indent": 1,
+              "parameters": []
+            },
+            {
+              "code": 412,
+              "indent": 0,
+              "parameters": []
+            },
+            {
               "code": 101,
               "indent": 0,
               "parameters": [
@@ -1535,14 +1603,69 @@
               "code": 401,
               "indent": 0,
               "parameters": [
-                "Use the switch below to activate or desactivate the"
+                "Use the switches below to activate or desactivate"
               ]
             },
             {
               "code": 401,
               "indent": 0,
               "parameters": [
-                "conditional lights of this room."
+                "the conditional lights of this room."
+              ]
+            },
+            {
+              "code": 101,
+              "indent": 0,
+              "parameters": [
+                "",
+                0,
+                0,
+                0
+              ]
+            },
+            {
+              "code": 401,
+              "indent": 0,
+              "parameters": [
+                "The switch on the left allow you to change"
+              ]
+            },
+            {
+              "code": 401,
+              "indent": 0,
+              "parameters": [
+                "the colors of the crystal's light (be sure"
+              ]
+            },
+            {
+              "code": 401,
+              "indent": 0,
+              "parameters": [
+                "to activate them first to see the difference)."
+              ]
+            },
+            {
+              "code": 101,
+              "indent": 0,
+              "parameters": [
+                "",
+                0,
+                0,
+                0
+              ]
+            },
+            {
+              "code": 401,
+              "indent": 0,
+              "parameters": [
+                "The switch on the right will reset the lights"
+              ]
+            },
+            {
+              "code": 401,
+              "indent": 0,
+              "parameters": [
+                "of this room to their initial state."
               ]
             },
             {
@@ -1729,10 +1852,30 @@
               ]
             },
             {
-              "code": 356,
+              "code": 357,
               "indent": 0,
               "parameters": [
-                "Light off 2"
+                "Community_Lighting_MZ",
+                "activateById",
+                "Activate Light By ID",
+                {
+                  "id": "2",
+                  "enabled": "false"
+                }
+              ]
+            },
+            {
+              "code": 657,
+              "indent": 0,
+              "parameters": [
+                "Event ID = 2"
+              ]
+            },
+            {
+              "code": 657,
+              "indent": 0,
+              "parameters": [
+                "Active = false"
               ]
             },
             {
@@ -1910,10 +2053,30 @@
               ]
             },
             {
-              "code": 356,
+              "code": 357,
               "indent": 0,
               "parameters": [
-                "Light on 2"
+                "Community_Lighting_MZ",
+                "activateById",
+                "Activate Light By ID",
+                {
+                  "id": "2",
+                  "enabled": "true"
+                }
+              ]
+            },
+            {
+              "code": 657,
+              "indent": 0,
+              "parameters": [
+                "Event ID = 2"
+              ]
+            },
+            {
+              "code": 657,
+              "indent": 0,
+              "parameters": [
+                "Active = true"
               ]
             },
             {
@@ -1948,7 +2111,7 @@
     },
     {
       "id": 3,
-      "name": "EV003",
+      "name": "Yellow crystal",
       "note": "<cl: light 150 #e4e809 1>",
       "pages": [
         {
@@ -2211,10 +2374,30 @@
               ]
             },
             {
-              "code": 356,
+              "code": 357,
               "indent": 0,
               "parameters": [
-                "Light off 1"
+                "Community_Lighting_MZ",
+                "activateById",
+                "Activate Light By ID",
+                {
+                  "id": "1",
+                  "enabled": "false"
+                }
+              ]
+            },
+            {
+              "code": 657,
+              "indent": 0,
+              "parameters": [
+                "Event ID = 1"
+              ]
+            },
+            {
+              "code": 657,
+              "indent": 0,
+              "parameters": [
+                "Active = false"
               ]
             },
             {
@@ -2392,10 +2575,30 @@
               ]
             },
             {
-              "code": 356,
+              "code": 357,
               "indent": 0,
               "parameters": [
-                "Light on 1"
+                "Community_Lighting_MZ",
+                "activateById",
+                "Activate Light By ID",
+                {
+                  "id": "1",
+                  "enabled": "true"
+                }
+              ]
+            },
+            {
+              "code": 657,
+              "indent": 0,
+              "parameters": [
+                "Event ID = 1"
+              ]
+            },
+            {
+              "code": 657,
+              "indent": 0,
+              "parameters": [
+                "Active = true"
               ]
             },
             {
@@ -2430,7 +2633,7 @@
     },
     {
       "id": 5,
-      "name": "EV005",
+      "name": "Blue crystal",
       "note": "<cl: light 150 #2200b8 1> ",
       "pages": [
         {
@@ -2541,7 +2744,7 @@
     },
     {
       "id": 6,
-      "name": "EV006",
+      "name": "One time event",
       "note": "",
       "pages": [
         {
@@ -2621,10 +2824,30 @@
           },
           "list": [
             {
-              "code": 356,
+              "code": 357,
               "indent": 0,
               "parameters": [
-                "Light on 2"
+                "Community_Lighting_MZ",
+                "activateById",
+                "Activate Light By ID",
+                {
+                  "id": "2",
+                  "enabled": "true"
+                }
+              ]
+            },
+            {
+              "code": 657,
+              "indent": 0,
+              "parameters": [
+                "Event ID = 2"
+              ]
+            },
+            {
+              "code": 657,
+              "indent": 0,
+              "parameters": [
+                "Active = true"
               ]
             },
             {
@@ -3015,7 +3238,7 @@
     },
     {
       "id": 9,
-      "name": "EV009",
+      "name": "Red crystal",
       "note": "<cl: light 150 #ff0000 1>",
       "pages": [
         {
@@ -3126,7 +3349,7 @@
     },
     {
       "id": 10,
-      "name": "EV010",
+      "name": "Light settings",
       "note": "",
       "pages": [
         {
@@ -3150,8 +3373,8 @@
             "tileId": 0,
             "characterName": "!Switch1",
             "direction": 2,
-            "pattern": 1,
-            "characterIndex": 7
+            "pattern": 2,
+            "characterIndex": 4
           },
           "list": [
             {
@@ -3206,24 +3429,132 @@
           },
           "list": [
             {
-              "code": 356,
+              "code": 357,
               "indent": 0,
               "parameters": [
-                "Daynight speed 0"
+                "Community_Lighting_MZ",
+                "setTimeSpeed",
+                "Time Speed",
+                {
+                  "speed": "0"
+                }
               ]
             },
             {
-              "code": 356,
+              "code": 657,
               "indent": 0,
               "parameters": [
-                "Tint set #333333"
+                "Speed = 0"
               ]
             },
             {
-              "code": 356,
+              "code": 357,
               "indent": 0,
               "parameters": [
-                "Regionblock 60 on #000000"
+                "Community_Lighting_MZ",
+                "setTint",
+                "Set Tint",
+                {
+                  "color": "#333333",
+                  "fadeSpeed": "0"
+                }
+              ]
+            },
+            {
+              "code": 657,
+              "indent": 0,
+              "parameters": [
+                "Tint Color = #333333"
+              ]
+            },
+            {
+              "code": 657,
+              "indent": 0,
+              "parameters": [
+                "Fade Speed = 0"
+              ]
+            },
+            {
+              "code": 357,
+              "indent": 0,
+              "parameters": [
+                "Community_Lighting_MZ",
+                "tileBlock",
+                "Tile-Based Light Blocking",
+                {
+                  "tileType": "region",
+                  "id": "60",
+                  "enabled": "true",
+                  "color": "#000000",
+                  "shape": "0",
+                  "xOffset": "0",
+                  "yOffset": "0",
+                  "blockwidth": "48",
+                  "blockHeight": "48"
+                }
+              ]
+            },
+            {
+              "code": 657,
+              "indent": 0,
+              "parameters": [
+                "Tile ID Type = region"
+              ]
+            },
+            {
+              "code": 657,
+              "indent": 0,
+              "parameters": [
+                "ID = 60"
+              ]
+            },
+            {
+              "code": 657,
+              "indent": 0,
+              "parameters": [
+                "On/Off = true"
+              ]
+            },
+            {
+              "code": 657,
+              "indent": 0,
+              "parameters": [
+                "Color = #000000"
+              ]
+            },
+            {
+              "code": 657,
+              "indent": 0,
+              "parameters": [
+                "Shape = 0"
+              ]
+            },
+            {
+              "code": 657,
+              "indent": 0,
+              "parameters": [
+                "X Offset = 0"
+              ]
+            },
+            {
+              "code": 657,
+              "indent": 0,
+              "parameters": [
+                "Y Offset = 0"
+              ]
+            },
+            {
+              "code": 657,
+              "indent": 0,
+              "parameters": [
+                "Width = 48"
+              ]
+            },
+            {
+              "code": 657,
+              "indent": 0,
+              "parameters": [
+                "Height = 48"
               ]
             },
             {
@@ -3338,28 +3669,22 @@
                 "",
                 0,
                 0,
-                0
+                0,
+                ""
               ]
             },
             {
               "code": 401,
               "indent": 1,
               "parameters": [
-                "Use the plugin commands 'Light on ID' and"
+                "Use the plugin commands 'Activate Light by ID'"
               ]
             },
             {
               "code": 401,
               "indent": 1,
               "parameters": [
-                "'Light off ID' to activate or desactivate"
-              ]
-            },
-            {
-              "code": 401,
-              "indent": 1,
-              "parameters": [
-                "the conditional light. In our example, 'Light on 1'."
+                "to activate or desactivate the conditional light."
               ]
             },
             {
@@ -3544,7 +3869,8 @@
                 "",
                 0,
                 0,
-                2
+                2,
+                ""
               ]
             },
             {
@@ -3558,7 +3884,7 @@
               "code": 401,
               "indent": 1,
               "parameters": [
-                "'Light switch reset' plugin command."
+                "'Reset Light Switches' plugin command."
               ]
             },
             {
@@ -3681,14 +4007,15 @@
                 "",
                 0,
                 0,
-                0
+                0,
+                ""
               ]
             },
             {
               "code": 401,
               "indent": 1,
               "parameters": [
-                "The plugin commands 'Light color ID COLOR' allows"
+                "The plugin commands 'Light Color by ID' allows"
               ]
             },
             {
@@ -3712,28 +4039,29 @@
                 "",
                 0,
                 0,
-                0
+                0,
+                ""
               ]
             },
             {
               "code": 401,
               "indent": 1,
               "parameters": [
-                "If COLOR is set to 'defaultcolor' (without the"
+                "If the color argument is set to 'defaultcolor'"
               ]
             },
             {
               "code": 401,
               "indent": 1,
               "parameters": [
-                "quotes), it will reset the light back to its"
+                "(without the quotes), it will reset the light"
               ]
             },
             {
               "code": 401,
               "indent": 1,
               "parameters": [
-                "initial color."
+                "back to its initial color."
               ]
             },
             {
@@ -3964,10 +4292,30 @@
               ]
             },
             {
-              "code": 356,
+              "code": 357,
               "indent": 0,
               "parameters": [
-                "Light color 1 #008c46"
+                "Community_Lighting_MZ",
+                "lightColor",
+                "Light Color By ID",
+                {
+                  "id": "1",
+                  "color": "#008c46"
+                }
+              ]
+            },
+            {
+              "code": 657,
+              "indent": 0,
+              "parameters": [
+                "Event ID = 1"
+              ]
+            },
+            {
+              "code": 657,
+              "indent": 0,
+              "parameters": [
+                "Color = #008c46"
               ]
             },
             {
@@ -4153,10 +4501,30 @@
               ]
             },
             {
-              "code": 356,
+              "code": 357,
               "indent": 0,
               "parameters": [
-                "Light color 1 defaultcolor"
+                "Community_Lighting_MZ",
+                "lightColor",
+                "Light Color By ID",
+                {
+                  "id": "1",
+                  "color": "defaultcolor"
+                }
+              ]
+            },
+            {
+              "code": 657,
+              "indent": 0,
+              "parameters": [
+                "Event ID = 1"
+              ]
+            },
+            {
+              "code": 657,
+              "indent": 0,
+              "parameters": [
+                "Color = defaultcolor"
               ]
             },
             {
@@ -4365,17 +4733,40 @@
               ]
             },
             {
-              "code": 356,
+              "code": 357,
               "indent": 0,
               "parameters": [
-                "Light switch reset"
+                "Community_Lighting_MZ",
+                "resetLightSwitches",
+                "Reset Light Switches",
+                {}
               ]
             },
             {
-              "code": 356,
+              "code": 357,
               "indent": 0,
               "parameters": [
-                "Light on 2"
+                "Community_Lighting_MZ",
+                "activateById",
+                "Activate Light By ID",
+                {
+                  "id": "2",
+                  "enabled": "true"
+                }
+              ]
+            },
+            {
+              "code": 657,
+              "indent": 0,
+              "parameters": [
+                "Event ID = 2"
+              ]
+            },
+            {
+              "code": 657,
+              "indent": 0,
+              "parameters": [
+                "Active = true"
               ]
             },
             {
@@ -4507,7 +4898,7 @@
           },
           "directionFix": true,
           "image": {
-            "tileId": 174,
+            "tileId": 70,
             "characterName": "",
             "characterIndex": 0,
             "direction": 2,
@@ -4618,7 +5009,7 @@
           },
           "directionFix": false,
           "image": {
-            "tileId": 181,
+            "tileId": 77,
             "characterName": "",
             "characterIndex": 0,
             "direction": 2,
@@ -4729,7 +5120,7 @@
           },
           "directionFix": false,
           "image": {
-            "tileId": 183,
+            "tileId": 79,
             "characterName": "",
             "characterIndex": 0,
             "direction": 2,
@@ -4840,7 +5231,7 @@
           },
           "directionFix": false,
           "image": {
-            "tileId": 175,
+            "tileId": 71,
             "characterName": "",
             "characterIndex": 0,
             "direction": 2,
@@ -4951,7 +5342,7 @@
           },
           "directionFix": false,
           "image": {
-            "tileId": 173,
+            "tileId": 69,
             "characterName": "",
             "characterIndex": 0,
             "direction": 2,
