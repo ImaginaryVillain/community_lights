@@ -6,10 +6,10 @@
     "chanceByDamage": 100,
     "iconIndex": 1,
     "maxTurns": 1,
-    "message1": " has fallen!",
-    "message2": " is slain!",
+    "message1": "%1 has fallen!",
+    "message2": "%1 is slain!",
     "message3": "",
-    "message4": " revives!",
+    "message4": "%1 revives!",
     "minTurns": 1,
     "motion": 3,
     "name": "Knockout",
@@ -29,7 +29,8 @@
         "dataId": 9,
         "value": 0
       }
-    ]
+    ],
+    "messageType": 1
   },
   {
     "id": 2,
@@ -60,7 +61,8 @@
         "dataId": 1,
         "value": 0
       }
-    ]
+    ],
+    "messageType": 1
   },
   {
     "id": 3,
@@ -91,7 +93,8 @@
         "dataId": 1,
         "value": 0
       }
-    ]
+    ],
+    "messageType": 1
   },
   {
     "id": 4,
@@ -99,10 +102,10 @@
     "chanceByDamage": 100,
     "iconIndex": 2,
     "maxTurns": 1,
-    "message1": " is poisoned!",
-    "message2": " is poisoned!",
+    "message1": "%1 is poisoned!",
+    "message2": "%1 is poisoned!",
     "message3": "",
-    "message4": " is no longer poisoned!",
+    "message4": "%1 is no longer poisoned!",
     "minTurns": 1,
     "motion": 1,
     "overlay": 1,
@@ -122,7 +125,8 @@
         "dataId": 7,
         "value": -0.1
       }
-    ]
+    ],
+    "messageType": 1
   },
   {
     "id": 5,
@@ -130,10 +134,10 @@
     "chanceByDamage": 100,
     "iconIndex": 3,
     "maxTurns": 5,
-    "message1": " is blinded!",
-    "message2": " is blinded!",
+    "message1": "%1 is blinded!",
+    "message2": "%1 is blinded!",
     "message3": "",
-    "message4": " is no longer blinded!",
+    "message4": "%1 is no longer blinded!",
     "minTurns": 3,
     "motion": 1,
     "name": "Blind",
@@ -153,7 +157,8 @@
         "dataId": 0,
         "value": -0.5
       }
-    ]
+    ],
+    "messageType": 1
   },
   {
     "id": 6,
@@ -161,10 +166,10 @@
     "chanceByDamage": 100,
     "iconIndex": 4,
     "maxTurns": 5,
-    "message1": " is silenced!",
-    "message2": " is silenced!",
+    "message1": "%1 is silenced!",
+    "message2": "%1 is silenced!",
     "message3": "",
-    "message4": " is no longer silenced!",
+    "message4": "%1 is no longer silenced!",
     "minTurns": 3,
     "motion": 1,
     "name": "Silence",
@@ -184,7 +189,8 @@
         "dataId": 1,
         "value": 0
       }
-    ]
+    ],
+    "messageType": 1
   },
   {
     "id": 7,
@@ -192,10 +198,10 @@
     "chanceByDamage": 50,
     "iconIndex": 5,
     "maxTurns": 4,
-    "message1": " is enraged!",
-    "message2": " is enraged!",
+    "message1": "%1 is enraged!",
+    "message2": "%1 is enraged!",
     "message3": "",
-    "message4": " is no longer enraged!",
+    "message4": "%1 is no longer enraged!",
     "minTurns": 2,
     "motion": 1,
     "name": "Rage",
@@ -209,7 +215,8 @@
     "removeByWalking": false,
     "restriction": 1,
     "stepsToRemove": 100,
-    "traits": []
+    "traits": [],
+    "messageType": 1
   },
   {
     "id": 8,
@@ -217,10 +224,10 @@
     "chanceByDamage": 50,
     "iconIndex": 6,
     "maxTurns": 4,
-    "message1": " is confused!",
-    "message2": " is confused!",
+    "message1": "%1 is confused!",
+    "message2": "%1 is confused!",
     "message3": "",
-    "message4": " is no longer confused!",
+    "message4": "%1 is no longer confused!",
     "minTurns": 2,
     "motion": 1,
     "name": "Confusion",
@@ -234,7 +241,8 @@
     "removeByWalking": false,
     "restriction": 2,
     "stepsToRemove": 100,
-    "traits": []
+    "traits": [],
+    "messageType": 1
   },
   {
     "id": 9,
@@ -242,10 +250,10 @@
     "chanceByDamage": 50,
     "iconIndex": 7,
     "maxTurns": 4,
-    "message1": " is fascinated!",
-    "message2": " is fascinated!",
+    "message1": "%1 is fascinated!",
+    "message2": "%1 is fascinated!",
     "message3": "",
-    "message4": " is no longer fascinated!",
+    "message4": "%1 is no longer fascinated!",
     "minTurns": 2,
     "motion": 1,
     "name": "Fascination",
@@ -259,7 +267,8 @@
     "removeByWalking": false,
     "restriction": 3,
     "stepsToRemove": 100,
-    "traits": []
+    "traits": [],
+    "messageType": 1
   },
   {
     "id": 10,
@@ -267,10 +276,10 @@
     "chanceByDamage": 100,
     "iconIndex": 8,
     "maxTurns": 5,
-    "message1": " falls asleep!",
-    "message2": " falls asleep!",
-    "message3": " is sleeping.",
-    "message4": " wakes up!",
+    "message1": "%1 falls asleep!",
+    "message2": "%1 falls asleep!",
+    "message3": "%1 is sleeping.",
+    "message4": "%1 wakes up!",
     "minTurns": 3,
     "motion": 2,
     "name": "Sleep",
@@ -290,6 +299,7 @@
         "dataId": 1,
         "value": -1
       }
-    ]
+    ],
+    "messageType": 1
   }
 ]

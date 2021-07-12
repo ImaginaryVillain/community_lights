@@ -21,7 +21,7 @@
     ],
     "hitType": 1,
     "iconIndex": 76,
-    "message1": " attacks!",
+    "message1": "%1 attacks!",
     "message2": "",
     "mpCost": 0,
     "name": "Attack",
@@ -35,7 +35,8 @@
     "stypeId": 0,
     "successRate": 100,
     "tpCost": 0,
-    "tpGain": 10
+    "tpGain": 10,
+    "messageType": 1
   },
   {
     "id": 2,
@@ -58,7 +59,7 @@
     ],
     "hitType": 0,
     "iconIndex": 81,
-    "message1": " guards.",
+    "message1": "%1 guards.",
     "message2": "",
     "mpCost": 0,
     "name": "Guard",
@@ -72,7 +73,8 @@
     "stypeId": 0,
     "successRate": 100,
     "tpCost": 0,
-    "tpGain": 10
+    "tpGain": 10,
+    "messageType": 1
   },
   {
     "id": 3,
@@ -95,7 +97,7 @@
     ],
     "hitType": 1,
     "iconIndex": 76,
-    "message1": " attacks!",
+    "message1": "%1 attacks!",
     "message2": "",
     "mpCost": 0,
     "name": "Dual Attack",
@@ -109,7 +111,8 @@
     "stypeId": 0,
     "successRate": 100,
     "tpCost": 0,
-    "tpGain": 5
+    "tpGain": 5,
+    "messageType": 1
   },
   {
     "id": 4,
@@ -132,7 +135,7 @@
     ],
     "hitType": 1,
     "iconIndex": 76,
-    "message1": " attacks!",
+    "message1": "%1 attacks!",
     "message2": "",
     "mpCost": 0,
     "name": "Double Attack",
@@ -146,7 +149,8 @@
     "stypeId": 0,
     "successRate": 100,
     "tpCost": 0,
-    "tpGain": 5
+    "tpGain": 5,
+    "messageType": 1
   },
   {
     "id": 5,
@@ -169,7 +173,7 @@
     ],
     "hitType": 1,
     "iconIndex": 76,
-    "message1": " attacks!",
+    "message1": "%1 attacks!",
     "message2": "",
     "mpCost": 0,
     "name": "Triple Attack",
@@ -183,7 +187,8 @@
     "stypeId": 0,
     "successRate": 100,
     "tpCost": 0,
-    "tpGain": 4
+    "tpGain": 4,
+    "messageType": 1
   },
   {
     "id": 6,
@@ -206,7 +211,7 @@
     ],
     "hitType": 0,
     "iconIndex": 82,
-    "message1": " flees.",
+    "message1": "%1 flees.",
     "message2": "",
     "mpCost": 0,
     "name": "Escape",
@@ -220,7 +225,8 @@
     "stypeId": 0,
     "successRate": 100,
     "tpCost": 0,
-    "tpGain": 0
+    "tpGain": 0,
+    "messageType": 1
   },
   {
     "id": 7,
@@ -236,7 +242,7 @@
     "effects": [],
     "hitType": 0,
     "iconIndex": 81,
-    "message1": " waits.",
+    "message1": "%1 waits.",
     "message2": "",
     "mpCost": 0,
     "name": "Wait",
@@ -250,7 +256,8 @@
     "stypeId": 0,
     "successRate": 100,
     "tpCost": 0,
-    "tpGain": 10
+    "tpGain": 10,
+    "messageType": 1
   },
   {
     "id": 8,
@@ -280,7 +287,8 @@
     "stypeId": 1,
     "successRate": 100,
     "tpCost": 0,
-    "tpGain": 0
+    "tpGain": 0,
+    "messageType": 1
   },
   {
     "id": 9,
@@ -310,7 +318,8 @@
     "stypeId": 1,
     "successRate": 100,
     "tpCost": 0,
-    "tpGain": 0
+    "tpGain": 0,
+    "messageType": 1
   },
   {
     "id": 10,
@@ -340,7 +349,8 @@
     "stypeId": 1,
     "successRate": 100,
     "tpCost": 0,
-    "tpGain": 0
+    "tpGain": 0,
+    "messageType": 1
   },
   {
     "id": 11,
@@ -370,7 +380,8 @@
     "stypeId": 1,
     "successRate": 100,
     "tpCost": 0,
-    "tpGain": 0
+    "tpGain": 0,
+    "messageType": 1
   },
   {
     "id": 12,
@@ -400,11 +411,12 @@
     "stypeId": 1,
     "successRate": 100,
     "tpCost": 0,
-    "tpGain": 0
+    "tpGain": 0,
+    "messageType": 1
   },
   {
     "id": 13,
-    "animationId": 4,
+    "animationId": 103,
     "damage": {
       "critical": false,
       "elementId": 9,
@@ -437,11 +449,12 @@
     "stypeId": 1,
     "successRate": 100,
     "tpCost": 0,
-    "tpGain": 0
+    "tpGain": 0,
+    "messageType": 1
   },
   {
     "id": 14,
-    "animationId": 3,
+    "animationId": 67,
     "damage": {
       "critical": false,
       "elementId": 0,
@@ -474,7 +487,8 @@
     "stypeId": 1,
     "successRate": 100,
     "tpCost": 0,
-    "tpGain": 0
+    "tpGain": 0,
+    "messageType": 1
   },
   {
     "id": 15,
@@ -511,6 +525,7 @@
     "stypeId": 1,
     "successRate": 100,
     "tpCost": 0,
-    "tpGain": 0
+    "tpGain": 0,
+    "messageType": 1
   }
 ]

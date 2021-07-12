@@ -11,10 +11,54 @@
         ]
       },
       {
-        "code": 356,
+        "code": 357,
         "indent": 0,
         "parameters": [
-          "Flashlight off"
+          "Community_Lighting_MZ",
+          "flashlight",
+          "Player Flashlight",
+          {
+            "enabled": "false",
+            "beamLength": "8",
+            "beamWdth": "12",
+            "color": "#ffffff",
+            "density": "3"
+          }
+        ]
+      },
+      {
+        "code": 657,
+        "indent": 0,
+        "parameters": [
+          "On/Off = false"
+        ]
+      },
+      {
+        "code": 657,
+        "indent": 0,
+        "parameters": [
+          "Beam Length = 8"
+        ]
+      },
+      {
+        "code": 657,
+        "indent": 0,
+        "parameters": [
+          "Beam Width = 12"
+        ]
+      },
+      {
+        "code": 657,
+        "indent": 0,
+        "parameters": [
+          "Beam Color = #ffffff"
+        ]
+      },
+      {
+        "code": 657,
+        "indent": 0,
+        "parameters": [
+          "Beam Density = 3"
         ]
       },
       {
@@ -25,10 +69,46 @@
         ]
       },
       {
-        "code": 356,
+        "code": 357,
         "indent": 0,
         "parameters": [
-          "Fire radius 150 #887722"
+          "Community_Lighting_MZ",
+          "playerLightRadius",
+          "Player Light Radius",
+          {
+            "radius": "150",
+            "color": "#887722",
+            "brightness": "0",
+            "fadeSpeed": "0"
+          }
+        ]
+      },
+      {
+        "code": 657,
+        "indent": 0,
+        "parameters": [
+          "Radius = 150"
+        ]
+      },
+      {
+        "code": 657,
+        "indent": 0,
+        "parameters": [
+          "Color = #887722"
+        ]
+      },
+      {
+        "code": 657,
+        "indent": 0,
+        "parameters": [
+          "Brightness = 0"
+        ]
+      },
+      {
+        "code": 657,
+        "indent": 0,
+        "parameters": [
+          "fadeSpeed = 0"
         ]
       },
       {
@@ -52,10 +132,46 @@
         ]
       },
       {
-        "code": 356,
+        "code": 357,
         "indent": 0,
         "parameters": [
-          "Light radius 1 #ffffff"
+          "Community_Lighting_MZ",
+          "playerLightRadius",
+          "Player Light Radius",
+          {
+            "radius": "0",
+            "color": "#ffffff",
+            "brightness": "0",
+            "fadeSpeed": "0"
+          }
+        ]
+      },
+      {
+        "code": 657,
+        "indent": 0,
+        "parameters": [
+          "Radius = 0"
+        ]
+      },
+      {
+        "code": 657,
+        "indent": 0,
+        "parameters": [
+          "Color = #ffffff"
+        ]
+      },
+      {
+        "code": 657,
+        "indent": 0,
+        "parameters": [
+          "Brightness = 0"
+        ]
+      },
+      {
+        "code": 657,
+        "indent": 0,
+        "parameters": [
+          "fadeSpeed = 0"
         ]
       },
       {
@@ -66,10 +182,54 @@
         ]
       },
       {
-        "code": 356,
+        "code": 357,
         "indent": 0,
         "parameters": [
-          "Flashlight on 6 8 #ffffff 3"
+          "Community_Lighting_MZ",
+          "flashlight",
+          "Player Flashlight",
+          {
+            "enabled": "true",
+            "beamLength": "6",
+            "beamWdth": "8",
+            "color": "#ffffff",
+            "density": "3"
+          }
+        ]
+      },
+      {
+        "code": 657,
+        "indent": 0,
+        "parameters": [
+          "On/Off = true"
+        ]
+      },
+      {
+        "code": 657,
+        "indent": 0,
+        "parameters": [
+          "Beam Length = 6"
+        ]
+      },
+      {
+        "code": 657,
+        "indent": 0,
+        "parameters": [
+          "Beam Width = 8"
+        ]
+      },
+      {
+        "code": 657,
+        "indent": 0,
+        "parameters": [
+          "Beam Color = #ffffff"
+        ]
+      },
+      {
+        "code": 657,
+        "indent": 0,
+        "parameters": [
+          "Beam Density = 3"
         ]
       },
       {
@@ -93,10 +253,54 @@
         ]
       },
       {
-        "code": 356,
+        "code": 357,
         "indent": 0,
         "parameters": [
-          "Flashlight off"
+          "Community_Lighting_MZ",
+          "flashlight",
+          "Player Flashlight",
+          {
+            "enabled": "false",
+            "beamLength": "8",
+            "beamWdth": "12",
+            "color": "#ffffff",
+            "density": "3"
+          }
+        ]
+      },
+      {
+        "code": 657,
+        "indent": 0,
+        "parameters": [
+          "On/Off = false"
+        ]
+      },
+      {
+        "code": 657,
+        "indent": 0,
+        "parameters": [
+          "Beam Length = 8"
+        ]
+      },
+      {
+        "code": 657,
+        "indent": 0,
+        "parameters": [
+          "Beam Width = 12"
+        ]
+      },
+      {
+        "code": 657,
+        "indent": 0,
+        "parameters": [
+          "Beam Color = #ffffff"
+        ]
+      },
+      {
+        "code": 657,
+        "indent": 0,
+        "parameters": [
+          "Beam Density = 3"
         ]
       },
       {
@@ -107,10 +311,46 @@
         ]
       },
       {
-        "code": 356,
+        "code": 357,
         "indent": 0,
         "parameters": [
-          "Light radius 300 #aaaaaa"
+          "Community_Lighting_MZ",
+          "playerLightRadius",
+          "Player Light Radius",
+          {
+            "radius": "300",
+            "color": "#aaaaaa",
+            "brightness": "0",
+            "fadeSpeed": "0"
+          }
+        ]
+      },
+      {
+        "code": 657,
+        "indent": 0,
+        "parameters": [
+          "Radius = 300"
+        ]
+      },
+      {
+        "code": 657,
+        "indent": 0,
+        "parameters": [
+          "Color = #aaaaaa"
+        ]
+      },
+      {
+        "code": 657,
+        "indent": 0,
+        "parameters": [
+          "Brightness = 0"
+        ]
+      },
+      {
+        "code": 657,
+        "indent": 0,
+        "parameters": [
+          "fadeSpeed = 0"
         ]
       },
       {
@@ -134,10 +374,54 @@
         ]
       },
       {
-        "code": 356,
+        "code": 357,
         "indent": 0,
         "parameters": [
-          "Flashlight off"
+          "Community_Lighting_MZ",
+          "flashlight",
+          "Player Flashlight",
+          {
+            "enabled": "false",
+            "beamLength": "8",
+            "beamWdth": "12",
+            "color": "#ffffff",
+            "density": "3"
+          }
+        ]
+      },
+      {
+        "code": 657,
+        "indent": 0,
+        "parameters": [
+          "On/Off = false"
+        ]
+      },
+      {
+        "code": 657,
+        "indent": 0,
+        "parameters": [
+          "Beam Length = 8"
+        ]
+      },
+      {
+        "code": 657,
+        "indent": 0,
+        "parameters": [
+          "Beam Width = 12"
+        ]
+      },
+      {
+        "code": 657,
+        "indent": 0,
+        "parameters": [
+          "Beam Color = #ffffff"
+        ]
+      },
+      {
+        "code": 657,
+        "indent": 0,
+        "parameters": [
+          "Beam Density = 3"
         ]
       },
       {
@@ -148,10 +432,46 @@
         ]
       },
       {
-        "code": 356,
+        "code": 357,
         "indent": 0,
         "parameters": [
-          "Light radius 0 #000000"
+          "Community_Lighting_MZ",
+          "playerLightRadius",
+          "Player Light Radius",
+          {
+            "radius": "0",
+            "color": "#000000",
+            "brightness": "0",
+            "fadeSpeed": "0"
+          }
+        ]
+      },
+      {
+        "code": 657,
+        "indent": 0,
+        "parameters": [
+          "Radius = 0"
+        ]
+      },
+      {
+        "code": 657,
+        "indent": 0,
+        "parameters": [
+          "Color = #000000"
+        ]
+      },
+      {
+        "code": 657,
+        "indent": 0,
+        "parameters": [
+          "Brightness = 0"
+        ]
+      },
+      {
+        "code": 657,
+        "indent": 0,
+        "parameters": [
+          "fadeSpeed = 0"
         ]
       },
       {
