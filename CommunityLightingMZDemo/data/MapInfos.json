@@ -6,8 +6,8 @@
     "name": "Overworld",
     "order": 1,
     "parentId": 0,
-    "scrollX": 1345.3333333333333,
-    "scrollY": 904
+    "scrollX": 1229,
+    "scrollY": 1140.5
   },
   {
     "id": 2,
@@ -15,8 +15,8 @@
     "name": "Volcano",
     "order": 2,
     "parentId": 1,
-    "scrollX": 893,
-    "scrollY": 904
+    "scrollX": 917,
+    "scrollY": 811.5
   },
   {
     "id": 3,
@@ -25,16 +25,16 @@
     "order": 3,
     "parentId": 1,
     "scrollX": 821,
-    "scrollY": 790
+    "scrollY": 680.5
   },
   {
     "id": 4,
-    "expanded": true,
+    "expanded": false,
     "name": "Bobo's Camp",
     "order": 4,
     "parentId": 1,
     "scrollX": 821,
-    "scrollY": 695
+    "scrollY": 679.5
   },
   {
     "id": 5,
@@ -42,8 +42,8 @@
     "name": "Bobo's Tent",
     "order": 5,
     "parentId": 4,
-    "scrollX": 1081.3333333333333,
-    "scrollY": 633.3333333333334
+    "scrollX": 811,
+    "scrollY": 587
   },
   {
     "id": 6,
@@ -51,8 +51,8 @@
     "name": "Lightless Tower",
     "order": 6,
     "parentId": 1,
-    "scrollX": 1081.3333333333333,
-    "scrollY": 790.6666666666666
+    "scrollX": 821,
+    "scrollY": 553.5
   },
   {
     "id": 7,
@@ -60,8 +60,8 @@
     "name": "Time-Lost Island",
     "order": 9,
     "parentId": 0,
-    "scrollX": 1638,
-    "scrollY": 922
+    "scrollX": 819,
+    "scrollY": 634.5
   },
   {
     "id": 8,
@@ -69,8 +69,8 @@
     "name": "Light gallery",
     "order": 7,
     "parentId": 1,
-    "scrollX": 1092,
-    "scrollY": 614.6666666666666
+    "scrollX": 811,
+    "scrollY": 461.5
   },
   {
     "id": 9,
@@ -78,7 +78,7 @@
     "name": "Conditional light hall",
     "order": 8,
     "parentId": 1,
-    "scrollX": 1092,
-    "scrollY": 614.6666666666666
+    "scrollX": 811,
+    "scrollY": 453
   }
 ]

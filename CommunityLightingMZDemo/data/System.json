@@ -81,10 +81,10 @@
     "pitch": 100,
     "volume": 90
   },
-  "battleback1Name": "Meadow",
+  "battleback1Name": "Grassland",
   "battleback2Name": "Forest",
   "battlerHue": 0,
-  "battlerName": "Bat",
+  "battlerName": "Goblin",
   "boat": {
     "bgm": {
       "name": "",
@@ -105,7 +105,7 @@
     "pitch": 100,
     "volume": 90
   },
-  "editMapId": 9,
+  "editMapId": 1,
   "elements": [
     "",
     "Physical",
@@ -176,7 +176,7 @@
   ],
   "sounds": [
     {
-      "name": "Cursor2",
+      "name": "Cursor1",
       "pan": 0,
       "pitch": 100,
       "volume": 90
@@ -206,13 +206,13 @@
       "volume": 90
     },
     {
-      "name": "Save",
+      "name": "Save1",
       "pan": 0,
       "pitch": 100,
       "volume": 90
     },
     {
-      "name": "Load",
+      "name": "Load1",
       "pan": 0,
       "pitch": 100,
       "volume": 90
@@ -322,7 +322,7 @@
   ],
   "startMapId": 2,
   "startX": 19,
-  "startY": 18,
+  "startY": 17,
   "switches": [
     "",
     "Night Time",
@@ -450,7 +450,9 @@
       "substitute": "%1 protected %2!",
       "surprise": "%1 was surprised!",
       "useItem": "%1 uses %2!",
-      "victory": "%1 was victorious!"
+      "victory": "%1 was victorious!",
+      "touchUI": "Interface utilisateur tactile",
+      "autosave": "Sauvegarde automatique"
     }
   },
   "testBattlers": [
@@ -500,7 +502,7 @@
     }
   ],
   "testTroopId": 4,
-  "title1Name": "Volcano",
+  "title1Name": "Universe",
   "title2Name": "",
   "titleBgm": {
     "name": "Town2",
@@ -531,7 +533,7 @@
     "",
     ""
   ],
-  "versionId": 75267799,
+  "versionId": 81665035,
   "victoryMe": {
     "name": "Victory1",
     "pan": 0,
@@ -558,5 +560,31 @@
     0,
     0,
     0
-  ]
+  ],
+  "advanced": {
+    "gameId": 14691258,
+    "screenWidth": 816,
+    "screenHeight": 624,
+    "uiAreaWidth": 816,
+    "uiAreaHeight": 624,
+    "mainFontFilename": "mplus-1m-regular.woff",
+    "numberFontFilename": "mplus-2p-bold-sub.woff",
+    "fallbackFonts": "Verdana, sans-serif",
+    "fontSize": 26,
+    "windowOpacity": 192
+  },
+  "battleSystem": 0,
+  "itemCategories": [
+    true,
+    true,
+    true,
+    true
+  ],
+  "optAutosave": true,
+  "optKeyItemsNumber": false,
+  "titleCommandWindow": {
+    "background": 0,
+    "offsetX": 0,
+    "offsetY": 0
+  }
 }
