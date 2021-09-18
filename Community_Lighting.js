@@ -175,7 +175,7 @@ Imported[Community.Lighting.name] = true;
 * 1. This plugin features an optional note tag key that lets this plugin's
 * note tags work alongside those of other plugins--a feature not found in the
 * original Terrax Lighting plugin. If a note tag key is set in the plugin
-* paramters, all of these commands must be enclosed in a note tag with that
+* parameters, all of these commands must be enclosed in a note tag with that
 * particular key in in order to be recognized.
 *
 * This note tag key applies to anything this plugin would have placed inside
@@ -787,12 +787,30 @@ Imported[Community.Lighting.name] = true;
     }
   };
   let _Game_Interpreter_pluginCommand = Game_Interpreter.prototype.pluginCommand;
+
+  /**
+   *
+   * @param {String} command
+   * @param {String[]} args
+   */
   Game_Interpreter.prototype.pluginCommand = function (command, args) {
     _Game_Interpreter_pluginCommand.call(this, command, args);
     if (typeof command != 'undefined') {
       this.communityLighting_Commands(command, args);
     }
   };
+
+  let _Game_Player_clearTransferInfo = Game_Player.prototype.clearTransferInfo;
+
+  Game_Player.prototype.clearTransferInfo = function () {
+    _Game_Player_clearTransferInfo.call(this);
+    $$.defaultBrightness = 0;
+  };
+  /**
+   *
+   * @param {String} command
+   * @param {String[]} args
+   */
   Game_Interpreter.prototype.communityLighting_Commands = function (command, args) {
     command = command.toLowerCase();
 
@@ -807,24 +825,49 @@ Imported[Community.Lighting.name] = true;
     }
   };
 
+  /**
+   *
+   * @param {String} command
+   * @param {String[]} args
+   */
   Game_Interpreter.prototype.tileType = function (command, args) {
     const cmdArr = ['', 'tileblock', 'regionblock', 'tilelight', 'regionlight', 'tilefire', 'regionfire', 'tileglow', 'regionglow'];
     tiletype = cmdArr.indexOf(command);
     if (tiletype > 0) $$.tile(args);
   };
 
+  /**
+   *
+   * @param {String} command
+   * @param {String[]} args
+   */
   Game_Interpreter.prototype.tint = function (command, args) {
     $$.tint(args);
   };
 
+  /**
+   *
+   * @param {String} command
+   * @param {String[]} args
+   */
   Game_Interpreter.prototype.dayNight = function (command, args) {
     $$.DayNight(args);
   };
 
+  /**
+     *
+     * @param {String} command
+     * @param {String[]} args
+     */
   Game_Interpreter.prototype.flashLight = function (command, args) {
     $$.flashlight(args);
   };
 
+  /**
+   *
+   * @param {String} command
+   * @param {String[]} args
+   */
   Game_Interpreter.prototype.setFire = function (command, args) {
     flickerradiusshift = args[0];
     flickercolorshift = args[1];
@@ -832,6 +875,11 @@ Imported[Community.Lighting.name] = true;
     $gameVariables.SetFireColorshift(flickercolorshift);
   };
 
+  /**
+   *
+   * @param {String} command
+   * @param {String[]} args
+   */
   Game_Interpreter.prototype.fire = function (command, args) {
     if (args.contains("radius") || args.contains("radiusgrow")) $gameVariables.SetFire(true);
     if (args[0] === "deactivate") {
@@ -842,6 +890,11 @@ Imported[Community.Lighting.name] = true;
     $$.fireLight(args);
   };
 
+  /**
+   * 
+   * @param {String} command 
+   * @param {String[]} args 
+   */
   Game_Interpreter.prototype.light = function (command, args) {
     if (args.contains("radius") || args.contains("radiusgrow")) $gameVariables.SetFire(false);
     if (args[0] === "deactivate") {
@@ -896,7 +949,7 @@ Imported[Community.Lighting.name] = true;
 
   Game_Interpreter.prototype.determineBattleTint = function (tintColor) {
     if (!tintColor || tintColor.length < 7) {
-      return '#666666' // Not an hex color strintg
+      return '#666666' // Not an hex color string
     }
     var redhex = tintColor.substring(1, 3);
     var greenhex = tintColor.substring(3, 5);
@@ -943,6 +996,13 @@ Imported[Community.Lighting.name] = true;
     this._maskBitmap = new Bitmap(maxX + lightMaskPadding, maxY);   // one big bitmap to fill the intire screen with black
     let canvas = this._maskBitmap.canvas;             // a bit larger then setting to take care of screenshakes
   };
+
+  let _Game_Map_prototype_setupEvents = Game_Map.prototype.setupEvents;
+
+  Game_Map.prototype.setupEvents = function () {
+    $$.ReloadMapEvents();
+    _Game_Map_prototype_setupEvents.call(this);
+  }
 
   /**
    * @method _updateAllSprites
@@ -1461,6 +1521,7 @@ Imported[Community.Lighting.name] = true;
         let g2 = hexToRgb(tint_target).g;
         let b2 = hexToRgb(tint_target).b;
 
+
         let stepR = (r2 - r) / (60 * tint_speed);
         let stepG = (g2 - g) / (60 * tint_speed);
         let stepB = (b2 - b) / (60 * tint_speed);
@@ -1552,6 +1613,14 @@ Imported[Community.Lighting.name] = true;
 
   // *******************  NORMAL BOX SHAPE ***********************************
 
+  /**
+   * 
+   * @param {Number} x1 
+   * @param {Number} y1 
+   * @param {Number} x2 
+   * @param {Number} y2 
+   * @param {String} color1 
+   */
   Bitmap.prototype.FillRect = function (x1, y1, x2, y2, color1) {
     x1 = x1 + lightMaskPadding;
     //x2=x2+lightMaskPadding;
@@ -1565,6 +1634,13 @@ Imported[Community.Lighting.name] = true;
 
   // *******************  CIRCLE/OVAL SHAPE ***********************************
   // from http://scienceprimer.com/draw-oval-html5-canvas
+  /**
+   * @param {Number} centerX 
+   * @param {Number} centerY 
+   * @param {Number} xradius 
+   * @param {Number} yradius 
+   * @param {String} color1 
+   */
   Bitmap.prototype.FillCircle = function (centerX, centerY, xradius, yradius, color1) {
     centerX = centerX + lightMaskPadding;
 
@@ -1594,6 +1670,18 @@ Imported[Community.Lighting.name] = true;
   // *******************  NORMAL LIGHT SHAPE ***********************************
   // Fill gradient circle
 
+  /**
+   * 
+   * @param {Number} x1 
+   * @param {Number} y1 
+   * @param {Number}  r1
+   * @param {Number} r2
+   * @param {String} color1 
+   * @param {String} color2 
+   * @param {Boolean} flicker 
+   * @param {Number} brightness 
+   * @param {Number} direction 
+   */
   Bitmap.prototype.radialgradientFillRect = function (x1, y1, r1, r2, color1, color2, flicker, brightness, direction) {
 
     let isValidColor = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)/i.test(color1);
@@ -1663,9 +1751,12 @@ Imported[Community.Lighting.name] = true;
       if (brightness) {
         grad.addColorStop(0, '#FFFFFF');
       }
+
       grad.addColorStop(brightness, color1);
 
+
       grad.addColorStop(1, color2);
+
 
       context.save();
       context.fillStyle = grad;
@@ -1727,6 +1818,18 @@ Imported[Community.Lighting.name] = true;
   // ********************************** FLASHLIGHT *************************************
   // Fill gradient Cone
 
+  /**
+   * 
+   * @param {Number} x1 
+   * @param {Number} y1
+   * @param {Number} r1
+   * @param {Number} r2
+   * @param {String} color1 
+   * @param {String} color2 
+   * @param {Number} direction 
+   * @param {Number} flashlength 
+   * @param {Number} flashwidth 
+   */
   Bitmap.prototype.radialgradientFillRect2 = function (x1, y1, r1, r2, color1, color2, direction, flashlength, flashwidth) {
     x1 = x1 + lightMaskPadding;
 
@@ -1793,6 +1896,11 @@ Imported[Community.Lighting.name] = true;
   };
 
 
+  /**
+   * 
+   * @param {String} hex 
+   * @returns {{r:number,g:number,b:number}}
+   */
   function hexToRgb(hex) {
     let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
     result = result ? {
@@ -2084,22 +2192,25 @@ Imported[Community.Lighting.name] = true;
           }
         }
         else if (mapnote.match(/^RegionLight/i)) {
-          let data = mapnote.split(" ");
-          let tileId = Number(data[1]);
-          let isOff = data[2].toLowerCase() == "off";
-          let color = data[3];
+          let data = mapnote.split(/\s+/);
+          data.splice(0, 1);
+          data.map(x => x.trim());
           tiletype = 4;
-          $$.tile([tileId, isOff ? "off" : "on", color]);
+          $$.tile(data);
         }
         else if (mapnote.match(/^tint/i)) {
+
+          let data = mapnote.split(/\s+/);
+          data.splice(0, 1);
           console.log(mapnote);
-          let data = mapnote.split(" ");
-          let operation = data[1];
-          let color = data[2];
-          //let isOn = data[2].toLowerCase() == "off";
-          //let color = data[3];
-          //tiletype = 4;
-          $$.tint([operation, color]);
+          data.map(x => x.trim());
+          $$.tint(data);
+        }
+        else if (mapnote.match(/^defaultbrightness/i)) {
+          let brightness = note.match(/\d+/);
+          if (brightness) {
+            $$.defaultBrightness = Math.max(0, Math.min(Number(brightness[0], 100))) / 100;
+          }
         }
       }
     })
@@ -2124,7 +2235,7 @@ Imported[Community.Lighting.name] = true;
       let tile_on = tileargs[2];
       let tile_color = tileargs[3];
       let tile_radius = 0;
-      let brightness = 0.0;
+      let brightness = $$.defaultBrightness || 0;
       let shape = 0;
       let xo1 = 0.0;
       let yo1 = 0.0;
@@ -2510,7 +2621,7 @@ Imported[Community.Lighting.name] = true;
     }
 
     let tileradius = 100;
-    let tilebrightness = 0.0;
+    let tilebrightness = $$.defaultBrightness || 0;
     let shape = 0;
     let x1 = 0;
     let y1 = 0;
@@ -2569,18 +2680,21 @@ Imported[Community.Lighting.name] = true;
     $$.ReloadTagArea();
   };
 
+  /**
+   * 
+   * @param {String[]} args 
+   */
   $$.tint = function (args) {
-    console.log(JSON.stringify(args));
-    if (args[0] === 'set') {
+    if (args[0].trim().toLowerCase() === 'set') {
 
       $gameVariables.SetTint(args[1]);
       $gameVariables.SetTintTarget(args[1]);
     }
-    if (args[0] === 'fade') {
+    if (args[0].trim().toLowerCase() === 'fade') {
       $gameVariables.SetTintTarget(args[1]);
       $gameVariables.SetTintSpeed(args[2]);
     }
-    else if (args[0] === "daylight") {
+    else if (args[0].trim().toLowerCase() === "daylight") {
       let currentColor = $gameVariables.GetTintByTime();
       $gameVariables.SetTint(currentColor);
       $gameVariables.SetTintTarget(currentColor);
