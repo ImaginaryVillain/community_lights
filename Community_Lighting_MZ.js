@@ -30,6 +30,12 @@ Imported[Community.Lighting.name] = true;
 * @type boolean
 * @default false
 *
+* @param Shift lights with events
+* @parent ---General Settings---
+* @desc Should a light be shifted 6 pixel up if its associated event does?
+* @type boolean
+* @default false
+*
 * @param Reset Lights
 * @parent ---General Settings---
 * @desc Resets the light switches on map change
@@ -794,6 +800,7 @@ Imported[Community.Lighting.name] = true;
 	let parameters = $$.parameters;
 	let lightMaskPadding = +parameters["Lightmask Padding"] || 0;
 	let light_event_required = eval(parameters["Light event required"]) || false;
+	let shift_lights_with_events = eval(String(parameters['Shift lights with events'])) || false;
 	let player_radius = Number(parameters['Player radius']);
 	let reset_each_map = eval(String(parameters['Reset Lights'])) || false;
 	let noteTagKey = parameters["Note Tag Key"] !== "" ? parameters["Note Tag Key"] : false;
@@ -1878,6 +1885,9 @@ Imported[Community.Lighting.name] = true;
 						
 						let lx1 = $gameMap.events()[event_stacknumber[i]].screenX();
 						let ly1 = $gameMap.events()[event_stacknumber[i]].screenY() - 24;
+						if (!shift_lights_with_events) {
+							lyl += $gameMap.events()[event_stacknumber[i]].shiftY();
+						}
 						
 						// apply offsets
 						lx1 += +xoffset;
