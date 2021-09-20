@@ -23,6 +23,12 @@ Imported[Community.Lighting.name] = true;
 * @desc Adds an option to disable this plugin's lighting effects to the options menu (leave blank to omit)
 * @default Lighting Effects
 *
+* @param Use smoother lights
+* @parent ---General Settings---
+* @desc Instead of looking like spotlights; the lights get blended further. Does not work on old browsers.
+* @type boolean
+* @default false
+*
 * @param Light event required
 * @parent ---General Settings---
 * @desc At least one light event on the current is needed to make the plugin active (as in original TerraxLighting)
@@ -175,7 +181,7 @@ Imported[Community.Lighting.name] = true;
 * 1. This plugin features an optional note tag key that lets this plugin's
 * note tags work alongside those of other plugins--a feature not found in the
 * original Terrax Lighting plugin. If a note tag key is set in the plugin
-* paramters, all of these commands must be enclosed in a note tag with that
+* parameters, all of these commands must be enclosed in a note tag with that
 * particular key in in order to be recognized.
 *
 * This note tag key applies to anything this plugin would have placed inside
@@ -263,15 +269,15 @@ Imported[Community.Lighting.name] = true;
 * Flashlight [bl] [bw] [c] [onoff] [sdir] [x] [y] [id]
 * - Sets the light as a flashlight with beam length (bl) beam width (bw) color (c),
 *      0|1 (onoff), and 1=up, 2=right, 3=down, 4=left for static direction (sdir)
-* - bl:       Beam length:  Any number, optionally preceeded by "L", so 8, L8
-* - bw:       Beam width:  Any number, optionally preceeded by "W", so 12, W12
+* - bl:       Beam length:  Any number, optionally preceded by "L", so 8, L8
+* - bw:       Beam width:  Any number, optionally preceded by "W", so 12, W12
 * - cycle     Allows any number of color + duration pairs to follow that will be
 *             cycled through before repeating from the beginning:
 *             <cl: Flashlight l8 w12 cycle #f00 15 #ff0 15 #0f0 15 on someId d3>
 *             There's no limit to how many colors can cycled. [optional]
 * - onoff:    Initial state:  0, 1, off, on
 * - sdir:     Forced direction (optional): 0:auto, 1:up, 2:right, 3:down, 4:left
-*             Can be preceeded by "D", so D4.  If omitted, defaults to 0
+*             Can be preceded by "D", so D4.  If omitted, defaults to 0
 * - x         x[offset] Work the same as regular light [optional]
 * - y         y[offset] [optional]
 * - day       Sets the event's light to only show during the day [optional]
@@ -423,7 +429,7 @@ Imported[Community.Lighting.name] = true;
 *
 * If the 'Kill Switch Auto' parameter has been set to true, any event with
 * a (non) active conditional light have their killswitch locked to ON(OFF).
-* You can use this difference to give alternate apparences to these events.
+* You can use this difference to give alternate appearances to these events.
 * For example, a conditional light event can have a page where it shows a
 * burning candle, and second page (active only when the kill switch is ON)
 * who shows an unlit candle
@@ -493,6 +499,7 @@ Imported[Community.Lighting.name] = true;
 
   let parameters = $$.parameters;
   let lightMaskPadding = +parameters["Lightmask Padding"] || 0;
+  let useSmootherLights = eval(String(parameters['Use smoother lights'])) || false;
   let light_event_required = eval(parameters["Light event required"]) || false;
   let player_radius = Number(parameters['Player radius']);
   let reset_each_map = eval(String(parameters['Reset Lights'])) || false;
@@ -643,7 +650,7 @@ Imported[Community.Lighting.name] = true;
   };
   Game_Event.prototype.initLightData = function () {
     this._lastLightPage = this._pageIndex;
-    let tagData = this.getCLTag().toLowerCase().split(" ");
+    let tagData = this.getCLTag().toLowerCase().split(/\s+/);
     let needsCycleDuration = false;
     this._clType = tagData.shift();
     if (this._clType === "light" || this._clType === "fire") {
@@ -660,7 +667,9 @@ Imported[Community.Lighting.name] = true;
           needsCycleDuration = false;
         }
         else if (x[0] === "#" && this._clColor === undefined) this._clColor = $$.validateColor(x);
-        else if (x[0] === "b" && this._clBrightness === undefined) this._clBrightness = Number(+(x.substr(1, x.length)) / 100).clamp(0, 1);
+        else if (x[0] === "b" && this._clBrightness === undefined) {
+          this._clBrightness = Number(+(x.substr(1, x.length)) / 100).clamp(0, 1);
+        }
         else if ((x === "night" || x === "day") && this._clSwitch === undefined) this._clSwitch = x;
         else if (x[0] === "d" && this._clDirection === undefined) this._clDirection = +(x.substr(1, x.length));
         else if (x[0] === "x" && this._clXOffset === undefined) this._clXOffset = +(x.substr(1, x.length));
@@ -787,12 +796,30 @@ Imported[Community.Lighting.name] = true;
     }
   };
   let _Game_Interpreter_pluginCommand = Game_Interpreter.prototype.pluginCommand;
+
+  /**
+   *
+   * @param {String} command
+   * @param {String[]} args
+   */
   Game_Interpreter.prototype.pluginCommand = function (command, args) {
     _Game_Interpreter_pluginCommand.call(this, command, args);
     if (typeof command != 'undefined') {
       this.communityLighting_Commands(command, args);
     }
   };
+
+  let _Game_Player_clearTransferInfo = Game_Player.prototype.clearTransferInfo;
+
+  Game_Player.prototype.clearTransferInfo = function () {
+    _Game_Player_clearTransferInfo.call(this);
+    $$.defaultBrightness = 0;
+  };
+  /**
+   *
+   * @param {String} command
+   * @param {String[]} args
+   */
   Game_Interpreter.prototype.communityLighting_Commands = function (command, args) {
     command = command.toLowerCase();
 
@@ -807,24 +834,51 @@ Imported[Community.Lighting.name] = true;
     }
   };
 
+  /**
+   *
+   * @param {String} command
+   * @param {String[]} args
+   */
   Game_Interpreter.prototype.tileType = function (command, args) {
     const cmdArr = ['', 'tileblock', 'regionblock', 'tilelight', 'regionlight', 'tilefire', 'regionfire', 'tileglow', 'regionglow'];
     tiletype = cmdArr.indexOf(command);
-    if (tiletype > 0) $$.tile(args);
+    if (tiletype > 0) {
+      $$.tile(args);
+    }
   };
 
+  /**
+   *
+   * @param {String} command
+   * @param {String[]} args
+   */
   Game_Interpreter.prototype.tint = function (command, args) {
     $$.tint(args);
   };
 
+  /**
+   *
+   * @param {String} command
+   * @param {String[]} args
+   */
   Game_Interpreter.prototype.dayNight = function (command, args) {
     $$.DayNight(args);
   };
 
+  /**
+     *
+     * @param {String} command
+     * @param {String[]} args
+     */
   Game_Interpreter.prototype.flashLight = function (command, args) {
     $$.flashlight(args);
   };
 
+  /**
+   *
+   * @param {String} command
+   * @param {String[]} args
+   */
   Game_Interpreter.prototype.setFire = function (command, args) {
     flickerradiusshift = args[0];
     flickercolorshift = args[1];
@@ -832,6 +886,11 @@ Imported[Community.Lighting.name] = true;
     $gameVariables.SetFireColorshift(flickercolorshift);
   };
 
+  /**
+   *
+   * @param {String} command
+   * @param {String[]} args
+   */
   Game_Interpreter.prototype.fire = function (command, args) {
     if (args.contains("radius") || args.contains("radiusgrow")) $gameVariables.SetFire(true);
     if (args[0] === "deactivate") {
@@ -842,6 +901,11 @@ Imported[Community.Lighting.name] = true;
     $$.fireLight(args);
   };
 
+  /**
+   * 
+   * @param {String} command 
+   * @param {String[]} args 
+   */
   Game_Interpreter.prototype.light = function (command, args) {
     if (args.contains("radius") || args.contains("radiusgrow")) $gameVariables.SetFire(false);
     if (args[0] === "deactivate") {
@@ -868,6 +932,11 @@ Imported[Community.Lighting.name] = true;
     }
   };
 
+  /**
+   * 
+   * @param {String} command 
+   * @param {String[]} args 
+   */
   Game_Interpreter.prototype.reload = function (command, args) {
     if (args[0] === "events") {
       $$.ReloadMapEvents();
@@ -896,7 +965,7 @@ Imported[Community.Lighting.name] = true;
 
   Game_Interpreter.prototype.determineBattleTint = function (tintColor) {
     if (!tintColor || tintColor.length < 7) {
-      return '#666666' // Not an hex color strintg
+      return '#666666' // Not an hex color string
     }
     var redhex = tintColor.substring(1, 3);
     var greenhex = tintColor.substring(3, 5);
@@ -943,6 +1012,13 @@ Imported[Community.Lighting.name] = true;
     this._maskBitmap = new Bitmap(maxX + lightMaskPadding, maxY);   // one big bitmap to fill the intire screen with black
     let canvas = this._maskBitmap.canvas;             // a bit larger then setting to take care of screenshakes
   };
+
+  let _Game_Map_prototype_setupEvents = Game_Map.prototype.setupEvents;
+
+  Game_Map.prototype.setupEvents = function () {
+    $$.ReloadMapEvents();
+    _Game_Map_prototype_setupEvents.call(this);
+  }
 
   /**
    * @method _updateAllSprites
@@ -1078,22 +1154,22 @@ Imported[Community.Lighting.name] = true;
       y1 = y1 - flashlightoffset;
       if (iplayer_radius < 100) {
         // dim the light a bit at lower lightradius for a less focused effect.
-        let r = hexToRgb(playercolor).r;
-        let g = hexToRgb(playercolor).g;
-        let b = hexToRgb(playercolor).b;
-        g = g - 50;
-        r = r - 50;
-        b = b - 50;
-        if (g < 0) {
-          g = 0;
+        let red = hexToRgb(playercolor).r;
+        let green = hexToRgb(playercolor).g;
+        let blue = hexToRgb(playercolor).b;
+        green = green - 50;
+        red = red - 50;
+        blue = blue - 50;
+        if (green < 0) {
+          green = 0;
         }
-        if (r < 0) {
-          r = 0;
+        if (red < 0) {
+          red = 0;
         }
-        if (b < 0) {
-          b = 0;
+        if (blue < 0) {
+          blue = 0;
         }
-        let newcolor = "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+        let newcolor = "#" + ((1 << 24) + (red << 16) + (green << 8) + blue).toString(16).slice(1);
 
         this._maskBitmap.radialgradientFillRect(x1, y1, 0, iplayer_radius, newcolor, '#000000', playerflicker, playerbrightness);
       } else {
@@ -1552,6 +1628,14 @@ Imported[Community.Lighting.name] = true;
 
   // *******************  NORMAL BOX SHAPE ***********************************
 
+  /**
+   * 
+   * @param {Number} x1 
+   * @param {Number} y1 
+   * @param {Number} x2 
+   * @param {Number} y2 
+   * @param {String} color1 
+   */
   Bitmap.prototype.FillRect = function (x1, y1, x2, y2, color1) {
     x1 = x1 + lightMaskPadding;
     //x2=x2+lightMaskPadding;
@@ -1565,6 +1649,13 @@ Imported[Community.Lighting.name] = true;
 
   // *******************  CIRCLE/OVAL SHAPE ***********************************
   // from http://scienceprimer.com/draw-oval-html5-canvas
+  /**
+   * @param {Number} centerX 
+   * @param {Number} centerY 
+   * @param {Number} xradius 
+   * @param {Number} yradius 
+   * @param {String} color1 
+   */
   Bitmap.prototype.FillCircle = function (centerX, centerY, xradius, yradius, color1) {
     centerX = centerX + lightMaskPadding;
 
@@ -1594,6 +1685,18 @@ Imported[Community.Lighting.name] = true;
   // *******************  NORMAL LIGHT SHAPE ***********************************
   // Fill gradient circle
 
+  /**
+   * 
+   * @param {Number} x1 
+   * @param {Number} y1 
+   * @param {Number}  r1
+   * @param {Number} r2
+   * @param {String} color1 
+   * @param {String} color2 
+   * @param {Boolean} flicker 
+   * @param {Number} brightness 
+   * @param {Number} direction 
+   */
   Bitmap.prototype.radialgradientFillRect = function (x1, y1, r1, r2, color1, color2, flicker, brightness, direction) {
 
     let isValidColor = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)/i.test(color1);
@@ -1659,13 +1762,23 @@ Imported[Community.Lighting.name] = true;
         if (r2 < 0) r2 = 0;
       }
 
-      grad = context.createRadialGradient(x1, y1, r1, x1, y1, r2);
-      if (brightness) {
-        grad.addColorStop(0, '#FFFFFF');
+      if (useSmootherLights) {
+        context.filter = "blur(16px)";
       }
+
+      grad = context.createRadialGradient(x1, y1, r1, x1, y1, r2);
+
+      if (brightness) {
+        var alphaNum = brightness * 100 * 2.55;
+        grad.addColorStop(0, '#FFFFFF' + alphaNum.toString(16));
+      }
+
+
       grad.addColorStop(brightness, color1);
 
+
       grad.addColorStop(1, color2);
+
 
       context.save();
       context.fillStyle = grad;
@@ -1727,6 +1840,18 @@ Imported[Community.Lighting.name] = true;
   // ********************************** FLASHLIGHT *************************************
   // Fill gradient Cone
 
+  /**
+   * 
+   * @param {Number} x1 
+   * @param {Number} y1
+   * @param {Number} r1
+   * @param {Number} r2
+   * @param {String} color1 
+   * @param {String} color2 
+   * @param {Number} direction 
+   * @param {Number} flashlength 
+   * @param {Number} flashwidth 
+   */
   Bitmap.prototype.radialgradientFillRect2 = function (x1, y1, r1, r2, color1, color2, direction, flashlength, flashwidth) {
     x1 = x1 + lightMaskPadding;
 
@@ -1749,6 +1874,10 @@ Imported[Community.Lighting.name] = true;
     r1 = 1;
     r2 = 40;
     grad = context.createRadialGradient(x1, y1, r1, x1, y1, r2);
+    if (useSmootherLights) {
+      context.filter = "blur(16px)";
+    }
+
     grad.addColorStop(0, '#999999');
     grad.addColorStop(1, color2);
 
@@ -1793,6 +1922,11 @@ Imported[Community.Lighting.name] = true;
   };
 
 
+  /**
+   * 
+   * @param {String} hex 
+   * @returns {{r:number,g:number,b:number,a:number}}
+   */
   function hexToRgb(hex) {
     let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
     result = result ? {
@@ -1957,7 +2091,7 @@ Imported[Community.Lighting.name] = true;
 
     var sprite = new Sprite(this.viewport);
     sprite.bitmap = selectedbitmap;
-    sprite.opacity = 255;
+    //sprite.opacity = 255;
     sprite.blendMode = 2;
     sprite.x = x1;
     sprite.y = y1;
@@ -1966,7 +2100,7 @@ Imported[Community.Lighting.name] = true;
     sprite.rotation = 0;
     sprite.ax = 0;
     sprite.ay = 0
-    sprite.opacity = 255;
+    //sprite.opacity = 255;
   };
 
   /**
@@ -2074,7 +2208,7 @@ Imported[Community.Lighting.name] = true;
 
       if (mapnote) {
         mapnote = mapnote.toLowerCase().trim();
-        if (mapnote.match(/^daynight/i)) {
+        if ((/^daynight/i).test(mapnote)) {
           $$.daynightset = true;
           let dnspeed = note.match(/\d+/);
           if (dnspeed) {
@@ -2083,23 +2217,30 @@ Imported[Community.Lighting.name] = true;
             $gameVariables.SetDaynightSpeed(daynightspeed);
           }
         }
-        else if (mapnote.match(/^RegionLight/i)) {
-          let data = mapnote.split(" ");
-          let tileId = Number(data[1]);
-          let isOff = data[2].toLowerCase() == "off";
-          let color = data[3];
-          tiletype = 4;
-          $$.tile([tileId, isOff ? "off" : "on", color]);
+        else if ((/^RegionLight/i).test(mapnote)) {
+          let data = mapnote.split(/\s+/);
+          data.splice(0, 1);
+          data.map(x => x.trim());
+          $gameMap._interpreter.tileType("regionlight", data);
         }
-        else if (mapnote.match(/^tint/i)) {
-          console.log(mapnote);
-          let data = mapnote.split(" ");
-          let operation = data[1];
-          let color = data[2];
-          //let isOn = data[2].toLowerCase() == "off";
-          //let color = data[3];
-          //tiletype = 4;
-          $$.tint([operation, color]);
+        else if ((/^RegionGlow/i).test(mapnote)) {
+          let data = mapnote.split(/\s+/);
+          data.splice(0, 1);
+          data.map(x => x.trim());
+          $gameMap._interpreter.tileType("regionglow", data);
+        }
+        else if ((/^tint/i).test(mapnote)) {
+
+          let data = mapnote.split(/\s+/);
+          data.splice(0, 1);
+          data.map(x => x.trim());
+          $$.tint(data);
+        }
+        else if ((/^defaultbrightness/i).test(mapnote)) {
+          let brightness = note.match(/\d+/);
+          if (brightness) {
+            $$.defaultBrightness = Math.max(0, Math.min(Number(brightness[0], 100))) / 100;
+          }
         }
       }
     })
@@ -2124,7 +2265,7 @@ Imported[Community.Lighting.name] = true;
       let tile_on = tileargs[2];
       let tile_color = tileargs[3];
       let tile_radius = 0;
-      let brightness = 0.0;
+      let brightness = $$.defaultBrightness || 0;
       let shape = 0;
       let xo1 = 0.0;
       let yo1 = 0.0;
@@ -2213,6 +2354,10 @@ Imported[Community.Lighting.name] = true;
     $gameVariables.SetBlockTags(tile_blocks);
   };
 
+  /**
+   * 
+   * @param {String[]} args 
+   */
   $$.flashlight = function (args) {
     if (args[0] == 'on') {
 
@@ -2289,6 +2434,10 @@ Imported[Community.Lighting.name] = true;
     }
   };
 
+  /**
+   * 
+   * @param {String[]} args 
+   */
   $$.effectOnEvent = function (args) {
     x1 = 0;
     y1 = 0;
@@ -2329,6 +2478,10 @@ Imported[Community.Lighting.name] = true;
     }
   };
 
+  /**
+   * 
+   * @param {String[]} args 
+   */
   $$.fireLight = function (args) {
     //******************* Light radius 100 #FFFFFF ************************
     if (args[0] == 'radius') {
@@ -2497,11 +2650,16 @@ Imported[Community.Lighting.name] = true;
     }
   };
 
+  /**
+   * 
+   * @param {String[]} args 
+   */
   $$.tile = function (args) {
     let tilearray = $gameVariables.GetTileArray();
     let tilenumber = Number(eval(args[0]));
 
     let tile_on = String(args[1]).toLowerCase() === "on" ? 1 : 0;
+
     let tilecolor = args[2];
     let isValidColor1 = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)/i.test(tilecolor);
     if (!isValidColor1) {
@@ -2510,7 +2668,7 @@ Imported[Community.Lighting.name] = true;
     }
 
     let tileradius = 100;
-    let tilebrightness = 0.0;
+    let tilebrightness = $$.defaultBrightness || 0;
     let shape = 0;
     let x1 = 0;
     let y1 = 0;
@@ -2569,18 +2727,21 @@ Imported[Community.Lighting.name] = true;
     $$.ReloadTagArea();
   };
 
+  /**
+   * 
+   * @param {String[]} args 
+   */
   $$.tint = function (args) {
-    console.log(JSON.stringify(args));
-    if (args[0] === 'set') {
+    if (args[0].trim().toLowerCase() === 'set') {
 
       $gameVariables.SetTint(args[1]);
       $gameVariables.SetTintTarget(args[1]);
     }
-    if (args[0] === 'fade') {
+    if (args[0].trim().toLowerCase() === 'fade') {
       $gameVariables.SetTintTarget(args[1]);
       $gameVariables.SetTintSpeed(args[2]);
     }
-    else if (args[0] === "daylight") {
+    else if (args[0].trim().toLowerCase() === "daylight") {
       let currentColor = $gameVariables.GetTintByTime();
       $gameVariables.SetTint(currentColor);
       $gameVariables.SetTintTarget(currentColor);
@@ -2783,6 +2944,10 @@ Game_Variables.prototype.GetFlashlightWidth = function () {
   return this._Community_Lighting_FlashlightWidth || 12;
 };
 
+/**
+ * 
+ * @param {String} value 
+ */
 Game_Variables.prototype.SetPlayerColor = function (value) {
   this._Community_Lighting_PlayerColor = value;
 };
@@ -2931,6 +3096,14 @@ function Window_TimeOfDay() {
 };
 Window_TimeOfDay.prototype = Object.create(Window_Base.prototype);
 Window_TimeOfDay.prototype.constructor = Window_TimeOfDay;
+
+/**
+ * 
+ * @param {Number} x 
+ * @param {Number} y 
+ * @param {Number} width
+ * @param {Number} height
+ */
 Window_TimeOfDay.prototype.initialize = function (x, y, width, height) {
   width = 150;
   height = 65;
