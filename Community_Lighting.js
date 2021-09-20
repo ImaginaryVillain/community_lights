@@ -201,7 +201,7 @@ Imported[Community.Lighting.name] = true;
 *
 * Using a note tag key is recommended since it allows for other things
 * (plugins, or even your own personal notes) to make use of the note box
-* without breaking things.  Omitting the key is intended primarily as legacy
+* without breaking things. Omitting the key is intended primarily as legacy
 * support, allowing this plugin to be used with older projects that have
 * been upgraded from Terrax Lighting so you don't have to go back and
 * change a bunch of event and map notes.
@@ -493,7 +493,6 @@ Imported[Community.Lighting.name] = true;
   let event_moving = [];
   let event_stacknumber = [];
   let event_eventcount = 0;
-  let tiletype = 0;
   let tile_lights = [];
   let tile_blocks = [];
 
@@ -841,10 +840,10 @@ Imported[Community.Lighting.name] = true;
    */
   Game_Interpreter.prototype.tileType = function (command, args) {
     const cmdArr = ['', 'tileblock', 'regionblock', 'tilelight', 'regionlight', 'tilefire', 'regionfire', 'tileglow', 'regionglow'];
-    tiletype = cmdArr.indexOf(command);
-    if (tiletype > 0) {
-      $$.tile(args);
-    }
+	const tiletype = cmdArr.indexOf(command);
+	if (tiletype > 0) {
+		$$.tile(tiletype, args);
+	}
   };
 
   /**
@@ -1347,6 +1346,7 @@ Imported[Community.Lighting.name] = true;
     tile_lights = $gameVariables.GetLightTags();
     tile_blocks = $gameVariables.GetBlockTags();
 
+	// Tile lights
     for (let i = 0, len = tile_lights.length; i < len; i++) {
       let tilestr = tile_lights[i];
 
@@ -1411,12 +1411,9 @@ Imported[Community.Lighting.name] = true;
         let newtile_color = "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
         this._maskBitmap.radialgradientFillRect(x1, y1, 0, tile_radius, newtile_color, '#000000', false, brightness);
       }
-
-
     }
 
-
-
+	// Tile blocks
     ctx.globalCompositeOperation = "multiply";
     for (let i = 0, len = tile_blocks.length; i < len; i++) {
       let tilestr = tile_blocks[i];
@@ -2260,9 +2257,9 @@ Imported[Community.Lighting.name] = true;
 
       let tilestr = tilearray[i];
       let tileargs = tilestr.split(";");
-      let tile_type = tileargs[0];
-      let tile_number = tileargs[1];
-      let tile_on = tileargs[2];
+      let tile_type = Number(tileargs[0]);
+	  let tile_number = Number(tileargs[1]);
+	  let tile_on = Number(tileargs[2]);
       let tile_color = tileargs[3];
       let tile_radius = 0;
       let brightness = $$.defaultBrightness || 0;
@@ -2272,55 +2269,56 @@ Imported[Community.Lighting.name] = true;
       let xo2 = 0.0;
       let yo2 = 0.0;
 
-      if (tile_type == 1 || tile_type == 2) {
+      if (tile_type === 1 || tile_type === 2) {
 
         let b_arg = tileargs[4];
-        if (typeof b_arg != 'undefined') {
-          shape = b_arg;
+        if (typeof b_arg !== 'undefined') {
+          shape = Number(b_arg);
         }
         b_arg = tileargs[5];
-        if (typeof b_arg != 'undefined') {
-          xo1 = b_arg;
+        if (typeof b_arg !== 'undefined') {
+          xo1 = Number(b_arg);
         }
         b_arg = tileargs[6];
-        if (typeof b_arg != 'undefined') {
-          yo1 = b_arg;
+        if (typeof b_arg !== 'undefined') {
+          yo1 = Number(b_arg);
         }
         b_arg = tileargs[7];
-        if (typeof b_arg != 'undefined') {
-          xo2 = b_arg;
+        if (typeof b_arg !== 'undefined') {
+          xo2 = Number(b_arg);
         }
         b_arg = tileargs[8];
-        if (typeof b_arg != 'undefined') {
-          yo2 = b_arg;
+        if (typeof b_arg !== 'undefined') {
+          yo2 = Number(b_arg);
         }
 
 
       } else {
-        tile_radius = tileargs[4];
+        tile_radius = Number(tileargs[4]);
         let b_arg = tileargs[5];
         if (typeof b_arg != 'undefined') {
           let key = b_arg.substring(0, 1);
-          if (key == 'b' || key == 'B') {
+          if (key === 'b' || key === 'B') {
             brightness = Number(b_arg.substring(1)) / 100;
           }
         }
       }
 
-      if (tile_on == 1) {
+      if (tile_on === 1) {
 
         if (tile_type >= 3) {
           // *************************** TILE TAG LIGHTSOURCES *********
           for (let y = 0, mapHeight = $dataMap.height; y < mapHeight; y++) {
             for (let x = 0, mapWidth = $dataMap.width; x < mapWidth; x++) {
               let tag = 0;
-              if (tile_type == 3 || tile_type == 5 || tile_type == 7) {
+              if (tile_type === 3 || tile_type === 5 || tile_type === 7) { // tile light
                 tag = $gameMap.terrainTag(x, y);
-              }          // tile light
-              if (tile_type == 4 || tile_type == 6 || tile_type == 8) {
-                tag = $dataMap.data[(5 * $dataMap.height + y) * $dataMap.width + x];
-              }  // region light
-              if (tag == tile_number) {
+              }
+              if (tile_type === 4 || tile_type === 6 || tile_type === 8) { // region light
+				//$dataMap.data[(5 * $dataMap.height + y) * $dataMap.width + x]
+				tag = $gameMap.regionId(x, y); //Technically the same
+              }
+              if (tag === tile_number) {
                 let tilecode = x + ";" + y + ";" + tile_type + ";" + tile_radius + ";" + tile_color + ";" + brightness;
                 tile_lights.push(tilecode);
               }
@@ -2334,13 +2332,14 @@ Imported[Community.Lighting.name] = true;
           for (let y = 0, mapHeight = $dataMap.height; y < mapHeight; y++) {
             for (let x = 0, mapWidth = $dataMap.width; x < mapWidth; x++) {
               let tag = 0;
-              if (tile_type == 1) {
+              if (tile_type === 1) { // tile block
                 tag = $gameMap.terrainTag(x, y);
-              }                  // tile block
-              if (tile_type == 2) {
-                tag = $dataMap.data[(5 * $dataMap.height + y) * $dataMap.width + x];
-              }  // region block
-              if (tag == tile_number) {
+              }
+              if (tile_type === 2) { // region block
+			    //$dataMap.data[(5 * $dataMap.height + y) * $dataMap.width + x]
+                tag = $gameMap.regionId(x, y); //Technically the same
+              }
+              if (tag === tile_number) {
                 let tilecode = x + ";" + y + ";" + shape + ";" + xo1 + ";" + yo1 + ";" + xo2 + ";" + yo2 + ";" + tile_color;
                 tile_blocks.push(tilecode);
               }
@@ -2654,7 +2653,7 @@ Imported[Community.Lighting.name] = true;
    * 
    * @param {String[]} args 
    */
-  $$.tile = function (args) {
+  $$.tile = function (tiletype, args) {
     let tilearray = $gameVariables.GetTileArray();
     let tilenumber = Number(eval(args[0]));
 
