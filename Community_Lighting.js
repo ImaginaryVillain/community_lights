@@ -25,13 +25,19 @@ Imported[Community.Lighting.name] = true;
 *
 * @param Use smoother lights
 * @parent ---General Settings---
-* @desc Instead of looking like spotlights; the lights get blended further. Does not work on old browsers.
+* @desc Instead of looking like spotlights, the lights get blended further. Does not work on old browsers.
 * @type boolean
 * @default false
 *
 * @param Light event required
 * @parent ---General Settings---
 * @desc At least one light event on the current is needed to make the plugin active (as in original TerraxLighting)
+* @type boolean
+* @default false
+*
+* @param Shift lights with events
+* @parent ---General Settings---
+* @desc Should a light be shifted 6 pixel up if its associated event does?
 * @type boolean
 * @default false
 *
@@ -500,6 +506,7 @@ Imported[Community.Lighting.name] = true;
   let lightMaskPadding = +parameters["Lightmask Padding"] || 0;
   let useSmootherLights = eval(String(parameters['Use smoother lights'])) || false;
   let light_event_required = eval(parameters["Light event required"]) || false;
+  let shift_lights_with_events = eval(String(parameters['Shift lights with events'])) || false;
   let player_radius = Number(parameters['Player radius']);
   let reset_each_map = eval(String(parameters['Reset Lights'])) || false;
   let noteTagKey = parameters["Note Tag Key"] !== "" ? parameters["Note Tag Key"] : false;
@@ -1309,6 +1316,9 @@ Imported[Community.Lighting.name] = true;
 
             let lx1 = $gameMap.events()[event_stacknumber[i]].screenX();
             let ly1 = $gameMap.events()[event_stacknumber[i]].screenY() - 24;
+			if (!shift_lights_with_events) {
+				lyl += $gameMap.events()[event_stacknumber[i]].shiftY();
+			}
 
             // apply offsets
             lx1 += +xoffset;
