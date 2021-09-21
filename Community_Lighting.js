@@ -1921,7 +1921,18 @@ Imported[Community.Lighting.name] = true;
 
 
       grad = context.createRadialGradient(x1, y1, r1, x1, y1, r2);
-      grad.addColorStop(0, color1);
+      if (useSmootherLights) {
+        for (let i = 0; i < 1; i += 0.1) {
+          let data = hexToRgb(color1);
+          let newRed = data.r - (i * 100 * 2.55);
+          let newGreen = data.g - (i * 100 * 2.55);
+          let newBlue = data.b - (i * 100 * 2.55);
+          grad.addColorStop(i, rgba(newRed, newGreen, newBlue, 1 - i));
+        }
+      }
+      else {
+        grad.addColorStop(0, color1);
+      }
       grad.addColorStop(1, color2);
 
       context.fillStyle = grad;
