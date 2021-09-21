@@ -560,7 +560,7 @@ Imported[Community.Lighting.name] = true;
   //let averagetime = [];
   //let averagetimecount = 0;
   let notetag_reg = RegExp("<" + noteTagKey + ":[ ]*([^>]+)>", "i");
-
+  let radialColor2 = useSmootherLights == true ? "#00000000" : "#000000";
   $$.getFirstComment = function () {
     let result = null;
     let page = this.page();
@@ -1155,7 +1155,7 @@ Imported[Community.Lighting.name] = true;
 
     if (iplayer_radius > 0) {
       if (playerflashlight == true) {
-        this._maskBitmap.radialgradientFillRect2(x1, y1, lightMaskPadding, iplayer_radius, playercolor, '#000000', pd, flashlightlength, flashlightwidth);
+        this._maskBitmap.radialgradientFillRect2(x1, y1, lightMaskPadding, iplayer_radius, playercolor, radialColor2, pd, flashlightlength, flashlightwidth);
       }
       y1 = y1 - flashlightoffset;
       if (iplayer_radius < 100) {
@@ -1177,9 +1177,10 @@ Imported[Community.Lighting.name] = true;
         }
         let newcolor = "#" + ((1 << 24) + (red << 16) + (green << 8) + blue).toString(16).slice(1);
 
-        this._maskBitmap.radialgradientFillRect(x1, y1, 0, iplayer_radius, newcolor, '#000000', playerflicker, playerbrightness);
+        this._maskBitmap.radialgradientFillRect(x1, y1, 0, iplayer_radius, newcolor, radialColor2, playerflicker, playerbrightness);
       } else {
-        this._maskBitmap.radialgradientFillRect(x1, y1, lightMaskPadding, iplayer_radius, playercolor, '#000000', playerflicker, playerbrightness);
+        this._maskBitmap.radialgradientFillRect(x1, y1, lightMaskPadding, iplayer_radius, playercolor, radialColor2, playerflicker, playerbrightness);
+
       }
 
     }
@@ -1317,7 +1318,7 @@ Imported[Community.Lighting.name] = true;
             let lx1 = $gameMap.events()[event_stacknumber[i]].screenX();
             let ly1 = $gameMap.events()[event_stacknumber[i]].screenY() - 24;
             if (!shift_lights_with_events) {
-              lyl += $gameMap.events()[event_stacknumber[i]].shiftY();
+              ly1 += $gameMap.events()[event_stacknumber[i]].shiftY();
             }
 
             // apply offsets
@@ -1385,9 +1386,10 @@ Imported[Community.Lighting.name] = true;
       }
 
       if (tile_type == 3 || tile_type == 4) {
-        this._maskBitmap.radialgradientFillRect(x1, y1, 0, tile_radius, tile_color, '#000000', false, brightness); // Light
+        this._maskBitmap.radialgradientFillRect(x1, y1, 0, tile_radius, tile_color, radialColor2, false, brightness); // Light
       } else if (tile_type == 5 || tile_type == 6) {
-        this._maskBitmap.radialgradientFillRect(x1, y1, 0, tile_radius, tile_color, '#000000', true, brightness);  // Fire
+        this._maskBitmap.radialgradientFillRect(x1, y1, 0, tile_radius, tile_color, radialColor2, true, brightness);  // Fire
+
       } else {
 
         let r = hexToRgb(tile_color).r;
@@ -1419,7 +1421,7 @@ Imported[Community.Lighting.name] = true;
         }
 
         let newtile_color = "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
-        this._maskBitmap.radialgradientFillRect(x1, y1, 0, tile_radius, newtile_color, '#000000', false, brightness);
+        this._maskBitmap.radialgradientFillRect(x1, y1, 0, tile_radius, newtile_color, radialColor2, false, brightness);
       }
     }
 
