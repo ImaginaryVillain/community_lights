@@ -1692,7 +1692,7 @@ Imported[Community.Lighting.name] = true;
   };
 
   function rgba(r, g, b, a) {
-    return "rgb(" + r + "," + g + "," + b + "," + a + ")";
+    return "rgba(" + r + "," + g + "," + b + "," + a + ")";
   }
 
   // *******************  NORMAL LIGHT SHAPE ***********************************
