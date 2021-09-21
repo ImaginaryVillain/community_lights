@@ -9,36 +9,48 @@ const { exec } = require('child_process')
 let command = '';
 
 try {
-    mvFiles.forEach(file => {
-        // Load file, pretty the JSON, and write it back
-        const mvFilePath = `${mvPath}${file}`
-        const json = fs.readFileSync(mvFilePath)
-        fs.writeFileSync(mvFilePath, JSON.stringify(JSON.parse(json), null, 2))
-        command += ` ${mvFilePath}`
-    })
+  mvFiles.forEach(file => {
+    // Load file, pretty the JSON, and write it back
+    const mvFilePath = `${mvPath}${file}`
+    const json = fs.readFileSync(mvFilePath)
+    fs.writeFileSync(mvFilePath, JSON.stringify(JSON.parse(json), null, 2))
+    command += ` ${mvFilePath}`
+  })
 
-    mzFiles.forEach(file => {
-        // Load file, pretty the JSON, and write it back
-        const mzFilePath = `${mzPath}${file}`
-        const json = fs.readFileSync(mzFilePath)
-        fs.writeFileSync(mzFilePath, JSON.stringify(JSON.parse(json), null, 2))
-        command += ` ${mzFilePath}`
-    })
-    
-    // Add the files back to the staging since they changed
-    exec(`git add ${command}`, (err, stdout, stderr) => {
-        if (err) {
-            console.error(err)
-            process.exit(1)
-        }
+  mzFiles.forEach(file => {
+    // Load file, pretty the JSON, and write it back
+    const mzFilePath = `${mzPath}${file}`
+    const json = fs.readFileSync(mzFilePath)
+    fs.writeFileSync(mzFilePath, JSON.stringify(JSON.parse(json), null, 2))
+    command += ` ${mzFilePath}`
+  })
 
-        console.log(`stdout: ${stdout}`)
-        console.log(`stderr: ${stderr}`)
-        process.exit(0)
-    })
+  // Add the files back to the staging since they changed
+  exec(`git add ${command}`, (err, stdout, stderr) => {
+    if (err) {
+      console.error(err)
+      process.exit(1)
+    }
+
+    console.log(`stdout: ${stdout}`)
+    console.log(`stderr: ${stderr}`)
+    process.exit(0)
+  });
+
+  exec(`git diff --ignore-all-space`, (err, stdout, stderr) => {
+    if (err) {
+      console.error(err)
+      process.exit(1)
+    }
+
+    console.log(`stdout: ${stdout}`)
+    console.log(`stderr: ${stderr}`)
+    process.exit(0)
+  });
+
 } catch (err) {
-    console.error(err)
-    process.exit(1)
+  console.error(err)
+  process.exit(1)
 }
 
 
@@ -70,11 +82,11 @@ try {
 # them from being added to the repository. We exploit the fact that the
 # printable range starts at the space character and ends with tilde.
 ##if [ "$allownonascii" != "true" ] &&
-	# Note that the use of brackets around a tr range is ok here, (it's
-	# even required, for portability to Solaris 10's /usr/bin/tr), since
-	# the square bracket bytes happen to fall in the designated range.
-	##test $(git diff --cached --name-only --diff-filter=A -z $against |
-	  ##LC_ALL=C tr -d '[ -~]\0' | wc -c) != 0
+  # Note that the use of brackets around a tr range is ok here, (it's
+  # even required, for portability to Solaris 10's /usr/bin/tr), since
+  # the square bracket bytes happen to fall in the designated range.
+  ##test $(git diff --cached --name-only --diff-filter=A -z $against |
+    ##LC_ALL=C tr -d '[ -~]\0' | wc -c) != 0
 ##then
 ##	cat <<\EOF
 ##Error: Attempt to add a non-ASCII file name.
