@@ -140,16 +140,16 @@ Imported[Community.Lighting.name] = true;
 * @param Screensize X
 * @parent ---Offset and Sizes---
 * @desc Increase if your using a higher screen resolution then the default
-* Default : 866
-* @default 866
+* Default : 816
+* @default 816
 * @type number
 * @min 0
 *
 * @param Screensize Y
 * @parent ---Offset and Sizes---
 * @desc Increase if your using a higher screen resolution then the default
-* Default : 630
-* @default 630
+* Default : 624
+* @default 624
 * @type number
 * @min 0
 *
@@ -158,7 +158,7 @@ Imported[Community.Lighting.name] = true;
 * @desc Offscreen x-padding size for the light mask
 * @type number
 * @min 0
-* @default 40
+* @default 32
 *
 * @param ---Battle Settings---
 * @default
@@ -503,17 +503,17 @@ Imported[Community.Lighting.name] = true;
   let tile_blocks = [];
 
   let parameters = $$.parameters;
-  let lightMaskPadding = +parameters["Lightmask Padding"] || 0;
+  let lightMaskPadding = Number(parameters["Lightmask Padding"]) || 0;
   let useSmootherLights = eval(String(parameters['Use smoother lights'])) || false;
   let light_event_required = eval(parameters["Light event required"]) || false;
   let shift_lights_with_events = eval(String(parameters['Shift lights with events'])) || false;
-  let player_radius = Number(parameters['Player radius']);
+  let player_radius = Number(parameters['Player radius']) || 0;
   let reset_each_map = eval(String(parameters['Reset Lights'])) || false;
   let noteTagKey = parameters["Note Tag Key"] !== "" ? parameters["Note Tag Key"] : false;
-  let dayNightSaveHours = Number(parameters['Save DaynightHours'] || 0);
-  let dayNightSaveMinutes = Number(parameters['Save DaynightMinutes'] || 0);
-  let dayNightSaveSeconds = Number(parameters['Save DaynightSeconds'] || 0);
-  let dayNightSaveNight = +parameters["Save Night Switch"] || 0;
+  let dayNightSaveHours = Number(parameters['Save DaynightHours']) || 0;
+  let dayNightSaveMinutes = Number(parameters['Save DaynightMinutes']) || 0;
+  let dayNightSaveSeconds = Number(parameters['Save DaynightSeconds']) || 0;
+  let dayNightSaveNight = Number(parameters["Save Night Switch"]) || 0;
   let dayNightList = (function (dayNight, nightHours) {
     let result = [];
     try {
@@ -543,8 +543,8 @@ Imported[Community.Lighting.name] = true;
   }
 
   let options_lighting_on = true;
-  let maxX = Number(parameters['Screensize X'] || 866);
-  let maxY = Number(parameters['Screensize Y'] || 630);
+  let maxX = Number(parameters['Screensize X'] || 816) + 2 * lightMaskPadding;
+  let maxY = Number(parameters['Screensize Y'] || 624);
   let tint_oldseconds = 0;
   let tint_timer = 0;
   let oldseconds = 0;
