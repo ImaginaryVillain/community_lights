@@ -1779,7 +1779,7 @@ Imported[Community.Lighting.name] = true;
 
       if (brightness) {
         var alphaNum = Math.floor(brightness * 255);
-        grad.addColorStop(0, '#FFFFFF' + alphaNum.toString(16));
+        grad.addColorStop(0, '#FFFFFF' + ("00" + alphaNum.toString(16)).slice(-2));
       }
 
 
