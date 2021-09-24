@@ -1778,7 +1778,7 @@ Imported[Community.Lighting.name] = true;
       grad = context.createRadialGradient(x1, y1, r1, x1, y1, r2);
 
       if (brightness) {
-        var alphaNum = brightness * 100 * 2.55;
+        var alphaNum = Math.floor(brightness * 255);
         grad.addColorStop(0, '#FFFFFF' + alphaNum.toString(16));
       }
 
