@@ -529,22 +529,22 @@ Imported[Community.Lighting.name] = true;
     }
     return result;
   })(parameters["DayNight Colors"], parameters["Night Hours"]);
-  let flashlightoffset = Number(parameters['Flashlight offset'] || 0);
+  let flashlightoffset = Number(parameters['Flashlight offset']) || 0;
   let killswitch = parameters['Kill Switch'] || 'None';
   if (killswitch !== 'A' && killswitch !== 'B' && killswitch !== 'C' && killswitch !== 'D') {
     killswitch = 'None'; //Set any invalid value to no switch
   }
-  let killSwitchAuto = eval(String(parameters['Kill Switch Auto']));
+  let killSwitchAuto = eval(String(parameters['Kill Switch Auto'])) || false;
   let optionText = parameters["Options Menu Entry"] || "";
-  let lightInBattle = eval(String(parameters['Battle Tinting']));
+  let lightInBattle = eval(String(parameters['Battle Tinting'])) || false;
   let battleMaskPosition = parameters['Light Mask Position'] || 'Above';
   if (battleMaskPosition !== 'Above' && battleMaskPosition !== 'Between') {
     battleMaskPosition = 'Above'; //Get rid of any invalid value
   }
 
   let options_lighting_on = true;
-  let maxX = Number(parameters['Screensize X'] || 816) + 2 * lightMaskPadding;
-  let maxY = Number(parameters['Screensize Y'] || 624);
+  let maxX = (Number(parameters['Screensize X']) || 816) + 2 * lightMaskPadding;
+  let maxY = Number(parameters['Screensize Y']) || 624;
   let tint_oldseconds = 0;
   let tint_timer = 0;
   let oldseconds = 0;
@@ -560,7 +560,7 @@ Imported[Community.Lighting.name] = true;
   //let averagetime = [];
   //let averagetimecount = 0;
   let notetag_reg = RegExp("<" + noteTagKey + ":[ ]*([^>]+)>", "i");
-  let radialColor2 = useSmootherLights == true ? "#00000000" : "#000000";
+  let radialColor2 = useSmootherLights ? "#00000000" : "#000000";
   $$.getFirstComment = function () {
     let result = null;
     let page = this.page();
