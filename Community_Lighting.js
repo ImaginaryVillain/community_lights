@@ -2027,7 +2027,12 @@ Imported[Community.Lighting.name] = true;
     this._createBitmap();
 
     //Initialize the bitmap
-    this._addSprite(-lightMaskPadding, 0, this._maskBitmap);
+	
+	// Battlebacks are shifted 32 pixels left (to be able to support screen shakes).
+	// We must take this into account if the BattleLightmask is linked to the battlebacks.
+	var battlebackOffset = battleMaskPosition === 'Between' ? 32 : 0;
+	
+    this._addSprite(-lightMaskPadding + battlebackOffset, 0 + battlebackOffset, this._maskBitmap);
     var redhex = $gameTemp._MapTint.substring(1, 3);
     var greenhex = $gameTemp._MapTint.substring(3, 5);
     var bluehex = $gameTemp._MapTint.substring(5);
