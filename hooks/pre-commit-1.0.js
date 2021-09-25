@@ -38,9 +38,7 @@ try {
     console.log(`stdout: ${stdout}`);
     console.log(`stderr: ${stderr}`);
   }
-  addFiles();
-  ignoreSpaces();
-  process.exit(0);
+  addFiles().then(ignoreSpaces).then(process.exit(0));
 } catch (err) {
   console.error(err);
   process.exit(1);
