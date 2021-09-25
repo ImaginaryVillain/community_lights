@@ -2255,6 +2255,12 @@ Imported[Community.Lighting.name] = true;
           data.map(x => x.trim());
           $gameMap._interpreter.tileType("regionglow", data);
         }
+        else if ((/^RegionFire/i).test(mapnote)) {
+          let data = mapnote.split(/\s+/);
+          data.splice(0, 1);
+          data.map(x => x.trim());
+          $gameMap._interpreter.tileType("regionfire", data);
+        }
         else if ((/^tint/i).test(mapnote)) {
 
           let data = mapnote.split(/\s+/);
