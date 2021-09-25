@@ -21,7 +21,7 @@ try {
   mzFiles.forEach(file => {
     // Load file, pretty the JSON, and write it back
     const mzFilePath = `${mzPath}${file}`;
-    const json = fs.readFileSync(mzFilePath, { encoding: "utf8" });;
+    const json = fs.readFileSync(mzFilePath, { encoding: "utf8" });
     fs.writeFileSync(mzFilePath, JSON.stringify(JSON.parse(json), null, 2));
     command += ` ${mzFilePath}`;
   });
