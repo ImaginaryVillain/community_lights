@@ -315,7 +315,7 @@ Imported[Community.Lighting.name] = true;
 * green - #008000
 * cyan - #00FFFF
 * yellow - #FFFF00
-* white - #FFFF00
+* white - #FFFFFF
 * purple - #800080
 * pink - #FFC0CB
 * black - #000000
