@@ -43,7 +43,7 @@
     "order": 5,
     "parentId": 4,
     "scrollX": 811,
-    "scrollY": 587
+    "scrollY": 587.5
   },
   {
     "id": 6,
@@ -51,7 +51,7 @@
     "name": "Lightless Tower",
     "order": 6,
     "parentId": 1,
-    "scrollX": 821,
+    "scrollX": 819,
     "scrollY": 553.5
   },
   {
@@ -79,6 +79,6 @@
     "order": 8,
     "parentId": 1,
     "scrollX": 811,
-    "scrollY": 453
+    "scrollY": 453.5
   }
 ]

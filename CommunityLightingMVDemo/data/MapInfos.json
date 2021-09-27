@@ -6,8 +6,8 @@
     "name": "Overworld",
     "order": 1,
     "parentId": 0,
-    "scrollX": 1345.3333333333333,
-    "scrollY": 904
+    "scrollX": 1337,
+    "scrollY": 896
   },
   {
     "id": 2,
@@ -78,7 +78,7 @@
     "name": "Conditional light hall",
     "order": 8,
     "parentId": 1,
-    "scrollX": 1092,
-    "scrollY": 614.6666666666666
+    "scrollX": 819,
+    "scrollY": 461
   }
 ]
