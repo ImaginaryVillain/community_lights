@@ -140,16 +140,16 @@ Imported[Community.Lighting.name] = true;
 * @param Screensize X
 * @parent ---Offset and Sizes---
 * @desc Increase if your using a higher screen resolution then the default
-* Default : 816
-* @default 816
+* Default : 866
+* @default 866
 * @type number
 * @min 0
 *
 * @param Screensize Y
 * @parent ---Offset and Sizes---
 * @desc Increase if your using a higher screen resolution then the default
-* Default : 624
-* @default 624
+* Default : 630
+* @default 630
 * @type number
 * @min 0
 *
@@ -158,7 +158,7 @@ Imported[Community.Lighting.name] = true;
 * @desc Offscreen x-padding size for the light mask
 * @type number
 * @min 0
-* @default 32
+* @default 40
 *
 * @param ---Battle Settings---
 * @default
@@ -539,17 +539,17 @@ Imported[Community.Lighting.name] = true;
   let tile_blocks = [];
 
   let parameters = $$.parameters;
-  let lightMaskPadding = Number(parameters["Lightmask Padding"]) || 0;
+  let lightMaskPadding = +parameters["Lightmask Padding"] || 0;
   let useSmootherLights = eval(String(parameters['Use smoother lights'])) || false;
   let light_event_required = eval(parameters["Light event required"]) || false;
   let shift_lights_with_events = eval(String(parameters['Shift lights with events'])) || false;
-  let player_radius = Number(parameters['Player radius']) || 0;
+  let player_radius = Number(parameters['Player radius']);
   let reset_each_map = eval(String(parameters['Reset Lights'])) || false;
   let noteTagKey = parameters["Note Tag Key"] !== "" ? parameters["Note Tag Key"] : false;
-  let dayNightSaveHours = Number(parameters['Save DaynightHours']) || 0;
-  let dayNightSaveMinutes = Number(parameters['Save DaynightMinutes']) || 0;
-  let dayNightSaveSeconds = Number(parameters['Save DaynightSeconds']) || 0;
-  let dayNightSaveNight = Number(parameters["Save Night Switch"]) || 0;
+  let dayNightSaveHours = Number(parameters['Save DaynightHours'] || 0);
+  let dayNightSaveMinutes = Number(parameters['Save DaynightMinutes'] || 0);
+  let dayNightSaveSeconds = Number(parameters['Save DaynightSeconds'] || 0);
+  let dayNightSaveNight = +parameters["Save Night Switch"] || 0;
   let dayNightList = (function (dayNight, nightHours) {
     let result = [];
     try {
@@ -565,22 +565,22 @@ Imported[Community.Lighting.name] = true;
     }
     return result;
   })(parameters["DayNight Colors"], parameters["Night Hours"]);
-  let flashlightoffset = Number(parameters['Flashlight offset']) || 0;
+  let flashlightoffset = Number(parameters['Flashlight offset'] || 0);
   let killswitch = parameters['Kill Switch'] || 'None';
   if (killswitch !== 'A' && killswitch !== 'B' && killswitch !== 'C' && killswitch !== 'D') {
     killswitch = 'None'; //Set any invalid value to no switch
   }
-  let killSwitchAuto = eval(String(parameters['Kill Switch Auto'])) || false;
+  let killSwitchAuto = eval(String(parameters['Kill Switch Auto']));
   let optionText = parameters["Options Menu Entry"] || "";
-  let lightInBattle = eval(String(parameters['Battle Tinting'])) || false;
+  let lightInBattle = eval(String(parameters['Battle Tinting']));
   let battleMaskPosition = parameters['Light Mask Position'] || 'Above';
   if (battleMaskPosition !== 'Above' && battleMaskPosition !== 'Between') {
     battleMaskPosition = 'Above'; //Get rid of any invalid value
   }
 
   let options_lighting_on = true;
-  let maxX = (Number(parameters['Screensize X']) || 816) + 2 * lightMaskPadding;
-  let maxY = Number(parameters['Screensize Y']) || 624;
+  let maxX = Number(parameters['Screensize X'] || 866);
+  let maxY = Number(parameters['Screensize Y'] || 630);
   let tint_oldseconds = 0;
   let tint_timer = 0;
   let oldseconds = 0;
@@ -1815,8 +1815,8 @@ Imported[Community.Lighting.name] = true;
       grad = context.createRadialGradient(x1, y1, r1, x1, y1, r2);
 
       if (brightness) {
-        var alphaNum = Math.floor(brightness * 255);
-        grad.addColorStop(0, '#FFFFFF' + ("00" + alphaNum.toString(16)).slice(-2));
+        var alphaNum = brightness * 100 * 2.55;
+        grad.addColorStop(0, '#FFFFFF' + alphaNum.toString(16));
       }
 
 
@@ -2066,17 +2066,7 @@ Imported[Community.Lighting.name] = true;
     this._createBitmap();
 
     //Initialize the bitmap
-	
-	// Battlebacks are shifted 32 pixels left (to be able to support screen shakes).
-	// We must take this into account if the BattleLightmask is linked to the battlebacks.
-	var battlebackOffset = battleMaskPosition === 'Between' ? 32 : 0;
-	if (Imported.YEP_ImprovedBattlebacks) { // ImprovedBattlebacks don't have any Y shift
-		this._addSprite(-lightMaskPadding + battlebackOffset, 0, this._maskBitmap);
-	} else {
-		this._addSprite(-lightMaskPadding + battlebackOffset, 0 + battlebackOffset, this._maskBitmap);
-	}
-	
-    
+    this._addSprite(-lightMaskPadding, 0, this._maskBitmap);
     var redhex = $gameTemp._MapTint.substring(1, 3);
     var greenhex = $gameTemp._MapTint.substring(3, 5);
     var bluehex = $gameTemp._MapTint.substring(5);
