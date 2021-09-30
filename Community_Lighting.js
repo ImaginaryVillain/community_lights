@@ -306,24 +306,6 @@ Imported[Community.Lighting.name] = true;
 * <cl: Flashlight l8 w12 #ff0000 on asdf>
 * Creates a flashlight beam with id asdf which can be turned on or off via
 * plugin commands
-*
-* --------------------------------------------------------------------------
-* Easy hex color references
-* --------------------------------------------------------------------------
-* blue - #0000FF
-* red - #FF0000
-* green - #008000
-* cyan - #00FFFF
-* yellow - #FFFF00
-* white - #FFFFFF
-* purple - #800080
-* pink - #FFC0CB
-* black - #000000
-* -------------------------------------------------------------------------------
-* Migrating from Khas Ultra Lights
-* -------------------------------------------------------------------------------
-* Using the smooth lights options make it look extremely close.
-* The default light radius that Khas appears to be around 122. 
 * -------------------------------------------------------------------------------
 * Maps
 * -------------------------------------------------------------------------------
@@ -333,23 +315,7 @@ Imported[Community.Lighting.name] = true;
          the default speed, higher numbers are slower, lower numbers are
          faster, and 0 stops the flow of time entirely.  If speed is not
          specified, then the current speed is used.
-*         
-* RegionLight id ON c r
-* - Turns on lights for tile tag or region tag (id) using color (c) and radius (r) 
-* - Replace ON with OFF to turn them off
-* - Put in map note
 *
-* RegionFire, RegionGlow
-* - Same as above, but different lighting effects
-*
-* defaultbrightness
-* - Sets the default brightness of all the lights in the map
-* 
-* Tint set c
-* - Sets the current screen tint to the color (c)
-* 
-* Tint daylight
-* - Sets the tint based on the current hour.
 * -------------------------------------------------------------------------------
 * Plugin Commands
 * -------------------------------------------------------------------------------
@@ -504,8 +470,6 @@ Imported[Community.Lighting.name] = true;
 * $gameVariables.SetActiveRadius(#)
 *
 * ....where # is the max distance you want in tiles.
-*
-*
 */
 
 (function ($$) {
@@ -584,7 +548,6 @@ Imported[Community.Lighting.name] = true;
   //let averagetimecount = 0;
   let notetag_reg = RegExp("<" + noteTagKey + ":[ ]*([^>]+)>", "i");
   let radialColor2 = useSmootherLights == true ? "#00000000" : "#000000";
-  let isValidColorRegex = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)/i;
   $$.getFirstComment = function () {
     let result = null;
     let page = this.page();
@@ -1728,11 +1691,11 @@ Imported[Community.Lighting.name] = true;
    */
   Bitmap.prototype.radialgradientFillRect = function (x1, y1, r1, r2, color1, color2, flicker, brightness, direction) {
 
-    let isValidColor = isValidColorRegex.test(color1);
+    let isValidColor = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)/i.test(color1);
     if (!isValidColor) {
       color1 = '#000000'
     }
-    let isValidColor2 = isValidColorRegex.test(color2);
+    let isValidColor2 = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)/i.test(color2);
     if (!isValidColor2) {
       color2 = '#000000'
     }
@@ -1889,11 +1852,11 @@ Imported[Community.Lighting.name] = true;
   Bitmap.prototype.radialgradientFillRect2 = function (x1, y1, r1, r2, color1, color2, direction, flashlength, flashwidth) {
     x1 = x1 + lightMaskPadding;
 
-    let isValidColor = isValidColorRegex.test(color1);
+    let isValidColor = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)/i.test(color1);
     if (!isValidColor) {
       color1 = '#000000'
     }
-    let isValidColor2 = isValidColorRegex.test(color2);
+    let isValidColor2 = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)/i.test(color2);
     if (!isValidColor2) {
       color2 = '#000000'
     }
@@ -1970,13 +1933,11 @@ Imported[Community.Lighting.name] = true;
    * @returns {{r:number,g:number,b:number,a:number}}
    */
   function hexToRgb(hex) {
-    var regex = new RegExp(/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})?$/i);
-    let result = regex.exec(hex);
+    let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
     result = result ? {
       r: parseInt(result[1], 16),
       g: parseInt(result[2], 16),
-      b: parseInt(result[3], 16),
-      a: result[4] == null ? 255 : parseInt(result[4], 16)
+      b: parseInt(result[3], 16)
     } : null;
     return result;
   }
@@ -2283,12 +2244,6 @@ Imported[Community.Lighting.name] = true;
           data.map(x => x.trim());
           $gameMap._interpreter.tileType("regionglow", data);
         }
-        else if ((/^RegionFire/i).test(mapnote)) {
-          let data = mapnote.split(/\s+/);
-          data.splice(0, 1);
-          data.map(x => x.trim());
-          $gameMap._interpreter.tileType("regionfire", data);
-        }
         else if ((/^tint/i).test(mapnote)) {
 
           let data = mapnote.split(/\s+/);
@@ -2436,7 +2391,7 @@ Imported[Community.Lighting.name] = true;
       }
       if (args.length >= 3) {
         playercolor = args[3];
-        let isValidPlayerColor = isValidColorRegex.test(playercolor);
+        let isValidPlayerColor = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)/i.test(playercolor);
         if (!isValidPlayerColor) {
           playercolor = '#FFFFFF'
         }
@@ -2482,7 +2437,7 @@ Imported[Community.Lighting.name] = true;
       }
       if (args.length > 2) {
         playercolor = args[2];
-        let isValidPlayerColor = isValidColorRegex.test(playercolor);
+        let isValidPlayerColor = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)/i.test(playercolor);
         if (!isValidPlayerColor) {
           playercolor = '#FFFFFF'
         }
@@ -2528,7 +2483,7 @@ Imported[Community.Lighting.name] = true;
       // player color
       if (args.length > 2) {
         playercolor = args[2];
-        let isValidPlayerColor = isValidColorRegex.test(playercolor);
+        let isValidPlayerColor = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)/i.test(playercolor);
         if (!isValidPlayerColor) {
           playercolor = '#FFFFFF'
         }
@@ -2650,7 +2605,7 @@ Imported[Community.Lighting.name] = true;
     let tile_on = String(args[1]).toLowerCase() === "on" ? 1 : 0;
 
     let tilecolor = args[2];
-    let isValidColor1 = isValidColorRegex.test(tilecolor);
+    let isValidColor1 = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)/i.test(tilecolor);
     if (!isValidColor1) {
       if (tiletype === 1 || tiletype === 2) tilecolor = "#000000";
       else tilecolor = "#ffffff";
@@ -2836,7 +2791,7 @@ Imported[Community.Lighting.name] = true;
         hour = (daynighthoursinday - 1);
       }
       let hourcolor = args[2];
-      let isValidColor = isValidColorRegex.test(hourcolor);
+      let isValidColor = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)/i.test(hourcolor);
       if (isValidColor) {
         daynightcolors[hour].color = hourcolor;
       }
