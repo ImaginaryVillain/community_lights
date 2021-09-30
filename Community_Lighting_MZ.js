@@ -1512,6 +1512,14 @@ Imported[Community.Lighting.name] = true;
 		$$.flashlight(args);
 	};
 
+	Game_Interpreter.prototype.effectOnEvent = function(command, args){
+		$$.effectOnEvent(args);
+	};
+
+	Game_Interpreter.prototype.effectOnXy = function(command, args){
+		$$.effectXy(args);
+	};
+
 	Game_Interpreter.prototype.scriptF = function(command, args){
 		if (args[0].toLowerCase() == 'deactivate') {
 			$gameVariables.SetScriptActive(true);
@@ -3208,6 +3216,76 @@ Imported[Community.Lighting.name] = true;
 		$gameVariables.SetLightTags(tile_lights);
 		$gameVariables.SetBlockTags(tile_blocks);
 	};
+	/*
+	$$.effectXy = function (args) {
+		let x1 = args[0];
+		if (x1.substring(0, 1) == '#') {
+			x1 = $gameVariables.value(Number(x1.substring(1)));
+		}
+		let y1 = args[1];
+		if (y1.substring(0, 1) == '#') {
+			y1 = $gameVariables.value(Number(y1.substring(1)));
+		}
+		let radius = args[2];
+		if (radius.substring(0, 1) == '#') {
+			radius = $gameVariables.value(Number(radius.substring(1)));
+		}
+		let color = args[3];
+		let time = args[4];
+		if (time.substring(0, 1) == '#') {
+			time = $gameVariables.value(Number(time.substring(1)));
+		}
+		let def = radius + "," + color + "," + time;
+		if (args.length >= 6) {
+			let command = args[5];
+			let ctime = args[6];
+			if (ctime.substring(0, 1) == '#') {
+				ctime = $gameVariables.value(Number(ctime.substring(1)));
+			}
+			def = def + "," + command + "," + ctime;
+		}
+	};
+
+	$$.effectOnEvent = function (args) {
+		x1 = 0;
+		y1 = 0;
+		let evid = -1;
+		for (let i = 0, len = $gameMap.events().length; i < len; i++) {
+			if ($gameMap.events()[i]) {
+				evid = $gameMap.events()[i]._eventId;
+				if (evid == args[0]) {
+					x1 = $gameMap.events()[i]._realX * $gameMap.tileWidth();
+					y1 = $gameMap.events()[i]._realY * $gameMap.tileHeight();
+				}
+			}
+		}
+		// def = radius,color,duration(,keyword,speed)
+		// 0. Radius
+		// 1. Color
+		// 2. Time in Frames
+		// 3. Keyword (optional)   FADEIN FADEOUT FADEBOTH GROW SHRINK GROWSHRINK BIO
+		// 4. Fade/Grow Speed in frames
+
+		let radius = args[1];
+		if (radius.substring(0, 1) == '#') {
+			radius = $gameVariables.value(Number(radius.substring(1)));
+		}
+		let color = args[2];
+		let time = args[3];
+		if (time.substring(0, 1) == '#') {
+			time = $gameVariables.value(Number(time.substring(1)));
+		}
+		let def = radius + "," + color + "," + time;
+		if (args.length >= 5) {
+			let command = args[4];
+			let ctime = args[5];
+			if (ctime.substring(0, 1) == '#') {
+				ctime = $gameVariables.value(Number(ctime.substring(1)));
+			}
+			def = def + "," + command + "," + ctime;
+		}
+	};
+*/
 })(Community.Lighting);
 
 Game_Variables.prototype.GetFirstRun = function () {
