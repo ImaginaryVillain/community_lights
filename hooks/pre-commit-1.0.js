@@ -1,47 +1,56 @@
 #!/usr/bin/env node
 
-const fs = require('fs');
-const mvPath = './CommunityLightingMVDemo/data/';
-const mzPath = './CommunityLightingMZDemo/data/';
-const mvFiles = fs.readdirSync(`${mvPath}`);
-const mzFiles = fs.readdirSync(`${mzPath}`);
-const util = require('util');
-const exec = util.promisify(require('child_process').exec);
+const fs = require('fs')
+const mvPath = './CommunityLightingMVDemo/data/'
+const mzPath = './CommunityLightingMZDemo/data/'
+const mvFiles = fs.readdirSync(`${mvPath}`)
+const mzFiles = fs.readdirSync(`${mzPath}`)
+const { exec } = require('child_process')
 let command = '';
 
 try {
   mvFiles.forEach(file => {
     // Load file, pretty the JSON, and write it back
-    const mvFilePath = `${mvPath}${file}`;
-    const json = fs.readFileSync(mvFilePath, { encoding: "utf8" });
-    fs.writeFileSync(mvFilePath, JSON.stringify(JSON.parse(json), null, 2));
-    command += ` ${mvFilePath}`;
-  });
+    const mvFilePath = `${mvPath}${file}`
+    const json = fs.readFileSync(mvFilePath)
+    fs.writeFileSync(mvFilePath, JSON.stringify(JSON.parse(json), null, 2))
+    command += ` ${mvFilePath}`
+  })
 
   mzFiles.forEach(file => {
     // Load file, pretty the JSON, and write it back
-    const mzFilePath = `${mzPath}${file}`;
-    const json = fs.readFileSync(mzFilePath, { encoding: "utf8" });
-    fs.writeFileSync(mzFilePath, JSON.stringify(JSON.parse(json), null, 2));
-    command += ` ${mzFilePath}`;
+    const mzFilePath = `${mzPath}${file}`
+    const json = fs.readFileSync(mzFilePath)
+    fs.writeFileSync(mzFilePath, JSON.stringify(JSON.parse(json), null, 2))
+    command += ` ${mzFilePath}`
+  })
+
+  // Add the files back to the staging since they changed
+  exec(`git add ${command}`, (err, stdout, stderr) => {
+    if (err) {
+      console.error(err)
+      process.exit(1)
+    }
+
+    console.log(`stdout: ${stdout}`)
+    console.log(`stderr: ${stderr}`)
+    process.exit(0)
   });
 
+  exec(`git diff --ignore-all-space`, (err, stdout, stderr) => {
+    if (err) {
+      console.error(err)
+      process.exit(1)
+    }
 
-  async function addFiles() {
-    const { stdout, stderr } = await exec(`git add ${command}`);
-    console.log(`stdout: ${stdout}`);
-    console.log(`stderr: ${stderr}`);
-  }
+    console.log(`stdout: ${stdout}`)
+    console.log(`stderr: ${stderr}`)
+    process.exit(0)
+  });
 
-  async function ignoreSpaces() {
-    const { stdout, stderr } = await exec(`git diff --ignore-all-space`);
-    console.log(`stdout: ${stdout}`);
-    console.log(`stderr: ${stderr}`);
-  }
-  addFiles().then(ignoreSpaces).then(process.exit(0));
 } catch (err) {
-  console.error(err);
-  process.exit(1);
+  console.error(err)
+  process.exit(1)
 }
 
 
