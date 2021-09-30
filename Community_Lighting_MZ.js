@@ -8,12 +8,12 @@ var Community = Community || {};
 Community.Lighting = Community.Lighting || {};
 Community.Lighting.name = "Community_Lighting_MZ";
 Community.Lighting.parameters = PluginManager.parameters(Community.Lighting.name);
-Community.Lighting.version = 4.2;
+Community.Lighting.version = 4.3;
 var Imported = Imported || {};
 Imported[Community.Lighting.name] = true;
 /*:
 * @target MZ
-* @plugindesc v4.2 Creates an extra layer that darkens a map and adds lightsources! Released under the MIT license!
+* @plugindesc v4.3 Creates an extra layer that darkens a map and adds lightsources! Released under the MIT license!
 * @author Terrax, iVillain, Aesica, Eliaquim, Alexandre, Nekohime1989
 7
 * @param ---General Settings---
@@ -129,16 +129,16 @@ Imported[Community.Lighting.name] = true;
 * @param Screensize X
 * @parent ---Offset and Sizes---
 * @desc Increase if your using a higher screen resolution then the default
-* Default : 866
-* @default 866
+* Default : 816
+* @default 816
 * @type number
 * @min 0
 *
 * @param Screensize Y
 * @parent ---Offset and Sizes---
 * @desc Increase if your using a higher screen resolution then the default
-* Default : 630
-* @default 630
+* Default : 624
+* @default 624
 * @type number
 * @min 0
 *
@@ -147,7 +147,7 @@ Imported[Community.Lighting.name] = true;
 * @desc Offscreen x-padding size for the light mask
 * @type number
 * @min 0
-* @default 40
+* @default 32
 *
 * @param ---Battle Settings---
 * @default
@@ -798,16 +798,16 @@ Imported[Community.Lighting.name] = true;
 	let tile_blocks = [];
 
 	let parameters = $$.parameters;
-	let lightMaskPadding = +parameters["Lightmask Padding"] || 0;
+	let lightMaskPadding = Number(parameters["Lightmask Padding"]) || 0;
 	let light_event_required = eval(parameters["Light event required"]) || false;
 	let shift_lights_with_events = eval(String(parameters['Shift lights with events'])) || false;
-	let player_radius = Number(parameters['Player radius']);
+	let player_radius = Number(parameters['Player radius']) || 0;
 	let reset_each_map = eval(String(parameters['Reset Lights'])) || false;
 	let noteTagKey = parameters["Note Tag Key"] !== "" ? parameters["Note Tag Key"] : false;
-	let dayNightSaveHours = Number(parameters['Save DaynightHours'] || 0);
-	let dayNightSaveMinutes = Number(parameters['Save DaynightMinutes'] || 0);
-	let dayNightSaveSeconds = Number(parameters['Save DaynightSeconds'] || 0);
-	let dayNightSaveNight = +parameters["Save Night Switch"] || 0;
+	let dayNightSaveHours = Number(parameters['Save DaynightHours']) || 0;
+	let dayNightSaveMinutes = Number(parameters['Save DaynightMinutes']) || 0;
+	let dayNightSaveSeconds = Number(parameters['Save DaynightSeconds']) || 0;
+	let dayNightSaveNight = Number(parameters["Save Night Switch"]) || 0;
 	let dayNightList = (function(dayNight, nightHours)
 	{
 		let result = [];
@@ -824,23 +824,23 @@ Imported[Community.Lighting.name] = true;
 		}
 		return result;
 	})(parameters["DayNight Colors"], parameters["Night Hours"]);
-	let flashlightoffset = Number(parameters['Flashlight offset'] || 0);
+	let flashlightoffset = Number(parameters['Flashlight offset']) || 0;
 	let killswitch = parameters['Kill Switch'] || 'None';
 	if (killswitch !== 'A' && killswitch !== 'B' && killswitch !== 'C' && killswitch !== 'D') {
 		killswitch = 'None'; //Set any invalid value to no switch
 	}
-	let killSwitchAuto = eval(String(parameters['Kill Switch Auto']));
+	let killSwitchAuto = eval(String(parameters['Kill Switch Auto'])) || false;
 	//let add_to_options = parameters['Add to options'] || 'Yes';
 	let optionText = parameters["Options Menu Entry"] || "";
-	let lightInBattle = eval(String(parameters['Battle Tinting']));
+	let lightInBattle = eval(String(parameters['Battle Tinting'])) || false;
 	let battleMaskPosition = parameters['Light Mask Position'] || 'Above';
 	if (battleMaskPosition !== 'Above' && battleMaskPosition !== 'Between') {
 		battleMaskPosition = 'Above'; //Get rid of any invalid value
 	}
 
 	let options_lighting_on = true;
-	let maxX = Number(parameters['Screensize X'] || 866);
-	let maxY = Number(parameters['Screensize Y'] || 630);
+	let maxX = Number(parameters['Screensize X']) || 816;
+	let maxY = Number(parameters['Screensize Y']) || 624;
 	let tint_oldseconds = 0;
 	let tint_timer = 0;
 	let oldseconds = 0;
@@ -1512,14 +1512,6 @@ Imported[Community.Lighting.name] = true;
 		$$.flashlight(args);
 	};
 
-	Game_Interpreter.prototype.effectOnEvent = function(command, args){
-		$$.effectOnEvent(args);
-	};
-
-	Game_Interpreter.prototype.effectOnXy = function(command, args){
-		$$.effectXy(args);
-	};
-
 	Game_Interpreter.prototype.scriptF = function(command, args){
 		if (args[0].toLowerCase() == 'deactivate') {
 			$gameVariables.SetScriptActive(true);
@@ -1886,7 +1878,7 @@ Imported[Community.Lighting.name] = true;
 						let lx1 = $gameMap.events()[event_stacknumber[i]].screenX();
 						let ly1 = $gameMap.events()[event_stacknumber[i]].screenY() - 24;
 						if (!shift_lights_with_events) {
-							lyl += $gameMap.events()[event_stacknumber[i]].shiftY();
+							ly1 += $gameMap.events()[event_stacknumber[i]].shiftY();
 						}
 						
 						// apply offsets
@@ -2886,7 +2878,16 @@ Imported[Community.Lighting.name] = true;
 	    this._createBitmap();
 
 		//Initialize the bitmap
-		this._addSprite(-lightMaskPadding,0,this._maskBitmap);
+		
+		// Battlebacks are shifted 32 pixels left (to be able to support screen shakes).
+		// We must take this into account if the BattleLightmask is linked to the battlebacks.
+		var battlebackOffset = battleMaskPosition === 'Between' ? 32 : 0;
+		if (Imported.YEP_ImprovedBattlebacks) { // ImprovedBattlebacks don't have any Y shift
+			this._addSprite(-lightMaskPadding + battlebackOffset, 0, this._maskBitmap);
+		} else {
+			this._addSprite(-lightMaskPadding + battlebackOffset, 0 + battlebackOffset, this._maskBitmap);
+		}
+
 		var redhex = $$._MapTint.substring(1, 3);
 		var greenhex = $$._MapTint.substring(3, 5);
 		var bluehex = $$._MapTint.substring(5);
@@ -3207,76 +3208,6 @@ Imported[Community.Lighting.name] = true;
 		$gameVariables.SetLightTags(tile_lights);
 		$gameVariables.SetBlockTags(tile_blocks);
 	};
-	/*
-	$$.effectXy = function (args) {
-		let x1 = args[0];
-		if (x1.substring(0, 1) == '#') {
-			x1 = $gameVariables.value(Number(x1.substring(1)));
-		}
-		let y1 = args[1];
-		if (y1.substring(0, 1) == '#') {
-			y1 = $gameVariables.value(Number(y1.substring(1)));
-		}
-		let radius = args[2];
-		if (radius.substring(0, 1) == '#') {
-			radius = $gameVariables.value(Number(radius.substring(1)));
-		}
-		let color = args[3];
-		let time = args[4];
-		if (time.substring(0, 1) == '#') {
-			time = $gameVariables.value(Number(time.substring(1)));
-		}
-		let def = radius + "," + color + "," + time;
-		if (args.length >= 6) {
-			let command = args[5];
-			let ctime = args[6];
-			if (ctime.substring(0, 1) == '#') {
-				ctime = $gameVariables.value(Number(ctime.substring(1)));
-			}
-			def = def + "," + command + "," + ctime;
-		}
-	};
-
-	$$.effectOnEvent = function (args) {
-		x1 = 0;
-		y1 = 0;
-		let evid = -1;
-		for (let i = 0, len = $gameMap.events().length; i < len; i++) {
-			if ($gameMap.events()[i]) {
-				evid = $gameMap.events()[i]._eventId;
-				if (evid == args[0]) {
-					x1 = $gameMap.events()[i]._realX * $gameMap.tileWidth();
-					y1 = $gameMap.events()[i]._realY * $gameMap.tileHeight();
-				}
-			}
-		}
-		// def = radius,color,duration(,keyword,speed)
-		// 0. Radius
-		// 1. Color
-		// 2. Time in Frames
-		// 3. Keyword (optional)   FADEIN FADEOUT FADEBOTH GROW SHRINK GROWSHRINK BIO
-		// 4. Fade/Grow Speed in frames
-
-		let radius = args[1];
-		if (radius.substring(0, 1) == '#') {
-			radius = $gameVariables.value(Number(radius.substring(1)));
-		}
-		let color = args[2];
-		let time = args[3];
-		if (time.substring(0, 1) == '#') {
-			time = $gameVariables.value(Number(time.substring(1)));
-		}
-		let def = radius + "," + color + "," + time;
-		if (args.length >= 5) {
-			let command = args[4];
-			let ctime = args[5];
-			if (ctime.substring(0, 1) == '#') {
-				ctime = $gameVariables.value(Number(ctime.substring(1)));
-			}
-			def = def + "," + command + "," + ctime;
-		}
-	};
-*/
 })(Community.Lighting);
 
 Game_Variables.prototype.GetFirstRun = function () {
