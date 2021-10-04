@@ -330,9 +330,9 @@ Imported[Community.Lighting.name] = true;
 * DayNight [speed]
 * Activates day/night cycle.  Put in map note or event note
 * - speed     Optional parameter to alter the speed at which time passes.  10 is
-         the default speed, higher numbers are slower, lower numbers are
-         faster, and 0 stops the flow of time entirely.  If speed is not
-         specified, then the current speed is used.
+*         the default speed, higher numbers are slower, lower numbers are
+*         faster, and 0 stops the flow of time entirely.  If speed is not
+*         specified, then the current speed is used.
 *         
 * RegionLight id ON c r
 * - Turns on lights for tile tag or region tag (id) using color (c) and radius (r) 
