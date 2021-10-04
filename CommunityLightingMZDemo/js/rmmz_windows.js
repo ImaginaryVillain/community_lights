@@ -1,5 +1,5 @@
 //=============================================================================
-// rmmz_windows.js v1.1.1
+// rmmz_windows.js v1.3.3
 //=============================================================================
 
 //-----------------------------------------------------------------------------
@@ -74,7 +74,7 @@ Window_Base.prototype.updatePadding = function() {
 };
 
 Window_Base.prototype.updateBackOpacity = function() {
-    this.backOpacity = 192;
+    this.backOpacity = $gameSystem.windowOpacity();
 };
 
 Window_Base.prototype.fittingHeight = function(numLines) {
@@ -4316,6 +4316,7 @@ Window_ChoiceList.prototype.start = function() {
     this.placeCancelButton();
     this.createContents();
     this.refresh();
+    this.scrollTo(0, 0);
     this.selectDefault();
     this.open();
     this.activate();
@@ -4967,7 +4968,7 @@ Window_Message.prototype.updateMessage = function() {
             }
         }
         this.flushTextState(textState);
-        if (this.isEndOfText(textState) && !this.pause) {
+        if (this.isEndOfText(textState) && !this.isWaiting()) {
             this.onEndOfText();
         }
         return true;
@@ -4981,7 +4982,7 @@ Window_Message.prototype.shouldBreakHere = function(textState) {
         if (!this._showFast && !this._lineShowFast) {
             return true;
         }
-        if (this.pause || this._waitCount > 0) {
+        if (this.isWaiting()) {
             return true;
         }
     }
@@ -5160,6 +5161,10 @@ Window_Message.prototype.startWait = function(count) {
 Window_Message.prototype.startPause = function() {
     this.startWait(10);
     this.pause = true;
+};
+
+Window_Message.prototype.isWaiting = function() {
+    return this.pause || this._waitCount > 0;
 };
 
 //-----------------------------------------------------------------------------

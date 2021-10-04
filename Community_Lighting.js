@@ -140,16 +140,16 @@ Imported[Community.Lighting.name] = true;
 * @param Screensize X
 * @parent ---Offset and Sizes---
 * @desc Increase if your using a higher screen resolution then the default
-* Default : 866
-* @default 866
+* Default : 816
+* @default 816
 * @type number
 * @min 0
 *
 * @param Screensize Y
 * @parent ---Offset and Sizes---
 * @desc Increase if your using a higher screen resolution then the default
-* Default : 630
-* @default 630
+* Default : 624
+* @default 624
 * @type number
 * @min 0
 *
@@ -158,7 +158,7 @@ Imported[Community.Lighting.name] = true;
 * @desc Offscreen x-padding size for the light mask
 * @type number
 * @min 0
-* @default 40
+* @default 32
 *
 * @param ---Battle Settings---
 * @default
@@ -306,16 +306,50 @@ Imported[Community.Lighting.name] = true;
 * <cl: Flashlight l8 w12 #ff0000 on asdf>
 * Creates a flashlight beam with id asdf which can be turned on or off via
 * plugin commands
+*
+* --------------------------------------------------------------------------
+* Easy hex color references
+* --------------------------------------------------------------------------
+* blue - #0000FF
+* red - #FF0000
+* green - #008000
+* cyan - #00FFFF
+* yellow - #FFFF00
+* white - #FFFFFF
+* purple - #800080
+* pink - #FFC0CB
+* black - #000000
+* -------------------------------------------------------------------------------
+* Migrating from Khas Ultra Lights
+* -------------------------------------------------------------------------------
+* Using the smooth lights options make it look extremely close.
+* The default light radius that Khas appears to be around 122. 
 * -------------------------------------------------------------------------------
 * Maps
 * -------------------------------------------------------------------------------
 * DayNight [speed]
 * Activates day/night cycle.  Put in map note or event note
 * - speed     Optional parameter to alter the speed at which time passes.  10 is
-         the default speed, higher numbers are slower, lower numbers are
-         faster, and 0 stops the flow of time entirely.  If speed is not
-         specified, then the current speed is used.
+*         the default speed, higher numbers are slower, lower numbers are
+*         faster, and 0 stops the flow of time entirely.  If speed is not
+*         specified, then the current speed is used.
+*         
+* RegionLight id ON c r
+* - Turns on lights for tile tag or region tag (id) using color (c) and radius (r) 
+* - Replace ON with OFF to turn them off
+* - Put in map note
 *
+* RegionFire, RegionGlow
+* - Same as above, but different lighting effects
+*
+* defaultbrightness
+* - Sets the default brightness of all the lights in the map
+* 
+* Tint set c
+* - Sets the current screen tint to the color (c)
+* 
+* Tint daylight
+* - Sets the tint based on the current hour.
 * -------------------------------------------------------------------------------
 * Plugin Commands
 * -------------------------------------------------------------------------------
@@ -416,19 +450,6 @@ Imported[Community.Lighting.name] = true;
 * - width		width of shape
 * - height		height of shape
 *
-* effect_on_event id radius color frames
-* - id			event id
-* - radius		radius
-* - color		color
-* - frames		frames to persist
-*
-* effect_on_xy x y radius color frames
-* - x			x coord
-* - y			y coord
-* - radius		radius
-* - color		color
-* - frames		frames to persist
-*
 * --------------------------------------------------------------------------
 * Kill Switch and conditional lighting
 * --------------------------------------------------------------------------
@@ -483,6 +504,7 @@ Imported[Community.Lighting.name] = true;
 * $gameVariables.SetActiveRadius(#)
 *
 * ....where # is the max distance you want in tiles.
+*
 */
 
 (function ($$) {
@@ -503,17 +525,17 @@ Imported[Community.Lighting.name] = true;
   let tile_blocks = [];
 
   let parameters = $$.parameters;
-  let lightMaskPadding = +parameters["Lightmask Padding"] || 0;
+  let lightMaskPadding = Number(parameters["Lightmask Padding"]) || 0;
   let useSmootherLights = eval(String(parameters['Use smoother lights'])) || false;
   let light_event_required = eval(parameters["Light event required"]) || false;
   let shift_lights_with_events = eval(String(parameters['Shift lights with events'])) || false;
-  let player_radius = Number(parameters['Player radius']);
+  let player_radius = Number(parameters['Player radius']) || 0;
   let reset_each_map = eval(String(parameters['Reset Lights'])) || false;
   let noteTagKey = parameters["Note Tag Key"] !== "" ? parameters["Note Tag Key"] : false;
-  let dayNightSaveHours = Number(parameters['Save DaynightHours'] || 0);
-  let dayNightSaveMinutes = Number(parameters['Save DaynightMinutes'] || 0);
-  let dayNightSaveSeconds = Number(parameters['Save DaynightSeconds'] || 0);
-  let dayNightSaveNight = +parameters["Save Night Switch"] || 0;
+  let dayNightSaveHours = Number(parameters['Save DaynightHours']) || 0;
+  let dayNightSaveMinutes = Number(parameters['Save DaynightMinutes']) || 0;
+  let dayNightSaveSeconds = Number(parameters['Save DaynightSeconds']) || 0;
+  let dayNightSaveNight = Number(parameters["Save Night Switch"]) || 0;
   let dayNightList = (function (dayNight, nightHours) {
     let result = [];
     try {
@@ -529,22 +551,22 @@ Imported[Community.Lighting.name] = true;
     }
     return result;
   })(parameters["DayNight Colors"], parameters["Night Hours"]);
-  let flashlightoffset = Number(parameters['Flashlight offset'] || 0);
+  let flashlightoffset = Number(parameters['Flashlight offset']) || 0;
   let killswitch = parameters['Kill Switch'] || 'None';
   if (killswitch !== 'A' && killswitch !== 'B' && killswitch !== 'C' && killswitch !== 'D') {
     killswitch = 'None'; //Set any invalid value to no switch
   }
-  let killSwitchAuto = eval(String(parameters['Kill Switch Auto']));
+  let killSwitchAuto = eval(String(parameters['Kill Switch Auto'])) || false;
   let optionText = parameters["Options Menu Entry"] || "";
-  let lightInBattle = eval(String(parameters['Battle Tinting']));
+  let lightInBattle = eval(String(parameters['Battle Tinting'])) || false;
   let battleMaskPosition = parameters['Light Mask Position'] || 'Above';
   if (battleMaskPosition !== 'Above' && battleMaskPosition !== 'Between') {
     battleMaskPosition = 'Above'; //Get rid of any invalid value
   }
 
   let options_lighting_on = true;
-  let maxX = Number(parameters['Screensize X'] || 866);
-  let maxY = Number(parameters['Screensize Y'] || 630);
+  let maxX = (Number(parameters['Screensize X']) || 816) + 2 * lightMaskPadding;
+  let maxY = Number(parameters['Screensize Y']) || 624;
   let tint_oldseconds = 0;
   let tint_timer = 0;
   let oldseconds = 0;
@@ -561,6 +583,7 @@ Imported[Community.Lighting.name] = true;
   //let averagetimecount = 0;
   let notetag_reg = RegExp("<" + noteTagKey + ":[ ]*([^>]+)>", "i");
   let radialColor2 = useSmootherLights == true ? "#00000000" : "#000000";
+  let isValidColorRegex = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)/i;
   $$.getFirstComment = function () {
     let result = null;
     let page = this.page();
@@ -832,7 +855,7 @@ Imported[Community.Lighting.name] = true;
     const allCommands = {
       tileblock: 'tileType', regionblock: 'tileType', tilelight: 'tileType', regionlight: 'tileType', tilefire: 'tileType', regionfire: 'tileType',
       tileglow: 'tileType', regionglow: 'tileType', tint: 'tint', daynight: 'dayNight', flashlight: 'flashLight', setfire: 'setFire', fire: 'fire', light: 'light',
-      effect_on_event: 'effectOnEvent', effect_on_xy: 'effectOnXy', script: 'scriptF', reload: 'reload', tintbattle: 'tintbattle'
+      script: 'scriptF', reload: 'reload', tintbattle: 'tintbattle'
     };
     const result = allCommands[command];
     if (result) {
@@ -920,14 +943,6 @@ Imported[Community.Lighting.name] = true;
       $gameVariables.SetScriptActive(true);
     }
     $$.fireLight(args);
-  };
-
-  Game_Interpreter.prototype.effectOnEvent = function (command, args) {
-    $$.effectOnEvent(args);
-  };
-
-  Game_Interpreter.prototype.effectOnXy = function (command, args) {
-    $$.effectXy(args);
   };
 
   Game_Interpreter.prototype.scriptF = function (command, args) {
@@ -1712,11 +1727,11 @@ Imported[Community.Lighting.name] = true;
    */
   Bitmap.prototype.radialgradientFillRect = function (x1, y1, r1, r2, color1, color2, flicker, brightness, direction) {
 
-    let isValidColor = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)/i.test(color1);
+    let isValidColor = isValidColorRegex.test(color1);
     if (!isValidColor) {
       color1 = '#000000'
     }
-    let isValidColor2 = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)/i.test(color2);
+    let isValidColor2 = isValidColorRegex.test(color2);
     if (!isValidColor2) {
       color2 = '#000000'
     }
@@ -1778,8 +1793,8 @@ Imported[Community.Lighting.name] = true;
       grad = context.createRadialGradient(x1, y1, r1, x1, y1, r2);
 
       if (brightness) {
-        var alphaNum = brightness * 100 * 2.55;
-        grad.addColorStop(0, '#FFFFFF' + alphaNum.toString(16));
+        var alphaNum = Math.floor(brightness * 255);
+        grad.addColorStop(0, '#FFFFFF' + ("00" + alphaNum.toString(16)).slice(-2));
       }
 
 
@@ -1873,11 +1888,11 @@ Imported[Community.Lighting.name] = true;
   Bitmap.prototype.radialgradientFillRect2 = function (x1, y1, r1, r2, color1, color2, direction, flashlength, flashwidth) {
     x1 = x1 + lightMaskPadding;
 
-    let isValidColor = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)/i.test(color1);
+    let isValidColor = isValidColorRegex.test(color1);
     if (!isValidColor) {
       color1 = '#000000'
     }
-    let isValidColor2 = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)/i.test(color2);
+    let isValidColor2 = isValidColorRegex.test(color2);
     if (!isValidColor2) {
       color2 = '#000000'
     }
@@ -1954,11 +1969,13 @@ Imported[Community.Lighting.name] = true;
    * @returns {{r:number,g:number,b:number,a:number}}
    */
   function hexToRgb(hex) {
-    let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    var regex = new RegExp(/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})?$/i);
+    let result = regex.exec(hex);
     result = result ? {
       r: parseInt(result[1], 16),
       g: parseInt(result[2], 16),
-      b: parseInt(result[3], 16)
+      b: parseInt(result[3], 16),
+      a: result[4] == null ? 255 : parseInt(result[4], 16)
     } : null;
     return result;
   }
@@ -2027,7 +2044,17 @@ Imported[Community.Lighting.name] = true;
     this._createBitmap();
 
     //Initialize the bitmap
-    this._addSprite(-lightMaskPadding, 0, this._maskBitmap);
+	
+	// Battlebacks are shifted 32 pixels left (to be able to support screen shakes).
+	// We must take this into account if the BattleLightmask is linked to the battlebacks.
+	var battlebackOffset = battleMaskPosition === 'Between' ? 32 : 0;
+	if (Imported.YEP_ImprovedBattlebacks) { // ImprovedBattlebacks don't have any Y shift
+		this._addSprite(-lightMaskPadding + battlebackOffset, 0, this._maskBitmap);
+	} else {
+		this._addSprite(-lightMaskPadding + battlebackOffset, 0 + battlebackOffset, this._maskBitmap);
+	}
+	
+    
     var redhex = $gameTemp._MapTint.substring(1, 3);
     var greenhex = $gameTemp._MapTint.substring(3, 5);
     var bluehex = $gameTemp._MapTint.substring(5);
@@ -2255,6 +2282,12 @@ Imported[Community.Lighting.name] = true;
           data.map(x => x.trim());
           $gameMap._interpreter.tileType("regionglow", data);
         }
+        else if ((/^RegionFire/i).test(mapnote)) {
+          let data = mapnote.split(/\s+/);
+          data.splice(0, 1);
+          data.map(x => x.trim());
+          $gameMap._interpreter.tileType("regionfire", data);
+        }
         else if ((/^tint/i).test(mapnote)) {
 
           let data = mapnote.split(/\s+/);
@@ -2402,7 +2435,7 @@ Imported[Community.Lighting.name] = true;
       }
       if (args.length >= 3) {
         playercolor = args[3];
-        let isValidPlayerColor = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)/i.test(playercolor);
+        let isValidPlayerColor = isValidColorRegex.test(playercolor);
         if (!isValidPlayerColor) {
           playercolor = '#FFFFFF'
         }
@@ -2433,79 +2466,6 @@ Imported[Community.Lighting.name] = true;
     }
   };
 
-  $$.effectXy = function (args) {
-    let x1 = args[0];
-    if (x1.substring(0, 1) == '#') {
-      x1 = $gameVariables.value(Number(x1.substring(1)));
-    }
-    let y1 = args[1];
-    if (y1.substring(0, 1) == '#') {
-      y1 = $gameVariables.value(Number(y1.substring(1)));
-    }
-    let radius = args[2];
-    if (radius.substring(0, 1) == '#') {
-      radius = $gameVariables.value(Number(radius.substring(1)));
-    }
-    let color = args[3];
-    let time = args[4];
-    if (time.substring(0, 1) == '#') {
-      time = $gameVariables.value(Number(time.substring(1)));
-    }
-    let def = radius + "," + color + "," + time;
-    if (args.length >= 6) {
-      let command = args[5];
-      let ctime = args[6];
-      if (ctime.substring(0, 1) == '#') {
-        ctime = $gameVariables.value(Number(ctime.substring(1)));
-      }
-      def = def + "," + command + "," + ctime;
-    }
-  };
-
-  /**
-   * 
-   * @param {String[]} args 
-   */
-  $$.effectOnEvent = function (args) {
-    x1 = 0;
-    y1 = 0;
-    let evid = -1;
-    for (let i = 0, len = $gameMap.events().length; i < len; i++) {
-      if ($gameMap.events()[i]) {
-        evid = $gameMap.events()[i]._eventId;
-        if (evid == args[0]) {
-          x1 = $gameMap.events()[i]._realX * $gameMap.tileWidth();
-          y1 = $gameMap.events()[i]._realY * $gameMap.tileHeight();
-        }
-      }
-    }
-    // def = radius,color,duration(,keyword,speed)
-    // 0. Radius
-    // 1. Color
-    // 2. Time in Frames
-    // 3. Keyword (optional)   FADEIN FADEOUT FADEBOTH GROW SHRINK GROWSHRINK BIO
-    // 4. Fade/Grow Speed in frames
-
-    let radius = args[1];
-    if (radius.substring(0, 1) == '#') {
-      radius = $gameVariables.value(Number(radius.substring(1)));
-    }
-    let color = args[2];
-    let time = args[3];
-    if (time.substring(0, 1) == '#') {
-      time = $gameVariables.value(Number(time.substring(1)));
-    }
-    let def = radius + "," + color + "," + time;
-    if (args.length >= 5) {
-      let command = args[4];
-      let ctime = args[5];
-      if (ctime.substring(0, 1) == '#') {
-        ctime = $gameVariables.value(Number(ctime.substring(1)));
-      }
-      def = def + "," + command + "," + ctime;
-    }
-  };
-
   /**
    * 
    * @param {String[]} args 
@@ -2521,7 +2481,7 @@ Imported[Community.Lighting.name] = true;
       }
       if (args.length > 2) {
         playercolor = args[2];
-        let isValidPlayerColor = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)/i.test(playercolor);
+        let isValidPlayerColor = isValidColorRegex.test(playercolor);
         if (!isValidPlayerColor) {
           playercolor = '#FFFFFF'
         }
@@ -2567,7 +2527,7 @@ Imported[Community.Lighting.name] = true;
       // player color
       if (args.length > 2) {
         playercolor = args[2];
-        let isValidPlayerColor = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)/i.test(playercolor);
+        let isValidPlayerColor = isValidColorRegex.test(playercolor);
         if (!isValidPlayerColor) {
           playercolor = '#FFFFFF'
         }
@@ -2689,7 +2649,7 @@ Imported[Community.Lighting.name] = true;
     let tile_on = String(args[1]).toLowerCase() === "on" ? 1 : 0;
 
     let tilecolor = args[2];
-    let isValidColor1 = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)/i.test(tilecolor);
+    let isValidColor1 = isValidColorRegex.test(tilecolor);
     if (!isValidColor1) {
       if (tiletype === 1 || tiletype === 2) tilecolor = "#000000";
       else tilecolor = "#ffffff";
@@ -2875,7 +2835,7 @@ Imported[Community.Lighting.name] = true;
         hour = (daynighthoursinday - 1);
       }
       let hourcolor = args[2];
-      let isValidColor = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)/i.test(hourcolor);
+      let isValidColor = isValidColorRegex.test(hourcolor);
       if (isValidColor) {
         daynightcolors[hour].color = hourcolor;
       }

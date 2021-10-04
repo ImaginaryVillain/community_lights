@@ -12660,7 +12660,7 @@
     {
       "id": 7,
       "name": "Dark cultist",
-      "note": "<CL: Light 100 cycle #ff6666 1 #66ff66 1 #ff00ff 1 Y-0.5>",
+      "note": "<CL: Light 100 cycle #ff6666 10 #66ff66 10 #ff00ff 10 Y-0.5>",
       "pages": [
         {
           "conditions": {

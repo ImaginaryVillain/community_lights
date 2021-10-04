@@ -1,5 +1,5 @@
 //=============================================================================
-// rmmz_core.js v1.1.1
+// rmmz_core.js v1.3.3
 //=============================================================================
 
 //-----------------------------------------------------------------------------
@@ -192,7 +192,7 @@ Utils.RPGMAKER_NAME = "MZ";
  * @type string
  * @constant
  */
-Utils.RPGMAKER_VERSION = "1.1.1";
+Utils.RPGMAKER_VERSION = "1.3.3";
 
 /**
  * Checks whether the current RPG Maker version is greater than or equal to
@@ -369,6 +369,16 @@ Utils.canPlayWebm = function() {
  */
 Utils.encodeURI = function(str) {
     return encodeURIComponent(str).replace(/%2F/g, "/");
+};
+
+/**
+ * Gets the filename that does not include subfolders.
+ *
+ * @param {string} filename - The filename with subfolders.
+ * @returns {string} The filename without subfolders.
+ */
+Utils.extractFileName = function(filename) {
+    return filename.split("/").pop();
 };
 
 /**
@@ -720,6 +730,7 @@ Graphics.hideScreen = function() {
 Graphics.resize = function(width, height) {
     this._width = width;
     this._height = height;
+    this._app.renderer.resize(width, height);
     this._updateAllElements();
 };
 
@@ -1036,6 +1047,7 @@ Graphics._createEffekseerContext = function() {
             this._effekseer = effekseer.createContext();
             if (this._effekseer) {
                 this._effekseer.init(this._app.renderer.gl);
+                this._effekseer.setRestorationOfStatesFlag(false);
             }
         } catch (e) {
             this._app = null;
@@ -3099,8 +3111,8 @@ Tilemap.Renderer.prototype._createShader = function() {
 
     return new PIXI.Shader(PIXI.Program.from(vertexSrc, fragmentSrc), {
         uSampler0: 0,
-        uSampler1: 1,
-        uSampler2: 2,
+        uSampler1: 0,
+        uSampler2: 0,
         uProjectionMatrix: new PIXI.Matrix()
     });
 };
@@ -3981,16 +3993,17 @@ Window.prototype._refreshBack = function() {
     const h = Math.max(0, this._height - m * 2);
     const sprite = this._backSprite;
     const tilingSprite = sprite.children[0];
+    // [Note] We use 95 instead of 96 here to avoid blurring edges.
     sprite.bitmap = this._windowskin;
-    sprite.setFrame(0, 0, 96, 96);
+    sprite.setFrame(0, 0, 95, 95);
     sprite.move(m, m);
-    sprite.scale.x = w / 96;
-    sprite.scale.y = h / 96;
+    sprite.scale.x = w / 95;
+    sprite.scale.y = h / 95;
     tilingSprite.bitmap = this._windowskin;
     tilingSprite.setFrame(0, 96, 96, 96);
     tilingSprite.move(0, 0, w, h);
-    tilingSprite.scale.x = 96 / w;
-    tilingSprite.scale.y = 96 / h;
+    tilingSprite.scale.x = 1 / sprite.scale.x;
+    tilingSprite.scale.y = 1 / sprite.scale.y;
     sprite.setColorTone(this._colorTone);
 };
 
