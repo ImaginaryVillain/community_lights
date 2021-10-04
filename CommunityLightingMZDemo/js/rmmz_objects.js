@@ -1,5 +1,5 @@
 //=============================================================================
-// rmmz_objects.js v1.1.1
+// rmmz_objects.js v1.3.3
 //=============================================================================
 
 //-----------------------------------------------------------------------------
@@ -403,6 +403,14 @@ Game_System.prototype.mainFontSize = function() {
 
 Game_System.prototype.windowPadding = function() {
     return 12;
+};
+
+Game_System.prototype.windowOpacity = function() {
+    if ("windowOpacity" in $dataSystem.advanced) {
+        return $dataSystem.advanced.windowOpacity;
+    } else {
+        return 192;
+    }
 };
 
 //-----------------------------------------------------------------------------
@@ -7845,6 +7853,7 @@ Game_Character.prototype.processRouteEnd = function() {
     } else if (this._moveRouteForcing) {
         this._moveRouteForcing = false;
         this.restoreMoveRoute();
+        this.setMovementSuccess(false);
     }
 };
 
@@ -11271,7 +11280,8 @@ Game_Interpreter.prototype.pluginCommand = function() {
 
 // Plugin Command
 Game_Interpreter.prototype.command357 = function(params) {
-    PluginManager.callCommand(this, params[0], params[1], params[3]);
+    const pluginName = Utils.extractFileName(params[0]);
+    PluginManager.callCommand(this, pluginName, params[1], params[3]);
     return true;
 };
 
