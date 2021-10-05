@@ -312,6 +312,7 @@ Imported[Community.Lighting.name] = true;
 * --------------------------------------------------------------------------
 * blue - #0000FF
 * red - #FF0000
+* orange - #FFA500
 * green - #008000
 * cyan - #00FFFF
 * yellow - #FFFF00
@@ -323,7 +324,7 @@ Imported[Community.Lighting.name] = true;
 * Migrating from Khas Ultra Lights
 * -------------------------------------------------------------------------------
 * Using the smooth lights options make it look extremely close.
-* The default light radius that Khas appears to be around 122. 
+* The default light radius that Khas appears to be around 122.
 * -------------------------------------------------------------------------------
 * Maps
 * -------------------------------------------------------------------------------
@@ -333,9 +334,8 @@ Imported[Community.Lighting.name] = true;
 *         the default speed, higher numbers are slower, lower numbers are
 *         faster, and 0 stops the flow of time entirely.  If speed is not
 *         specified, then the current speed is used.
-*         
 * RegionLight id ON c r
-* - Turns on lights for tile tag or region tag (id) using color (c) and radius (r) 
+* - Turns on lights for tile tag or region tag (id) using color (c) and radius (r)
 * - Replace ON with OFF to turn them off
 * - Put in map note
 *
@@ -344,10 +344,8 @@ Imported[Community.Lighting.name] = true;
 *
 * defaultbrightness
 * - Sets the default brightness of all the lights in the map
-* 
 * Tint set c
 * - Sets the current screen tint to the color (c)
-* 
 * Tint daylight
 * - Sets the tint based on the current hour.
 * -------------------------------------------------------------------------------
@@ -504,7 +502,6 @@ Imported[Community.Lighting.name] = true;
 * $gameVariables.SetActiveRadius(#)
 *
 * ....where # is the max distance you want in tiles.
-*
 */
 
 (function ($$) {
@@ -1508,21 +1505,25 @@ Imported[Community.Lighting.name] = true;
         r = rgb.r;
         g = rgb.g;
         b = rgb.b;
+        a = rgb.a;
 
         rgb = hexToRgb(color2);
         let r2 = rgb.r;
         let g2 = rgb.g;
         let b2 = rgb.b;
+        let a2 = rgb.a;
 
         let stepR = (r2 - r) / (60 * daynightspeed);
         let stepG = (g2 - g) / (60 * daynightspeed);
         let stepB = (b2 - b) / (60 * daynightspeed);
+        let stepA = (a2 - a) / (60 * daynightspeed);
 
         r = Math.floor(r + (stepR * daynighttimer));
         g = Math.floor(g + (stepG * daynighttimer));
         b = Math.floor(b + (stepB * daynighttimer));
+        a = Math.floor(a + (stepA * daynighttimer));
       }
-      color1 = "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+      color1 = rgba2hex(r, g, b, a);
 
       this._maskBitmap.FillRect(-lightMaskPadding, 0, maxX + lightMaskPadding, maxY, color1);
     }
@@ -1556,18 +1557,22 @@ Imported[Community.Lighting.name] = true;
         let r = hexToRgb(tint_value).r;
         let g = hexToRgb(tint_value).g;
         let b = hexToRgb(tint_value).b;
+        let a = hexToRgb(tint_value).a;
 
         let r2 = hexToRgb(tint_target).r;
         let g2 = hexToRgb(tint_target).g;
         let b2 = hexToRgb(tint_target).b;
+        let a2 = hexToRgb(tint_target).a;
 
         let stepR = (r2 - r) / (60 * tint_speed);
         let stepG = (g2 - g) / (60 * tint_speed);
         let stepB = (b2 - b) / (60 * tint_speed);
+        let stepA = (a2 - a) / (60 * tint_speed);
 
         let r3 = Math.floor(r + (stepR * tint_timer));
         let g3 = Math.floor(g + (stepG * tint_timer));
         let b3 = Math.floor(b + (stepB * tint_timer));
+        let a3 = Math.floor(b + (stepA * tint_timer));
         if (r3 < 0) {
           r3 = 0
         }
@@ -1576,6 +1581,9 @@ Imported[Community.Lighting.name] = true;
         }
         if (b3 < 0) {
           b3 = 0
+        }
+        if (a3 < 0) {
+          a3 = 0;
         }
         if (r3 > 255) {
           r3 = 255
@@ -1586,31 +1594,52 @@ Imported[Community.Lighting.name] = true;
         if (b3 > 255) {
           b3 = 255
         }
+        if (a3 > 255) {
+          a3 = 255;
+        }
         let reddone = false;
         let greendone = false;
         let bluedone = false;
+        let alphadone = false;
+
+        //Greater than
+
+
         if (stepR >= 0 && r3 >= r2) {
-          reddone = true;
-        }
-        if (stepR <= 0 && r3 <= r2) {
           reddone = true;
         }
         if (stepG >= 0 && g3 >= g2) {
           greendone = true;
         }
-        if (stepG <= 0 && g3 <= g2) {
+        if (stepB >= 0 && b3 >= b2) {
           greendone = true;
         }
-        if (stepB >= 0 && b3 >= b2) {
+        if (stepA >= 0 && a3 >= a2) {
+          alphadone = true;
+        }
+
+
+        // Less than   
+
+        if (stepR <= 0 && r3 <= r2) {
           bluedone = true;
+        }
+        if (stepG <= 0 && g3 <= g2) {
+          greendone = true;
         }
         if (stepB <= 0 && b3 <= b2) {
           bluedone = true;
         }
-        if (reddone == true && bluedone == true && greendone == true) {
+        if (stepA <= 0 && a3 <= a2) {
+          alphadone = true;
+        }
+
+        if (reddone == true && bluedone == true && greendone == true && alphadone == true) {
           $gameVariables.SetTint(tint_target);
         }
-        tcolor = "#" + ((1 << 24) + (r3 << 16) + (g3 << 8) + b3).toString(16).slice(1);
+
+        let hex = rgba2hex(r3, g3, b3, a3);
+        tcolor = hex;
       } else {
         tint_timer = 0;
       }
@@ -1710,6 +1739,59 @@ Imported[Community.Lighting.name] = true;
     return "rgba(" + r + "," + g + "," + b + "," + a + ")";
   }
 
+
+
+  /**
+   * Function to convert the
+   * RGB code to Hex color code
+   * @param {Number} R 
+   * @param {Number} G 
+   * @param {Number} B
+   * @param {Number} A
+   * @returns {String}
+   */
+  function rgba2hex(R, G, B, A = 255) {
+    if ((R >= 0 && R <= 255)
+      && (G >= 0 && G <= 255)
+      && (B >= 0 && B <= 255) &&
+      (A >= 0 && A <= 255)) {
+
+      let hexCode = "#";
+      let redHex = R.toString(16);
+      if (redHex.length < 2) {
+        redHex = "0" + redHex;
+      }
+
+      let greenHex = G.toString(16);
+      if (greenHex.length < 2) {
+        greenHex = "0" + greenHex;
+      }
+
+      let blueHex = B.toString(16);
+      if (blueHex.length < 2) {
+        blueHex = "0" + blueHex;
+      }
+
+      let alphaHex = A.toString(16);
+      if (alphaHex.length < 2) {
+        alphaHex = "0" + alphaHex;
+      }
+
+      hexCode += redHex;
+      hexCode += greenHex;
+      hexCode += blueHex;
+      hexCode += alphaHex;
+
+      return hexCode;
+    }
+
+    // The hex color code doesn't exist
+    else {
+      return "-1";
+    }
+
+  }
+
   // *******************  NORMAL LIGHT SHAPE ***********************************
   // Fill gradient circle
 
@@ -1778,6 +1860,8 @@ Imported[Community.Lighting.name] = true;
         let r = hexToRgb(color1).r;
         let g = hexToRgb(color1).g;
         let b = hexToRgb(color1).b;
+        let a = hexToRgb(color1).a;
+
         g = g + colorrnd;
         if (g < 0) {
           g = 0;
@@ -1785,31 +1869,43 @@ Imported[Community.Lighting.name] = true;
         if (g > 255) {
           g = 255;
         }
-        color1 = "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+        color1 = rgba2hex(r, g, b, a);
         r2 = r2 - gradrnd;
         if (r2 < 0) r2 = 0;
       }
 
       grad = context.createRadialGradient(x1, y1, r1, x1, y1, r2);
 
+
       if (brightness) {
-        var alphaNum = Math.floor(brightness * 255);
-        grad.addColorStop(0, '#FFFFFF' + ("00" + alphaNum.toString(16)).slice(-2));
+        if (!useSmootherLights) {
+          var alpha = Math.floor(brightness * 100 * 2.55).toString(16);
+          if (alpha.length < 2) {
+            alpha = "0" + alpha;
+          }
+          grad.addColorStop(0, '#FFFFFF' + alpha);
+        }
       }
 
-
       if (useSmootherLights) {
-        for (let i = brightness; i < 1; i += 0.1) {
+        for (let distanceFromCenter = 0; distanceFromCenter < 1; distanceFromCenter += 0.1) {
           let data = hexToRgb(color1);
-          let newRed = data.r - (i * 100 * 2.55);
-          let newGreen = data.g - (i * 100 * 2.55);
-          let newBlue = data.b - (i * 100 * 2.55);
-          grad.addColorStop(i, rgba(newRed, newGreen, newBlue, 1 - i));
+          var newRed = data.r - (distanceFromCenter * 100 * 2.55);
+          var newGreen = data.g - (distanceFromCenter * 100 * 2.55);
+          let newBlue = data.b - (distanceFromCenter * 100 * 2.55);
+          let newAlpha = 1 - distanceFromCenter;
+          if (brightness) {
+            newAlpha = Math.max(0, brightness - distanceFromCenter);
+          }
+
+          grad.addColorStop(distanceFromCenter, rgba(newRed, newGreen, newBlue, newAlpha));
         }
       }
       else {
         grad.addColorStop(brightness, color1);
       }
+
+
       grad.addColorStop(1, color2);
 
 
@@ -2044,17 +2140,17 @@ Imported[Community.Lighting.name] = true;
     this._createBitmap();
 
     //Initialize the bitmap
-	
-	// Battlebacks are shifted 32 pixels left (to be able to support screen shakes).
-	// We must take this into account if the BattleLightmask is linked to the battlebacks.
-	var battlebackOffset = battleMaskPosition === 'Between' ? 32 : 0;
-	if (Imported.YEP_ImprovedBattlebacks) { // ImprovedBattlebacks don't have any Y shift
-		this._addSprite(-lightMaskPadding + battlebackOffset, 0, this._maskBitmap);
-	} else {
-		this._addSprite(-lightMaskPadding + battlebackOffset, 0 + battlebackOffset, this._maskBitmap);
-	}
-	
-    
+
+    // Battlebacks are shifted 32 pixels left (to be able to support screen shakes).
+    // We must take this into account if the BattleLightmask is linked to the battlebacks.
+    var battlebackOffset = battleMaskPosition === 'Between' ? 32 : 0;
+    if (Imported.YEP_ImprovedBattlebacks) { // ImprovedBattlebacks don't have any Y shift
+      this._addSprite(-lightMaskPadding + battlebackOffset, 0, this._maskBitmap);
+    } else {
+      this._addSprite(-lightMaskPadding + battlebackOffset, 0 + battlebackOffset, this._maskBitmap);
+    }
+
+
     var redhex = $gameTemp._MapTint.substring(1, 3);
     var greenhex = $gameTemp._MapTint.substring(3, 5);
     var bluehex = $gameTemp._MapTint.substring(5);
@@ -2270,6 +2366,18 @@ Imported[Community.Lighting.name] = true;
             $gameVariables.SetDaynightSpeed(daynightspeed);
           }
         }
+        else if ((/^RegionFire/i).test(mapnote)) {
+          let data = mapnote.split(/\s+/);
+          data.splice(0, 1);
+          data.map(x => x.trim());
+          $gameMap._interpreter.tileType("regionfire", data);
+        }
+        else if ((/^RegionGlow/i).test(mapnote)) {
+          let data = mapnote.split(/\s+/);
+          data.splice(0, 1);
+          data.map(x => x.trim());
+          $gameMap._interpreter.tileType("regionglow", data);
+        }
         else if ((/^RegionLight/i).test(mapnote)) {
           let data = mapnote.split(/\s+/);
           data.splice(0, 1);
@@ -2282,12 +2390,6 @@ Imported[Community.Lighting.name] = true;
           data.map(x => x.trim());
           $gameMap._interpreter.tileType("regionglow", data);
         }
-        else if ((/^RegionFire/i).test(mapnote)) {
-          let data = mapnote.split(/\s+/);
-          data.splice(0, 1);
-          data.map(x => x.trim());
-          $gameMap._interpreter.tileType("regionfire", data);
-        }
         else if ((/^tint/i).test(mapnote)) {
 
           let data = mapnote.split(/\s+/);
@@ -2295,10 +2397,30 @@ Imported[Community.Lighting.name] = true;
           data.map(x => x.trim());
           $$.tint(data);
         }
-        else if ((/^defaultbrightness/i).test(mapnote)) {
+        else if ((/^defaultBrightness/i).test(mapnote)) {
           let brightness = note.match(/\d+/);
           if (brightness) {
             $$.defaultBrightness = Math.max(0, Math.min(Number(brightness[0], 100))) / 100;
+          }
+        }
+
+        else if ((/^mapBrightness/i).test(mapnote)) {
+          let brightness = note.match(/\d+/);
+
+          if (brightness) {
+            let color = $gameVariables.GetTint();
+            if (color == "#000000" || color == "#00000000") {
+              color = "#FFFFFF";
+            }
+            var red = hexToRgb(color).r;
+            var blue = hexToRgb(color).b;
+            var green = hexToRgb(color).g;
+
+
+            var value = Math.max(0, Math.min(Number(brightness[0], 100)));
+            var alphaNum = Math.floor(value * 2.55);
+            var trueColor = rgba2hex(red, green, blue, alphaNum);
+            $$.tint(["set", trueColor]);
           }
         }
       }
