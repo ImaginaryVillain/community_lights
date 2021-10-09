@@ -5543,7 +5543,7 @@
     {
       "id": 3,
       "name": "EV003",
-      "note": "<cl: Flashlight 6 8 #FFFFFF>",
+      "note": "<cl: Flashlight 6 8 #FFFFFF D1>",
       "pages": [
         {
           "conditions": {
