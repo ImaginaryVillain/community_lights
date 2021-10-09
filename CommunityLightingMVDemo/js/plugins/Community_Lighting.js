@@ -330,9 +330,9 @@ Imported[Community.Lighting.name] = true;
 * DayNight [speed]
 * Activates day/night cycle.  Put in map note or event note
 * - speed     Optional parameter to alter the speed at which time passes.  10 is
-         the default speed, higher numbers are slower, lower numbers are
-         faster, and 0 stops the flow of time entirely.  If speed is not
-         specified, then the current speed is used.
+*         the default speed, higher numbers are slower, lower numbers are
+*         faster, and 0 stops the flow of time entirely.  If speed is not
+*         specified, then the current speed is used.
 *         
 * RegionLight id ON c r
 * - Turns on lights for tile tag or region tag (id) using color (c) and radius (r) 
@@ -1272,7 +1272,9 @@ Imported[Community.Lighting.name] = true;
                 // idfound = true;
                 state = lightarray_state[j];
                 let newcolor = lightarray_color[j];
-                if (newcolor != 'defaultcolor') colorvalue = newcolor;
+                if (newcolor != 'defaultcolor') {
+					colorvalue = newcolor;
+				}
               }
             }
 
@@ -1291,46 +1293,8 @@ Imported[Community.Lighting.name] = true;
           }
 
           // show light
-          if (state == true) {
-            let ldir = 0;
-            if (event_moving[i] > 0) {
-              ldir = $gameMap.events()[event_stacknumber[i]]._direction;
-            }
-            else {
-              ldir = event_dir[i];
-            }
-
-            // moving lightsources
-            let flashlight = false;
-            if (lightType == "flashlight") {
-              flashlight = true;
-
-              let walking = event_moving[i];
-              if (walking == false) {
-                let tldir = cur.getLightFlashlightDirection();
-                if (!isNaN(tldir)) {
-                  if (tldir < 0 || ldir >= 5) {
-                    ldir = 4
-                  }
-                  if (tldir == 1) {
-                    ldir = 8
-                  }
-                  if (tldir == 2) {
-                    ldir = 6
-                  }
-                  if (tldir == 3) {
-                    ldir = 2
-                  }
-                  if (tldir == 4) {
-                    ldir = 4
-                  }
-                }
-              }
-
-
-            }
-
-            let lx1 = $gameMap.events()[event_stacknumber[i]].screenX();
+          if (state === true) {		
+			let lx1 = $gameMap.events()[event_stacknumber[i]].screenX();
             let ly1 = $gameMap.events()[event_stacknumber[i]].screenY() - 24;
             if (!shift_lights_with_events) {
               ly1 += $gameMap.events()[event_stacknumber[i]].shiftY();
@@ -1340,12 +1304,37 @@ Imported[Community.Lighting.name] = true;
             lx1 += +xoffset;
             ly1 += +yoffset;
 
-
-            if (flashlight == true) {
-              this._maskBitmap.radialgradientFillRect2(lx1, ly1, 0, light_radius, colorvalue, '#000000', ldir, flashlength, flashwidth);
-            } else {
-              this._maskBitmap.radialgradientFillRect(lx1, ly1, 0, light_radius, colorvalue, '#000000', objectflicker, brightness, direction);
-            }
+            if (lightType === "flashlight") { // flashlight
+				let ldir = 0;
+				if (event_moving[i] > 0) {
+					ldir = $gameMap.events()[event_stacknumber[i]]._direction;
+				} else {
+					ldir = event_dir[i];
+				}
+				
+				let tldir = cur.getLightFlashlightDirection();
+				if (!isNaN(tldir)) {
+					switch(tldir) {
+						case 1:
+							ldir = 8;
+							break;
+						case 2:
+							ldir = 6;
+							break;
+						case 3:
+							ldir = 2;
+							break;
+						case 4:
+							ldir = 4;
+							break;
+						default:
+							break;
+					}
+				}
+				this._maskBitmap.radialgradientFillRect2(lx1, ly1, 0, light_radius, colorvalue, '#000000', ldir, flashlength, flashwidth);
+            } else { // regular light
+				this._maskBitmap.radialgradientFillRect(lx1, ly1, 0, light_radius, colorvalue, '#000000', objectflicker, brightness, direction);
+			}
           }
         }
       }
