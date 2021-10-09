@@ -1833,7 +1833,7 @@ Imported[Community.Lighting.name] = true;
 					}
 
 					// show light
-					if (state == true)
+					if (state === true)
 					{
 						let lx1 = $gameMap.events()[event_stacknumber[i]].screenX();
 						let ly1 = $gameMap.events()[event_stacknumber[i]].screenY() - 24;
@@ -1845,7 +1845,7 @@ Imported[Community.Lighting.name] = true;
 						lx1 += +xoffset;
 						ly1 += +yoffset;
 						
-						if (lightType == "flashlight")
+						if (lightType === "flashlight")
 						{
 							let ldir = 0;
 							if (event_moving[i] > 0) {
