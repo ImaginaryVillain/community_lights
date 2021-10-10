@@ -105,7 +105,7 @@
     "pitch": 100,
     "volume": 90
   },
-  "editMapId": 9,
+  "editMapId": 7,
   "elements": [
     "",
     "Physical",
@@ -322,7 +322,7 @@
   ],
   "startMapId": 2,
   "startX": 19,
-  "startY": 18,
+  "startY": 17,
   "switches": [
     "",
     "Night Time",
@@ -531,7 +531,7 @@
     "",
     ""
   ],
-  "versionId": 75267799,
+  "versionId": 66658528,
   "victoryMe": {
     "name": "Victory1",
     "pan": 0,
