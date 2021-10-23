@@ -1852,7 +1852,7 @@ Imported[Community.Lighting.name] = true;
         if (brightness > 0) {
           newAlpha = Math.max(0, brightness - distanceFromCenter);
         }
-        this.addColorStop(distanceFromCenter, rgba(newRed, newGreen, newBlue, newAlpha));
+        this.addColorStop(distanceFromCenter, rgba(~~newRed, ~~newGreen, ~~newBlue, newAlpha));
       }
     }
     else {
