@@ -945,7 +945,7 @@ Imported[Community.Lighting.name] = true;
    */
   Game_Interpreter.prototype.fire = function (command, args) {
     if (args.contains("radius") || args.contains("radiusgrow")) $gameVariables.SetFire(true);
-    if (args[0] === "deactivate") {
+    if (args[0] === "deactivate" || (args[0].toLowerCase() === "off" && args.length == 1)) {
       $gameVariables.SetScriptActive(false);
     } else {
       $gameVariables.SetScriptActive(true);
@@ -960,7 +960,7 @@ Imported[Community.Lighting.name] = true;
    */
   Game_Interpreter.prototype.light = function (command, args) {
     if (args.contains("radius") || args.contains("radiusgrow")) $gameVariables.SetFire(false);
-    if (args[0].toLowerCase() === "deactivate" || args[0].toLowerCase() === "off") {
+    if (args[0].toLowerCase() === "deactivate" || (args[0].toLowerCase() === "off" && args.length == 1)) {
       $gameVariables.SetScriptActive(false);
     } else {
       $gameVariables.SetScriptActive(true);
@@ -969,7 +969,7 @@ Imported[Community.Lighting.name] = true;
   };
 
   Game_Interpreter.prototype.scriptF = function (command, args) {
-    if (args[0] === "deactivate") {
+    if (args[0] === "deactivate" || (args[0].toLowerCase() === "off" && args.length == 1)) {
       $gameVariables.SetScriptActive(true);
     } else if (args[0] === "activate") {
       $gameVariables.SetScriptActive(false);
@@ -1300,8 +1300,8 @@ Imported[Community.Lighting.name] = true;
                 state = lightarray_state[j];
                 let newcolor = lightarray_color[j];
                 if (newcolor != 'defaultcolor') {
-					colorvalue = newcolor;
-				}
+                  colorvalue = newcolor;
+                }
               }
             }
 
@@ -1320,8 +1320,8 @@ Imported[Community.Lighting.name] = true;
           }
 
           // show light
-          if (state === true) {		
-			let lx1 = $gameMap.events()[event_stacknumber[i]].screenX();
+          if (state === true) {
+            let lx1 = $gameMap.events()[event_stacknumber[i]].screenX();
             let ly1 = $gameMap.events()[event_stacknumber[i]].screenY() - 24;
             if (!shift_lights_with_events) {
               ly1 += $gameMap.events()[event_stacknumber[i]].shiftY();
@@ -1332,36 +1332,36 @@ Imported[Community.Lighting.name] = true;
             ly1 += +yoffset;
 
             if (lightType === "flashlight") { // flashlight
-				let ldir = 0;
-				if (event_moving[i] > 0) {
-					ldir = $gameMap.events()[event_stacknumber[i]]._direction;
-				} else {
-					ldir = event_dir[i];
-				}
-				
-				let tldir = cur.getLightFlashlightDirection();
-				if (!isNaN(tldir)) {
-					switch(tldir) {
-						case 1:
-							ldir = 8;
-							break;
-						case 2:
-							ldir = 6;
-							break;
-						case 3:
-							ldir = 2;
-							break;
-						case 4:
-							ldir = 4;
-							break;
-						default:
-							break;
-					}
-				}
-				this._maskBitmap.radialgradientFillRect2(lx1, ly1, 0, light_radius, colorvalue, '#000000', ldir, flashlength, flashwidth);
+              let ldir = 0;
+              if (event_moving[i] > 0) {
+                ldir = $gameMap.events()[event_stacknumber[i]]._direction;
+              } else {
+                ldir = event_dir[i];
+              }
+
+              let tldir = cur.getLightFlashlightDirection();
+              if (!isNaN(tldir)) {
+                switch (tldir) {
+                  case 1:
+                    ldir = 8;
+                    break;
+                  case 2:
+                    ldir = 6;
+                    break;
+                  case 3:
+                    ldir = 2;
+                    break;
+                  case 4:
+                    ldir = 4;
+                    break;
+                  default:
+                    break;
+                }
+              }
+              this._maskBitmap.radialgradientFillRect2(lx1, ly1, 0, light_radius, colorvalue, '#000000', ldir, flashlength, flashwidth);
             } else { // regular light
-				this._maskBitmap.radialgradientFillRect(lx1, ly1, 0, light_radius, colorvalue, '#000000', objectflicker, brightness, direction);
-			}
+              this._maskBitmap.radialgradientFillRect(lx1, ly1, 0, light_radius, colorvalue, '#000000', objectflicker, brightness, direction);
+            }
           }
         }
       }
