@@ -1805,10 +1805,12 @@ Imported[Community.Lighting.name] = true;
 			if (cur._lastLightPage !== cur._pageIndex) cur.resetLightData();
 			
 			let lightsOnRadius = $gameVariables.GetActiveRadius();
-		    let distanceApart = Math.round(Community.Lighting.distance($gamePlayer.x, $gamePlayer.y, cur._realX, cur._realY));
-		    if (distanceApart > lightsOnRadius && lightsOnRadius > 0) {
-			  continue;
-		    }
+		    if (lightsOnRadius > 0) {
+				let distanceApart = Math.round(Community.Lighting.distance($gamePlayer.x, $gamePlayer.y, cur._realX, cur._realY));
+				if (distanceApart > lightsOnRadius) {
+					continue;
+				}
+			}
 			
 			let lightType = cur.getLightType();
 			if (lightType === "light" || lightType === "fire" || lightType === "flashlight")
