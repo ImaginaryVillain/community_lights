@@ -123,7 +123,7 @@ Imported[Community.Lighting.name] = true;
 * @min 0
 * @default 300
 *
-* @param Flashlight Y offset
+* @param Flashlight offset
 * @parent ---Offset and Sizes---
 * @desc Increase this setting to move up the flashlight for double height characters.
 * Default: 0
@@ -851,7 +851,7 @@ Imported[Community.Lighting.name] = true;
 		}
 		return result;
 	})(parameters["DayNight Colors"], parameters["Night Hours"]);
-	let flashlightYoffset = Number(parameters['Flashlight Y offset']) || 0;
+	let flashlightYoffset = Number(parameters['Flashlight offset']) || 0;
 	let flashlightXoffset = Number(parameters['Flashlight X offset']) || 0;
 	let killswitch = parameters['Kill Switch'] || 'None';
 	if (killswitch !== 'A' && killswitch !== 'B' && killswitch !== 'C' && killswitch !== 'D') {
