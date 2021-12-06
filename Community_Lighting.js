@@ -43,9 +43,9 @@ Imported[Community.Lighting.name] = true;
 *
 * @param Lights Active Radius
 * @parent ---Offset and Sizes---
-* @desc The number of grid spaces away from the player that lights are turned on.
-* Default: 20
-* @default 20
+* @desc The number of grid spaces away from the player that lights are turned on. (0 to not use this functionality)
+* Default: 0
+* @default 0
 *
 * @param Reset Lights
 * @parent ---General Settings---
@@ -128,9 +128,18 @@ Imported[Community.Lighting.name] = true;
 * @min 0
 * @default 300
 *
-* @param Flashlight offset
+* @param Flashlight Y offset
 * @parent ---Offset and Sizes---
 * @desc Increase this setting to move up the flashlight for double height characters.
+* Default: 0
+* @type number
+* @min -100
+* @max 100
+* @default 0
+*
+* @param Flashlight X offset
+* @parent ---Offset and Sizes---
+* @desc Use this setting for characters larger than one space.
 * Default: 0
 * @type number
 * @min -100
@@ -573,7 +582,8 @@ Imported[Community.Lighting.name] = true;
     }
     return result;
   })(parameters["DayNight Colors"], parameters["Night Hours"]);
-  let flashlightoffset = Number(parameters['Flashlight offset']) || 0;
+  let flashlightYoffset = Number(parameters['Flashlight Y offset']) || 0;
+  let flashlightXoffset = Number(parameters['Flashlight X offset']) || 0;
   let killswitch = parameters['Kill Switch'] || 'None';
   if (killswitch !== 'A' && killswitch !== 'B' && killswitch !== 'C' && killswitch !== 'D') {
     killswitch = 'None'; //Set any invalid value to no switch
@@ -1195,7 +1205,8 @@ Imported[Community.Lighting.name] = true;
       if (playerflashlight == true) {
         this._maskBitmap.radialgradientFillRect2(x1, y1, lightMaskPadding, iplayer_radius, playercolor, radialColor2, pd, flashlightlength, flashlightwidth);
       }
-      y1 = y1 - flashlightoffset;
+	  x1 = x1 - flashlightXoffset;
+      y1 = y1 - flashlightYoffset;
       if (iplayer_radius < 100) {
         // dim the light a bit at lower lightradius for a less focused effect.
         let red = hexToRgb(playercolor).r;
@@ -1260,12 +1271,21 @@ Imported[Community.Lighting.name] = true;
     }
 
     // ********** OTHER LIGHTSOURCES **************
+							
+	
 
     for (let i = 0, len = eventObjId.length; i < len; i++) {
       let evid = event_id[i];
       let cur = $gameMap.events()[eventObjId[i]];
       if (cur._lastLightPage !== cur._pageIndex) cur.resetLightData();
-      let lightType = cur.getLightType();
+      
+	  let lightsOnRadius = $gameVariables.GetActiveRadius();
+	  let distanceApart = Math.round(Community.Lighting.distance($gamePlayer.x, $gamePlayer.y, cur._realX, cur._realY));
+	  if (distanceApart > lightsOnRadius && lightsOnRadius > 0) {
+	    continue;
+	  }
+	  
+	  let lightType = cur.getLightType();
       if (lightType === "light" || lightType === "fire" || lightType === "flashlight") {
         let objectflicker = lightType === "fire";
         let light_radius = cur.getLightRadius();
@@ -2036,7 +2056,8 @@ Imported[Community.Lighting.name] = true;
 
     // smal dim glove around player
     context.save();
-    y1 = y1 - flashlightoffset;
+	x1 = x1 - flashlightXoffset;
+    y1 = y1 - flashlightYoffset;
 
     r1 = 1;
     r2 = 40;
@@ -2387,7 +2408,7 @@ Imported[Community.Lighting.name] = true;
     }
     // *********************************** DAY NIGHT Setting **************************
     $$.daynightset = false;
-    let mapNote = $dataMap.note.split("\n");
+    let mapNote = $dataMap.note ? $dataMap.note.split("\n") : [];
     mapNote.forEach((note) => {
       /**
        * @type {String}
@@ -3034,7 +3055,7 @@ Game_Variables.prototype.SetActiveRadius = function (value) {
   this._Player_Light_Radius = value;
 };
 Game_Variables.prototype.GetActiveRadius = function () {
-  return this._Player_Light_Radius || Number(Community.Lighting.parameters['Lights Active Radius']);
+  return this._Player_Light_Radius || Number(Community.Lighting.parameters['Lights Active Radius']) || 0;
 };
 
 Game_Variables.prototype.GetFirstRun = function () {
