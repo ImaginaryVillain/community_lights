@@ -36,9 +36,15 @@ Imported[Community.Lighting.name] = true;
 * @type boolean
 * @default false
 *
+* @param Lights Active Radius
+* @parent ---Offset and Sizes---
+* @desc The number of grid spaces away from the player that lights are turned on. (0 to not use this functionality)
+* Default: 0
+* @default 0
+*
 * @param Reset Lights
 * @parent ---General Settings---
-* @desc Resets the light switches on map change
+* @desc Resets the conditional lights on map change
 * @type boolean
 * @default false
 *
@@ -120,6 +126,15 @@ Imported[Community.Lighting.name] = true;
 * @param Flashlight offset
 * @parent ---Offset and Sizes---
 * @desc Increase this setting to move up the flashlight for double height characters.
+* Default: 0
+* @type number
+* @min -100
+* @max 100
+* @default 0
+*
+* @param Flashlight X offset
+* @parent ---Offset and Sizes---
+* @desc Use this setting for characters larger than one space.
 * Default: 0
 * @type number
 * @min -100
@@ -763,6 +778,18 @@ Imported[Community.Lighting.name] = true;
 * - The second argument is speed of the fade (1 very fast, 20 more slow)
 * - Still automatically set too dark color to '#666666' (dark gray).
 *
+* --------------------------------------------------------------------------
+* Lights Active Radius
+* --------------------------------------------------------------------------
+* This allows you to decide how far away from the player lights are active,
+* anything beyond this range will not light up until the player gets
+* closer to it.
+* 
+* It can be changed in the plugin parameters, or using the script call...
+*
+* $gameVariables.SetActiveRadius(#)
+*
+* ....where # is the max distance you want in tiles.
 */
 
 (function ($$) {
@@ -824,7 +851,8 @@ Imported[Community.Lighting.name] = true;
 		}
 		return result;
 	})(parameters["DayNight Colors"], parameters["Night Hours"]);
-	let flashlightoffset = Number(parameters['Flashlight offset']) || 0;
+	let flashlightYoffset = Number(parameters['Flashlight offset']) || 0;
+	let flashlightXoffset = Number(parameters['Flashlight X offset']) || 0;
 	let killswitch = parameters['Kill Switch'] || 'None';
 	if (killswitch !== 'A' && killswitch !== 'B' && killswitch !== 'C' && killswitch !== 'D') {
 		killswitch = 'None'; //Set any invalid value to no switch
@@ -1708,7 +1736,8 @@ Imported[Community.Lighting.name] = true;
 			if (playerflashlight == true) {
 				this._maskBitmap.radialgradientFillRect2(x1, y1, lightMaskPadding, iplayer_radius, playercolor, '#000000', pd, flashlightlength, flashlightwidth);
 			}
-			y1 = y1 - flashlightoffset;
+			x1 = x1 - flashlightXoffset;
+			y1 = y1 - flashlightYoffset;
 			if (iplayer_radius < 100) {
 				// dim the light a bit at lower lightradius for a less focused effect.
 				let r = $$.hexToRgb(playercolor).r;
@@ -1774,6 +1803,15 @@ Imported[Community.Lighting.name] = true;
 			let evid = event_id[i];
 			let cur = $gameMap.events()[eventObjId[i]];
 			if (cur._lastLightPage !== cur._pageIndex) cur.resetLightData();
+			
+			let lightsOnRadius = $gameVariables.GetActiveRadius();
+		    if (lightsOnRadius > 0) {
+				let distanceApart = Math.round(Community.Lighting.distance($gamePlayer.x, $gamePlayer.y, cur._realX, cur._realY));
+				if (distanceApart > lightsOnRadius) {
+					continue;
+				}
+			}
+			
 			let lightType = cur.getLightType();
 			if (lightType === "light" || lightType === "fire" || lightType === "flashlight")
 			{
@@ -2744,7 +2782,8 @@ Imported[Community.Lighting.name] = true;
 
 		// smal dim glove around player
 		context.save();
-		y1 = y1 - flashlightoffset;
+		x1 = x1 - flashlightXoffset;
+		y1 = y1 - flashlightYoffset;
 
 		r1 = 1;
 		r2 = 40;
@@ -3198,6 +3237,17 @@ Imported[Community.Lighting.name] = true;
 		$gameVariables.SetBlockTags(tile_blocks);
 	};
 })(Community.Lighting);
+
+Community.Lighting.distance = function (x1, y1, x2, y2) {
+  return Math.abs(Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2)));
+};
+
+Game_Variables.prototype.SetActiveRadius = function (value) {
+  this._Player_Light_Radius = value;
+};
+Game_Variables.prototype.GetActiveRadius = function () {
+  return this._Player_Light_Radius || Number(Community.Lighting.parameters['Lights Active Radius']) || 0;
+};
 
 Game_Variables.prototype.GetFirstRun = function () {
 	if (typeof this._Community_Lighting_FirstRun == 'undefined') {
