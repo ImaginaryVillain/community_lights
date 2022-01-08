@@ -1070,8 +1070,8 @@ Imported[Community.Lighting.name] = true;
   let _Game_Map_prototype_setupEvents = Game_Map.prototype.setupEvents;
 
   Game_Map.prototype.setupEvents = function () {
-    $$.ReloadMapEvents();
     _Game_Map_prototype_setupEvents.call(this);
+    $$.ReloadMapEvents();
   }
 
   /**
@@ -2387,7 +2387,7 @@ Imported[Community.Lighting.name] = true;
 
     for (let i = 0; i < event_eventcount; i++) {
       if ($gameMap.events()[i]) {
-        if ($gameMap.events()[i].event()) {
+        if ($gameMap.events()[i].event() && !$gameMap.events()[i]._erased) {
           let note = $gameMap.events()[i].getCLTag();
 
           let note_args = note.split(" ");
