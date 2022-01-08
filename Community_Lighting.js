@@ -1070,8 +1070,8 @@ Imported[Community.Lighting.name] = true;
   let _Game_Map_prototype_setupEvents = Game_Map.prototype.setupEvents;
 
   Game_Map.prototype.setupEvents = function () {
-    $$.ReloadMapEvents();
     _Game_Map_prototype_setupEvents.call(this);
+    $$.ReloadMapEvents();
   }
 
   /**
