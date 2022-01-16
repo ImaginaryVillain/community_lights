@@ -1,5 +1,5 @@
 //=============================================================================
-// rmmz_core.js v1.3.3
+// rmmz_core.js v1.4.0
 //=============================================================================
 
 //-----------------------------------------------------------------------------
@@ -192,7 +192,7 @@ Utils.RPGMAKER_NAME = "MZ";
  * @type string
  * @constant
  */
-Utils.RPGMAKER_VERSION = "1.3.3";
+Utils.RPGMAKER_VERSION = "1.4.0";
 
 /**
  * Checks whether the current RPG Maker version is greater than or equal to
@@ -1696,7 +1696,7 @@ Bitmap.prototype.measureTextWidth = function(text) {
     context.font = this._makeFontNameText();
     const width = context.measureText(text).width;
     context.restore();
-    return Math.ceil(width);
+    return width;
 };
 
 /**
