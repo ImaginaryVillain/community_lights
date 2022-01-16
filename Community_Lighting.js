@@ -1243,7 +1243,7 @@ Imported[Community.Lighting.name] = true;
 
     let daynightspeed = $gameVariables.GetDaynightSpeed();
 
-    if (daynightspeed > 0 && daynightspeed < 5000) {
+    if (daynightspeed > 0 && daynightspeed < 5000 && dayNightSaveNight == true) {
 
       let datenow = new Date();
       let seconds = Math.floor(datenow.getTime() / 10);
