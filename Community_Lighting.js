@@ -8,11 +8,11 @@ var Community = Community || {};
 Community.Lighting = Community.Lighting || {};
 Community.Lighting.name = "Community_Lighting";
 Community.Lighting.parameters = PluginManager.parameters(Community.Lighting.name);
-Community.Lighting.version = 4.3;
+Community.Lighting.version = 4.4;
 var Imported = Imported || {};
 Imported[Community.Lighting.name] = true;
 /*:
-* @plugindesc v4.3 Creates an extra layer that darkens a map and adds lightsources! Released under the MIT license!
+* @plugindesc v4.4 Creates an extra layer that darkens a map and adds lightsources! Released under the MIT license!
 * @author Terrax, iVillain, Aesica, Eliaquim, Alexandre, Nekohime1989
 *
 * @param ---General Settings---
@@ -77,6 +77,13 @@ Imported[Community.Lighting.name] = true;
 *
 * @param ---DayNight Settings---
 * @default
+*
+* @param Daynight Initial Speed
+* @parent ---DayNight Settings---
+* @desc What is the initial speed of the DayNight cycle?
+* @type number
+* @min 0
+* @default 10
 *
 * @param Save DaynightHours
 * @parent ---DayNight Settings---
@@ -3057,7 +3064,8 @@ Game_Variables.prototype.SetActiveRadius = function (value) {
   this._Player_Light_Radius = value;
 };
 Game_Variables.prototype.GetActiveRadius = function () {
-  return this._Player_Light_Radius || Number(Community.Lighting.parameters['Lights Active Radius']) || 0;
+  if (this._Player_Light_Radius >= 0) return this._Player_Light_Radius;
+  return Number(Community.Lighting.parameters['Lights Active Radius']) || 0;
 };
 
 Game_Variables.prototype.GetFirstRun = function () {
@@ -3201,7 +3209,8 @@ Game_Variables.prototype.SetDaynightSpeed = function (value) {
   this._Community_Lighting_DaynightSpeed = value;
 };
 Game_Variables.prototype.GetDaynightSpeed = function () {
-  return this._Community_Lighting_DaynightSpeed || 10;
+  if (this._Community_Lighting_DaynightSpeed >= 0) return this._Community_Lighting_DaynightSpeed;
+  return Number(Community.Lighting.parameters['Daynight Initial Speed']) || 10;
 };
 Game_Variables.prototype.SetDaynightCycle = function (value) {
   this._Community_Lighting_DaynightCycle = value;
