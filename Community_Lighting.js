@@ -434,7 +434,7 @@ Imported[Community.Lighting.name] = true;
 * - Turn off the flashlight.  yup.
 *
 * Daynight speed n
-* - Changes the speec by which hours pass ingame in relation to real life seconds
+* - Changes the speed by which hours pass ingame in relation to real life seconds
 *
 * Daynight hour h m
 * - Sets the ingame time to hh:mm
@@ -2958,6 +2958,10 @@ Imported[Community.Lighting.name] = true;
     }
   };
 
+  /**
+   * 
+   * @param {String[]} args 
+   */
   $$.DayNight = function (args) {
     let daynightspeed = $gameVariables.GetDaynightSpeed();
     let daynighttimer = $gameVariables.GetDaynightTimer();     // timer = minutes * speed
@@ -2967,7 +2971,7 @@ Imported[Community.Lighting.name] = true;
 
     if (args[0] === 'speed') {
       daynightspeed = Number(args[1]);
-      if (daynightspeed <= 0) {
+      if (daynightspeed < 0) {
         daynightspeed = 5000;
       }
       $gameVariables.SetDaynightSpeed(daynightspeed);
@@ -3219,8 +3223,16 @@ Game_Variables.prototype.SetDaynightSpeed = function (value) {
   this._Community_Lighting_DaynightSpeed = value;
 };
 Game_Variables.prototype.GetDaynightSpeed = function () {
-  if (this._Community_Lighting_DaynightSpeed >= 0) return this._Community_Lighting_DaynightSpeed;
-  return Number(Community.Lighting.parameters['Daynight Initial Speed']) || 10;
+  if (this._Community_Lighting_DaynightSpeed >= 0) {
+    return this._Community_Lighting_DaynightSpeed;
+  }
+  var defaultSpeed = Number(Community.Lighting.parameters['Daynight Initial Speed'])
+  if (Number.isNaN(defaultSpeed)) {
+    return 10;
+  }
+  else {
+    return defaultSpeed;
+  }
 };
 Game_Variables.prototype.SetDaynightCycle = function (value) {
   this._Community_Lighting_DaynightCycle = value;
