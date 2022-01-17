@@ -1,5 +1,5 @@
 //=============================================================================
-// rmmz_sprites.js v1.3.3
+// rmmz_sprites.js v1.4.0
 //=============================================================================
 
 //-----------------------------------------------------------------------------
@@ -1285,9 +1285,9 @@ Sprite_Animation.prototype.canStart = function() {
 };
 
 Sprite_Animation.prototype.shouldWaitForPrevious = function() {
-    // [Note] Effekseer is very heavy on some mobile devices, so we don't
-    //   display many effects at the same time.
-    return Utils.isMobileDevice();
+    // [Note] Older versions of Effekseer were very heavy on some mobile
+    //   devices. We don't need this anymore.
+    return false;
 };
 
 Sprite_Animation.prototype.updateEffectGeometry = function() {
@@ -2437,7 +2437,7 @@ Sprite_Gauge.prototype.measureLabelWidth = function() {
     this.setupLabelFont();
     const labels = [TextManager.hpA, TextManager.mpA, TextManager.tpA];
     const widths = labels.map(str => this.bitmap.measureTextWidth(str));
-    return Math.max(...widths);
+    return Math.ceil(Math.max(...widths));
 };
 
 Sprite_Gauge.prototype.labelOpacity = function() {
