@@ -124,6 +124,13 @@ Imported[Community.Lighting.name] = true;
 * @default ["#6666ff","#6666ff","#6666ff","#6666ff","#6666ff","#6666ff","#9999ff","#ccccff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffcc88","#9999ff","#6666ff","#6666ff","#6666ff","#6666ff"]
 * @type text[]
 *
+* @param Daynight Initial Hour
+* @parent ---DayNight Settings---
+* @desc What is the initial hour?
+* @type number
+* @min 0
+* @default 0
+*
 * @param ---Offset and Sizes---
 * @default
 *
@@ -3216,7 +3223,8 @@ Game_Variables.prototype.SetDaynightCycle = function (value) {
   this._Community_Lighting_DaynightCycle = value;
 };
 Game_Variables.prototype.GetDaynightCycle = function () {
-  return this._Community_Lighting_DaynightCycle || 0;
+  if (this._Community_Lighting_DaynightCycle !== undefined) return this._Community_Lighting_DaynightCycle;
+  return Number(Community.Lighting.parameters['Daynight Initial Hour']) || 0;
 };
 Game_Variables.prototype.SetDaynightTimer = function (value) {
   this._Community_Lighting_DaynightTimer = value;
