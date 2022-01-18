@@ -124,6 +124,13 @@ Imported[Community.Lighting.name] = true;
 * @default ["#6666ff","#6666ff","#6666ff","#6666ff","#6666ff","#6666ff","#9999ff","#ccccff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffcc88","#9999ff","#6666ff","#6666ff","#6666ff","#6666ff"]
 * @type text[]
 *
+* @param Daynight Initial Hour
+* @parent ---DayNight Settings---
+* @desc What is the initial hour?
+* @type number
+* @min 0
+* @default 0
+*
 * @param ---Offset and Sizes---
 * @default
 *
@@ -639,11 +646,7 @@ Imported[Community.Lighting.name] = true;
     return result;
   };
 
-  /**
-   * 
-   * @param {String} note 
-   * @returns {String}
-   */
+
   $$.getCLTag = function (note) {
     let result = false;
     note = String(note);
@@ -1216,7 +1219,7 @@ Imported[Community.Lighting.name] = true;
       if (playerflashlight == true) {
         this._maskBitmap.radialgradientFillRect2(x1, y1, lightMaskPadding, iplayer_radius, playercolor, radialColor2, pd, flashlightlength, flashlightwidth);
       }
-      x1 = x1 - flashlightXoffset;
+	  x1 = x1 - flashlightXoffset;
       y1 = y1 - flashlightYoffset;
       if (iplayer_radius < 100) {
         // dim the light a bit at lower lightradius for a less focused effect.
@@ -1282,23 +1285,23 @@ Imported[Community.Lighting.name] = true;
     }
 
     // ********** OTHER LIGHTSOURCES **************
-
-
+							
+	
 
     for (let i = 0, len = eventObjId.length; i < len; i++) {
       let evid = event_id[i];
       let cur = $gameMap.events()[eventObjId[i]];
       if (cur._lastLightPage !== cur._pageIndex) cur.resetLightData();
-
-      let lightsOnRadius = $gameVariables.GetActiveRadius();
-      if (lightsOnRadius > 0) {
-        let distanceApart = Math.round(Community.Lighting.distance($gamePlayer.x, $gamePlayer.y, cur._realX, cur._realY));
-        if (distanceApart > lightsOnRadius) {
-          continue;
-        }
-      }
-
-      let lightType = cur.getLightType();
+      
+	  let lightsOnRadius = $gameVariables.GetActiveRadius();
+	  if (lightsOnRadius > 0) {
+		let distanceApart = Math.round(Community.Lighting.distance($gamePlayer.x, $gamePlayer.y, cur._realX, cur._realY));
+	    if (distanceApart > lightsOnRadius) {
+	      continue;
+	    }
+	  }
+	  
+	  let lightType = cur.getLightType();
       if (lightType === "light" || lightType === "fire" || lightType === "flashlight") {
         let objectflicker = lightType === "fire";
         let light_radius = cur.getLightRadius();
@@ -2069,7 +2072,7 @@ Imported[Community.Lighting.name] = true;
 
     // smal dim glove around player
     context.save();
-    x1 = x1 - flashlightXoffset;
+	x1 = x1 - flashlightXoffset;
     y1 = y1 - flashlightYoffset;
 
     r1 = 1;
@@ -2427,6 +2430,7 @@ Imported[Community.Lighting.name] = true;
        * @type {String}
        */
       let mapnote = $$.getCLTag(note.trim());
+
       if (mapnote) {
         mapnote = mapnote.toLowerCase().trim();
         if ((/^daynight/i).test(mapnote)) {
@@ -3219,7 +3223,8 @@ Game_Variables.prototype.SetDaynightCycle = function (value) {
   this._Community_Lighting_DaynightCycle = value;
 };
 Game_Variables.prototype.GetDaynightCycle = function () {
-  return this._Community_Lighting_DaynightCycle || 0;
+  if (this._Community_Lighting_DaynightCycle !== undefined) return this._Community_Lighting_DaynightCycle;
+  return Number(Community.Lighting.parameters['Daynight Initial Hour']) || 0;
 };
 Game_Variables.prototype.SetDaynightTimer = function (value) {
   this._Community_Lighting_DaynightTimer = value;
