@@ -51,4 +51,18 @@ interface Game_Variables {
   GetBlockTags(): void;
 
   SetPlayerColor(color: String): void;
+
+  GetDaynightSpeed(): Number;
+
+  SetDaynightSpeed(speed: Number): void;
+
+  GetDaynightTimer(): Number;
+
+  SetDaynightTimer(timer: Number): void;
+
+  GetDaynightCycle(): Number;
+
+  SetDaynightCycle(cycle: Number): void;
+
+  GetDaynightHoursinDay(): Number;
 }
