@@ -589,6 +589,7 @@ Imported[Community.Lighting.name] = true;
   let dayNightSaveSeconds = Number(parameters['Save DaynightSeconds']) || 0;
   let dayNightSaveNight = Number(parameters["Save Night Switch"]) || 0;
   let dayNightNoAutoshadow = parameters["No Autoshadow During Night"] || false;
+  let hideAutoShadow = false;
   let dayNightList = (function (dayNight, nightHours) {
     let result = [];
     try {
@@ -604,7 +605,6 @@ Imported[Community.Lighting.name] = true;
     }
     return result;
   })(parameters["DayNight Colors"], parameters["Night Hours"]);
-  let hideAutoShadow = false;
   let flashlightYoffset = Number(parameters['Flashlight offset']) || 0;
   let flashlightXoffset = Number(parameters['Flashlight X offset']) || 0;
   let killswitch = parameters['Kill Switch'] || 'None';

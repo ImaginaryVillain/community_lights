@@ -109,6 +109,13 @@ Imported[Community.Lighting.name] = true;
 * @min 0
 * @default 0
 *
+* @param No Autoshadow During Night
+* @parent ---DayNight Settings---
+* @desc Hide autoshadow during night?
+* @type number
+* @type boolean
+* @default false
+*
 * @param Night Hours
 * @parent ---DayNight Settings---
 * @desc Comma-separated list of night hours.  Not used/relevant if Save Night Switch set to 0.
@@ -850,6 +857,8 @@ Imported[Community.Lighting.name] = true;
 	let dayNightSaveMinutes = Number(parameters['Save DaynightMinutes']) || 0;
 	let dayNightSaveSeconds = Number(parameters['Save DaynightSeconds']) || 0;
 	let dayNightSaveNight = Number(parameters["Save Night Switch"]) || 0;
+	let dayNightNoAutoshadow = parameters["No Autoshadow During Night"] || false;
+	let hideAutoShadow = false;
 	let dayNightList = (function(dayNight, nightHours)
 	{
 		let result = [];
@@ -956,6 +965,13 @@ Imported[Community.Lighting.name] = true;
 		if (dayNightSaveMinutes > 0) $gameVariables.setValue(dayNightSaveMinutes, mm);
 		if (dayNightSaveSeconds > 0 && ss !== null) $gameVariables.setValue(dayNightSaveSeconds, ss);
 		if (dayNightSaveNight > 0 && dayNightList[hh] instanceof Object) $gameSwitches.setValue(dayNightSaveNight, dayNightList[hh].isNight);
+		if (dayNightNoAutoshadow && $$.isNight() !== hideAutoShadow) {
+			hideAutoShadow = $$.isNight();
+			// Update the shadow manually
+			if (SceneManager._scene && SceneManager._scene._spriteset && SceneManager._scene._spriteset._tilemap) {
+				SceneManager._scene._spriteset._tilemap.refresh();
+			}
+		}
 	};
 	$$.isNight = function()
 	{
@@ -3250,6 +3266,14 @@ Imported[Community.Lighting.name] = true;
 		}
 		$gameVariables.SetLightTags(tile_lights);
 		$gameVariables.SetBlockTags(tile_blocks);
+	};
+	
+	let _Tilemap_addShadow = Tilemap.prototype._addShadow;
+	Tilemap.prototype._addShadow = function (layer, shadowBits, dx, dy) {
+		if (!hideAutoShadow) {
+		  _Tilemap_addShadow.call(this, layer, shadowBits, dx, dy);
+		}
+		// Else, show no shadow
 	};
 })(Community.Lighting);
 
