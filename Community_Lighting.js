@@ -8,11 +8,11 @@ var Community = Community || {};
 Community.Lighting = Community.Lighting || {};
 Community.Lighting.name = "Community_Lighting";
 Community.Lighting.parameters = PluginManager.parameters(Community.Lighting.name);
-Community.Lighting.version = 4.4;
+Community.Lighting.version = 4.5;
 var Imported = Imported || {};
 Imported[Community.Lighting.name] = true;
 /*:
-* @plugindesc v4.4 Creates an extra layer that darkens a map and adds lightsources! Released under the MIT license!
+* @plugindesc v4.5 Creates an extra layer that darkens a map and adds lightsources! Released under the MIT license!
 * @author Terrax, iVillain, Aesica, Eliaquim, Alexandre, Nekohime1989
 *
 * @param ---General Settings---
@@ -112,6 +112,13 @@ Imported[Community.Lighting.name] = true;
 * @type number
 * @min 0
 * @default 0
+*
+* @param No Autoshadow During Night
+* @parent ---DayNight Settings---
+* @desc Hide autoshadow during night?
+* @type number
+* @type boolean
+* @default false
 *
 * @param Night Hours
 * @parent ---DayNight Settings---
@@ -581,6 +588,8 @@ Imported[Community.Lighting.name] = true;
   let dayNightSaveMinutes = Number(parameters['Save DaynightMinutes']) || 0;
   let dayNightSaveSeconds = Number(parameters['Save DaynightSeconds']) || 0;
   let dayNightSaveNight = Number(parameters["Save Night Switch"]) || 0;
+  let dayNightNoAutoshadow = eval(parameters["No Autoshadow During Night"]) || false;
+  let hideAutoShadow = false;
   let dayNightList = (function (dayNight, nightHours) {
     let result = [];
     try {
@@ -680,6 +689,13 @@ Imported[Community.Lighting.name] = true;
     if (dayNightSaveMinutes > 0) $gameVariables.setValue(dayNightSaveMinutes, mm);
     if (dayNightSaveSeconds > 0 && ss !== null) $gameVariables.setValue(dayNightSaveSeconds, ss);
     if (dayNightSaveNight > 0 && dayNightList[hh] instanceof Object) $gameSwitches.setValue(dayNightSaveNight, dayNightList[hh].isNight);
+	if (dayNightNoAutoshadow && $$.isNight() !== hideAutoShadow) {
+		hideAutoShadow = $$.isNight();
+		// Update the shadow manually
+		if (SceneManager._scene && SceneManager._scene._spriteset && SceneManager._scene._spriteset._tilemap) {
+			SceneManager._scene._spriteset._tilemap.refresh();
+		}
+	}
   };
   $$.isNight = function () {
     let hour = $gameVariables.GetDaynightCycle();
@@ -3060,6 +3076,22 @@ Imported[Community.Lighting.name] = true;
       }
       $gameVariables.SetDaynightColorArray(daynightcolors);
     }
+  };
+  
+  let _Tilemap_drawShadow = Tilemap.prototype._drawShadow;
+  Tilemap.prototype._drawShadow = function (bitmap, shadowBits, dx, dy) {
+	if (!hideAutoShadow) {
+      _Tilemap_drawShadow.call(this, bitmap, shadowBits, dx, dy);
+    }
+	// Else, show no shadow
+  };
+  
+  let _ShaderTilemap_drawShadow = ShaderTilemap.prototype._drawShadow;
+  ShaderTilemap.prototype._drawShadow = function (bitmap, shadowBits, dx, dy) {
+	if (!hideAutoShadow) {
+      _ShaderTilemap_drawShadow.call(this, bitmap, shadowBits, dx, dy);
+    }
+	// Else, show no shadow
   };
 })(Community.Lighting);
 
