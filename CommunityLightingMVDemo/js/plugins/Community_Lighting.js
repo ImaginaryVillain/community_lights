@@ -47,6 +47,12 @@ Imported[Community.Lighting.name] = true;
 * Default: 0
 * @default 0
 *
+* @param Daynight Cycle
+* @parent ---General Settings---
+* @desc Should the brightness change over time
+* @type boolean
+* @default true
+*
 * @param Reset Lights
 * @parent ---General Settings---
 * @desc Resets the conditional lights on map change
@@ -442,7 +448,7 @@ Imported[Community.Lighting.name] = true;
 * - Turn off the flashlight.  yup.
 *
 * Daynight speed n
-* - Changes the speec by which hours pass ingame in relation to real life seconds
+* - Changes the speed by which hours pass ingame in relation to real life seconds
 *
 * Daynight hour h m
 * - Sets the ingame time to hh:mm
@@ -590,6 +596,7 @@ Imported[Community.Lighting.name] = true;
   let dayNightSaveNight = Number(parameters["Save Night Switch"]) || 0;
   let dayNightNoAutoshadow = eval(parameters["No Autoshadow During Night"]) || false;
   let hideAutoShadow = false;
+  let brightnessOverTime = eval(parameters['Daynight Cycle']) || true;
   let dayNightList = (function (dayNight, nightHours) {
     let result = [];
     try {
@@ -655,7 +662,11 @@ Imported[Community.Lighting.name] = true;
     return result;
   };
 
-
+  /**
+   * 
+   * @param {String} note 
+   * @returns {String}
+   */
   $$.getCLTag = function (note) {
     let result = false;
     note = String(note);
@@ -1235,7 +1246,7 @@ Imported[Community.Lighting.name] = true;
       if (playerflashlight == true) {
         this._maskBitmap.radialgradientFillRect2(x1, y1, lightMaskPadding, iplayer_radius, playercolor, radialColor2, pd, flashlightlength, flashlightwidth);
       }
-	  x1 = x1 - flashlightXoffset;
+      x1 = x1 - flashlightXoffset;
       y1 = y1 - flashlightYoffset;
       if (iplayer_radius < 100) {
         // dim the light a bit at lower lightradius for a less focused effect.
@@ -1273,7 +1284,7 @@ Imported[Community.Lighting.name] = true;
 
     let daynightspeed = $gameVariables.GetDaynightSpeed();
 
-    if (daynightspeed > 0 && daynightspeed < 5000) {
+    if (daynightspeed > 0 && daynightspeed < 5000 && brightnessOverTime) {
 
       let datenow = new Date();
       let seconds = Math.floor(datenow.getTime() / 10);
@@ -1301,23 +1312,23 @@ Imported[Community.Lighting.name] = true;
     }
 
     // ********** OTHER LIGHTSOURCES **************
-							
-	
+
+
 
     for (let i = 0, len = eventObjId.length; i < len; i++) {
       let evid = event_id[i];
       let cur = $gameMap.events()[eventObjId[i]];
       if (cur._lastLightPage !== cur._pageIndex) cur.resetLightData();
-      
-	  let lightsOnRadius = $gameVariables.GetActiveRadius();
-	  if (lightsOnRadius > 0) {
-		let distanceApart = Math.round(Community.Lighting.distance($gamePlayer.x, $gamePlayer.y, cur._realX, cur._realY));
-	    if (distanceApart > lightsOnRadius) {
-	      continue;
-	    }
-	  }
-	  
-	  let lightType = cur.getLightType();
+
+      let lightsOnRadius = $gameVariables.GetActiveRadius();
+      if (lightsOnRadius > 0) {
+        let distanceApart = Math.round(Community.Lighting.distance($gamePlayer.x, $gamePlayer.y, cur._realX, cur._realY));
+        if (distanceApart > lightsOnRadius) {
+          continue;
+        }
+      }
+
+      let lightType = cur.getLightType();
       if (lightType === "light" || lightType === "fire" || lightType === "flashlight") {
         let objectflicker = lightType === "fire";
         let light_radius = cur.getLightRadius();
@@ -2088,7 +2099,7 @@ Imported[Community.Lighting.name] = true;
 
     // smal dim glove around player
     context.save();
-	x1 = x1 - flashlightXoffset;
+    x1 = x1 - flashlightXoffset;
     y1 = y1 - flashlightYoffset;
 
     r1 = 1;
@@ -2446,7 +2457,6 @@ Imported[Community.Lighting.name] = true;
        * @type {String}
        */
       let mapnote = $$.getCLTag(note.trim());
-
       if (mapnote) {
         mapnote = mapnote.toLowerCase().trim();
         if ((/^daynight/i).test(mapnote)) {
@@ -2971,6 +2981,10 @@ Imported[Community.Lighting.name] = true;
     }
   };
 
+  /**
+   * 
+   * @param {String[]} args 
+   */
   $$.DayNight = function (args) {
     let daynightspeed = $gameVariables.GetDaynightSpeed();
     let daynighttimer = $gameVariables.GetDaynightTimer();     // timer = minutes * speed
@@ -2980,7 +2994,7 @@ Imported[Community.Lighting.name] = true;
 
     if (args[0] === 'speed') {
       daynightspeed = Number(args[1]);
-      if (daynightspeed <= 0) {
+      if (daynightspeed < 0) {
         daynightspeed = 5000;
       }
       $gameVariables.SetDaynightSpeed(daynightspeed);
@@ -3248,8 +3262,16 @@ Game_Variables.prototype.SetDaynightSpeed = function (value) {
   this._Community_Lighting_DaynightSpeed = value;
 };
 Game_Variables.prototype.GetDaynightSpeed = function () {
-  if (this._Community_Lighting_DaynightSpeed >= 0) return this._Community_Lighting_DaynightSpeed;
-  return Number(Community.Lighting.parameters['Daynight Initial Speed']) || 10;
+  if (this._Community_Lighting_DaynightSpeed >= 0) {
+    return this._Community_Lighting_DaynightSpeed;
+  }
+  var defaultSpeed = Number(Community.Lighting.parameters['Daynight Initial Speed'])
+  if (Number.isNaN(defaultSpeed)) {
+    return 10;
+  }
+  else {
+    return defaultSpeed;
+  }
 };
 Game_Variables.prototype.SetDaynightCycle = function (value) {
   this._Community_Lighting_DaynightCycle = value;
