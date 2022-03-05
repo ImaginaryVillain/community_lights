@@ -150,7 +150,7 @@
   "optExtraExp": false,
   "optFloorDeath": false,
   "optFollowers": false,
-  "optSideView": false,
+  "optSideView": true,
   "optSlipDeath": false,
   "optTransparent": false,
   "partyMembers": [
@@ -531,7 +531,7 @@
     "",
     ""
   ],
-  "versionId": 94656208,
+  "versionId": 53224280,
   "victoryMe": {
     "name": "Victory1",
     "pan": 0,
