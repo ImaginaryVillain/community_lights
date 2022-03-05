@@ -8,12 +8,12 @@ var Community = Community || {};
 Community.Lighting = Community.Lighting || {};
 Community.Lighting.name = "Community_Lighting_MZ";
 Community.Lighting.parameters = PluginManager.parameters(Community.Lighting.name);
-Community.Lighting.version = 4.5;
+Community.Lighting.version = 4.5.1;
 var Imported = Imported || {};
 Imported[Community.Lighting.name] = true;
 /*:
 * @target MZ
-* @plugindesc v4.5 Creates an extra layer that darkens a map and adds lightsources! Released under the MIT license!
+* @plugindesc v4.5.1 Creates an extra layer that darkens a map and adds lightsources! Released under the MIT license!
 * @author Terrax, iVillain, Aesica, Eliaquim, Alexandre, Nekohime1989
 7
 * @param ---General Settings---
@@ -2901,9 +2901,9 @@ Imported[Community.Lighting.name] = true;
 		}
 	};
 
-	let Community_Lighting_Spriteset_Battle_createBattleback = Spriteset_Battle.prototype.createBattleback;
-	Spriteset_Battle.prototype.createBattleback = function() {
-		Community_Lighting_Spriteset_Battle_createBattleback.call(this);
+	let Community_Lighting_Spriteset_Battle_createBattleField = Spriteset_Battle.prototype.createBattleField;
+	Spriteset_Battle.prototype.createBattleField = function() {
+		Community_Lighting_Spriteset_Battle_createBattleField.call(this);
 		if (battleMaskPosition === 'Between') {
 			this.createBattleLightmask();
 		}
@@ -2916,7 +2916,7 @@ Imported[Community.Lighting.name] = true;
 				if (battleMaskPosition === 'Above') {
 					this.addChild(this._battleLightmask);
 				} else if (battleMaskPosition === 'Between') {
-					this._back2Sprite.addChild(this._battleLightmask);
+					this._battleField.addChild(this._battleLightmask);
 				}
 			}
 		}
@@ -2937,15 +2937,7 @@ Imported[Community.Lighting.name] = true;
 	    this._createBitmap();
 
 		//Initialize the bitmap
-		
-		// Battlebacks are shifted 32 pixels left (to be able to support screen shakes).
-		// We must take this into account if the BattleLightmask is linked to the battlebacks.
-		var battlebackOffset = battleMaskPosition === 'Between' ? 32 : 0;
-		if (Imported.YEP_ImprovedBattlebacks) { // ImprovedBattlebacks don't have any Y shift
-			this._addSprite(-lightMaskPadding + battlebackOffset, 0, this._maskBitmap);
-		} else {
-			this._addSprite(-lightMaskPadding + battlebackOffset, 0 + battlebackOffset, this._maskBitmap);
-		}
+		this._addSprite(-lightMaskPadding, 24, this._maskBitmap); // The +24 is to offset the 24 pixels shift of Spriteset_Battle.prototype.battleFieldOffsetY
 
 		var redhex = $$._MapTint.substring(1, 3);
 		var greenhex = $$._MapTint.substring(3, 5);
