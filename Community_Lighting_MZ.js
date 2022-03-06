@@ -8,12 +8,12 @@ var Community = Community || {};
 Community.Lighting = Community.Lighting || {};
 Community.Lighting.name = "Community_Lighting_MZ";
 Community.Lighting.parameters = PluginManager.parameters(Community.Lighting.name);
-Community.Lighting.version = 4.4;
+Community.Lighting.version = 4.5.1;
 var Imported = Imported || {};
 Imported[Community.Lighting.name] = true;
 /*:
 * @target MZ
-* @plugindesc v4.3 Creates an extra layer that darkens a map and adds lightsources! Released under the MIT license!
+* @plugindesc v4.5.1 Creates an extra layer that darkens a map and adds lightsources! Released under the MIT license!
 * @author Terrax, iVillain, Aesica, Eliaquim, Alexandre, Nekohime1989
 7
 * @param ---General Settings---
@@ -108,6 +108,13 @@ Imported[Community.Lighting.name] = true;
 * @type number
 * @min 0
 * @default 0
+*
+* @param No Autoshadow During Night
+* @parent ---DayNight Settings---
+* @desc Hide autoshadow during night?
+* @type number
+* @type boolean
+* @default false
 *
 * @param Night Hours
 * @parent ---DayNight Settings---
@@ -850,6 +857,8 @@ Imported[Community.Lighting.name] = true;
 	let dayNightSaveMinutes = Number(parameters['Save DaynightMinutes']) || 0;
 	let dayNightSaveSeconds = Number(parameters['Save DaynightSeconds']) || 0;
 	let dayNightSaveNight = Number(parameters["Save Night Switch"]) || 0;
+	let dayNightNoAutoshadow = eval(parameters["No Autoshadow During Night"]) || false;
+	let hideAutoShadow = false;
 	let dayNightList = (function(dayNight, nightHours)
 	{
 		let result = [];
@@ -956,6 +965,13 @@ Imported[Community.Lighting.name] = true;
 		if (dayNightSaveMinutes > 0) $gameVariables.setValue(dayNightSaveMinutes, mm);
 		if (dayNightSaveSeconds > 0 && ss !== null) $gameVariables.setValue(dayNightSaveSeconds, ss);
 		if (dayNightSaveNight > 0 && dayNightList[hh] instanceof Object) $gameSwitches.setValue(dayNightSaveNight, dayNightList[hh].isNight);
+		if (dayNightNoAutoshadow && $$.isNight() !== hideAutoShadow) {
+			hideAutoShadow = $$.isNight();
+			// Update the shadow manually
+			if (SceneManager._scene && SceneManager._scene._spriteset && SceneManager._scene._spriteset._tilemap) {
+				SceneManager._scene._spriteset._tilemap.refresh();
+			}
+		}
 	};
 	$$.isNight = function()
 	{
@@ -2885,9 +2901,9 @@ Imported[Community.Lighting.name] = true;
 		}
 	};
 
-	let Community_Lighting_Spriteset_Battle_createBattleback = Spriteset_Battle.prototype.createBattleback;
-	Spriteset_Battle.prototype.createBattleback = function() {
-		Community_Lighting_Spriteset_Battle_createBattleback.call(this);
+	let Community_Lighting_Spriteset_Battle_createBattleField = Spriteset_Battle.prototype.createBattleField;
+	Spriteset_Battle.prototype.createBattleField = function() {
+		Community_Lighting_Spriteset_Battle_createBattleField.call(this);
 		if (battleMaskPosition === 'Between') {
 			this.createBattleLightmask();
 		}
@@ -2900,7 +2916,7 @@ Imported[Community.Lighting.name] = true;
 				if (battleMaskPosition === 'Above') {
 					this.addChild(this._battleLightmask);
 				} else if (battleMaskPosition === 'Between') {
-					this._back2Sprite.addChild(this._battleLightmask);
+					this._battleField.addChild(this._battleLightmask);
 				}
 			}
 		}
@@ -2921,15 +2937,7 @@ Imported[Community.Lighting.name] = true;
 	    this._createBitmap();
 
 		//Initialize the bitmap
-		
-		// Battlebacks are shifted 32 pixels left (to be able to support screen shakes).
-		// We must take this into account if the BattleLightmask is linked to the battlebacks.
-		var battlebackOffset = battleMaskPosition === 'Between' ? 32 : 0;
-		if (Imported.YEP_ImprovedBattlebacks) { // ImprovedBattlebacks don't have any Y shift
-			this._addSprite(-lightMaskPadding + battlebackOffset, 0, this._maskBitmap);
-		} else {
-			this._addSprite(-lightMaskPadding + battlebackOffset, 0 + battlebackOffset, this._maskBitmap);
-		}
+		this._addSprite(-lightMaskPadding, 24, this._maskBitmap); // The +24 is to offset the 24 pixels shift of Spriteset_Battle.prototype.battleFieldOffsetY
 
 		var redhex = $$._MapTint.substring(1, 3);
 		var greenhex = $$._MapTint.substring(3, 5);
@@ -3250,6 +3258,14 @@ Imported[Community.Lighting.name] = true;
 		}
 		$gameVariables.SetLightTags(tile_lights);
 		$gameVariables.SetBlockTags(tile_blocks);
+	};
+	
+	let _Tilemap_addShadow = Tilemap.prototype._addShadow;
+	Tilemap.prototype._addShadow = function (layer, shadowBits, dx, dy) {
+		if (!hideAutoShadow) {
+		  _Tilemap_addShadow.call(this, layer, shadowBits, dx, dy);
+		}
+		// Else, show no shadow
 	};
 })(Community.Lighting);
 
