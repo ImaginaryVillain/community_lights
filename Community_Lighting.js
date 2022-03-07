@@ -700,8 +700,8 @@ Imported[Community.Lighting.name] = true;
     if (dayNightSaveMinutes > 0) $gameVariables.setValue(dayNightSaveMinutes, mm);
     if (dayNightSaveSeconds > 0 && ss !== null) $gameVariables.setValue(dayNightSaveSeconds, ss);
     if (dayNightSaveNight > 0 && dayNightList[hh] instanceof Object) $gameSwitches.setValue(dayNightSaveNight, dayNightList[hh].isNight);
-	if (dayNightNoAutoshadow && $$.isNight() !== hideAutoShadow) {
-		hideAutoShadow = $$.isNight();
+	if (dayNightNoAutoshadow && dayNightList[hh] instanceof Object && dayNightList[hh].isNight !== hideAutoShadow) {
+		hideAutoShadow = dayNightList[hh].isNight; // We can not use $$.isNight because DaynightCycle hasn't been updated yet!
 		// Update the shadow manually
 		if (SceneManager._scene && SceneManager._scene._spriteset && SceneManager._scene._spriteset._tilemap) {
 			SceneManager._scene._spriteset._tilemap.refresh();
