@@ -1916,12 +1916,10 @@ Imported[Community.Lighting.name] = true;
         }
         this.addColorStop(distanceFromCenter, rgba(~~newRed, ~~newGreen, ~~newBlue, newAlpha));
       }
-    }
-    else {
+    } else {
       this.addColorStop(brightness, color1);
     }
-
-
+	
     this.addColorStop(1, color2);
   }
   // *******************  NORMAL LIGHT SHAPE ***********************************
@@ -2135,7 +2133,7 @@ Imported[Community.Lighting.name] = true;
 
 
       grad = context.createRadialGradient(x1, y1, r1, x1, y1, r2);
-      grad.addTransparentColorStops(1, color1, color2);
+      grad.addTransparentColorStops(0, color1, color2);
       context.fillStyle = grad;
       context.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
     }

@@ -645,7 +645,7 @@ Imported[Community.Lighting.name] = true;
   //let averagetimecount = 0;
   let notetag_reg = RegExp("<" + noteTagKey + ":[ ]*([^>]+)>", "i");
   let radialColor2 = useSmootherLights == true ? "#00000000" : "#000000";
-  let isValidColorRegex = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)/i;
+  let isValidColorRegex = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)|(^#[0-9A-F]{8}$)/i;
   $$.getFirstComment = function () {
     let result = null;
     let page = this.page();
@@ -1272,8 +1272,7 @@ Imported[Community.Lighting.name] = true;
         let newcolor = rgba2hex(red, green, blue, alpha);
 
         this._maskBitmap.radialgradientFillRect(x1, y1, 0, iplayer_radius, newcolor, radialColor2, playerflicker, playerbrightness);
-      }
-      else {
+      } else {
         this._maskBitmap.radialgradientFillRect(x1, y1, lightMaskPadding, iplayer_radius, playercolor, radialColor2, playerflicker, playerbrightness);
       }
 
@@ -1917,12 +1916,10 @@ Imported[Community.Lighting.name] = true;
         }
         this.addColorStop(distanceFromCenter, rgba(~~newRed, ~~newGreen, ~~newBlue, newAlpha));
       }
-    }
-    else {
+    } else {
       this.addColorStop(brightness, color1);
     }
-
-
+	
     this.addColorStop(1, color2);
   }
   // *******************  NORMAL LIGHT SHAPE ***********************************
@@ -2136,7 +2133,7 @@ Imported[Community.Lighting.name] = true;
 
 
       grad = context.createRadialGradient(x1, y1, r1, x1, y1, r2);
-      grad.addTransparentColorStops(1, color1, color2);
+      grad.addTransparentColorStops(0, color1, color2);
       context.fillStyle = grad;
       context.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
     }
