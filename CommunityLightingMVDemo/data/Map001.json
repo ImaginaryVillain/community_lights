@@ -13862,6 +13862,13 @@
               ]
             },
             {
+              "code": 356,
+              "indent": 0,
+              "parameters": [
+                "Light radius 80 #ff0000 50"
+              ]
+            },
+            {
               "code": 0,
               "indent": 0,
               "parameters": []
