@@ -8,11 +8,11 @@ var Community = Community || {};
 Community.Lighting = Community.Lighting || {};
 Community.Lighting.name = "Community_Lighting";
 Community.Lighting.parameters = PluginManager.parameters(Community.Lighting.name);
-Community.Lighting.version = 4.5.1;
+Community.Lighting.version = 4.6;
 var Imported = Imported || {};
 Imported[Community.Lighting.name] = true;
 /*:
-* @plugindesc v4.5.1 Creates an extra layer that darkens a map and adds lightsources! Released under the MIT license!
+* @plugindesc v4.6 Creates an extra layer that darkens a map and adds lightsources! Released under the MIT license!
 * @author Terrax, iVillain, Aesica, Eliaquim, Alexandre, Nekohime1989
 *
 * @param ---General Settings---
@@ -645,7 +645,7 @@ Imported[Community.Lighting.name] = true;
   //let averagetimecount = 0;
   let notetag_reg = RegExp("<" + noteTagKey + ":[ ]*([^>]+)>", "i");
   let radialColor2 = useSmootherLights == true ? "#00000000" : "#000000";
-  let isValidColorRegex = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)/i;
+  let isValidColorRegex = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)|(^#[0-9A-F]{8}$)/i;
   $$.getFirstComment = function () {
     let result = null;
     let page = this.page();
@@ -700,8 +700,8 @@ Imported[Community.Lighting.name] = true;
     if (dayNightSaveMinutes > 0) $gameVariables.setValue(dayNightSaveMinutes, mm);
     if (dayNightSaveSeconds > 0 && ss !== null) $gameVariables.setValue(dayNightSaveSeconds, ss);
     if (dayNightSaveNight > 0 && dayNightList[hh] instanceof Object) $gameSwitches.setValue(dayNightSaveNight, dayNightList[hh].isNight);
-	if (dayNightNoAutoshadow && $$.isNight() !== hideAutoShadow) {
-		hideAutoShadow = $$.isNight();
+	if (dayNightNoAutoshadow && dayNightList[hh] instanceof Object && dayNightList[hh].isNight !== hideAutoShadow) {
+		hideAutoShadow = dayNightList[hh].isNight; // We can not use $$.isNight because DaynightCycle hasn't been updated yet!
 		// Update the shadow manually
 		if (SceneManager._scene && SceneManager._scene._spriteset && SceneManager._scene._spriteset._tilemap) {
 			SceneManager._scene._spriteset._tilemap.refresh();
@@ -1272,8 +1272,7 @@ Imported[Community.Lighting.name] = true;
         let newcolor = rgba2hex(red, green, blue, alpha);
 
         this._maskBitmap.radialgradientFillRect(x1, y1, 0, iplayer_radius, newcolor, radialColor2, playerflicker, playerbrightness);
-      }
-      else {
+      } else {
         this._maskBitmap.radialgradientFillRect(x1, y1, lightMaskPadding, iplayer_radius, playercolor, radialColor2, playerflicker, playerbrightness);
       }
 
@@ -1917,12 +1916,10 @@ Imported[Community.Lighting.name] = true;
         }
         this.addColorStop(distanceFromCenter, rgba(~~newRed, ~~newGreen, ~~newBlue, newAlpha));
       }
-    }
-    else {
+    } else {
       this.addColorStop(brightness, color1);
     }
-
-
+	
     this.addColorStop(1, color2);
   }
   // *******************  NORMAL LIGHT SHAPE ***********************************
@@ -2136,7 +2133,7 @@ Imported[Community.Lighting.name] = true;
 
 
       grad = context.createRadialGradient(x1, y1, r1, x1, y1, r2);
-      grad.addTransparentColorStops(1, color1, color2);
+      grad.addTransparentColorStops(0, color1, color2);
       context.fillStyle = grad;
       context.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
     }
