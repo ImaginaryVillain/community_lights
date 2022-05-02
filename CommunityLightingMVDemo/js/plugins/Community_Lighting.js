@@ -700,13 +700,13 @@ Imported[Community.Lighting.name] = true;
     if (dayNightSaveMinutes > 0) $gameVariables.setValue(dayNightSaveMinutes, mm);
     if (dayNightSaveSeconds > 0 && ss !== null) $gameVariables.setValue(dayNightSaveSeconds, ss);
     if (dayNightSaveNight > 0 && dayNightList[hh] instanceof Object) $gameSwitches.setValue(dayNightSaveNight, dayNightList[hh].isNight);
-	if (dayNightNoAutoshadow && dayNightList[hh] instanceof Object && dayNightList[hh].isNight !== hideAutoShadow) {
-		hideAutoShadow = dayNightList[hh].isNight; // We can not use $$.isNight because DaynightCycle hasn't been updated yet!
-		// Update the shadow manually
-		if (SceneManager._scene && SceneManager._scene._spriteset && SceneManager._scene._spriteset._tilemap) {
-			SceneManager._scene._spriteset._tilemap.refresh();
-		}
-	}
+    if (dayNightNoAutoshadow && dayNightList[hh] instanceof Object && dayNightList[hh].isNight !== hideAutoShadow) {
+      hideAutoShadow = dayNightList[hh].isNight; // We can not use $$.isNight because DaynightCycle hasn't been updated yet!
+      // Update the shadow manually
+      if (SceneManager._scene && SceneManager._scene._spriteset && SceneManager._scene._spriteset._tilemap) {
+        SceneManager._scene._spriteset._tilemap.refresh();
+      }
+    }
   };
   $$.isNight = function () {
     let hour = $gameVariables.GetDaynightCycle();
@@ -1140,6 +1140,7 @@ Imported[Community.Lighting.name] = true;
         $gameVariables.SetLightArrayId([]);
         $gameVariables.SetLightArrayState([]);
         $gameVariables.SetLightArrayColor([]);
+        $gameVariables.SetTint(null);
       }
     }
 
@@ -1919,7 +1920,7 @@ Imported[Community.Lighting.name] = true;
     } else {
       this.addColorStop(brightness, color1);
     }
-	
+
     this.addColorStop(1, color2);
   }
   // *******************  NORMAL LIGHT SHAPE ***********************************
@@ -2226,7 +2227,7 @@ Imported[Community.Lighting.name] = true;
     this._createBitmap();
 
     //Initialize the bitmap
-	this._addSprite(-lightMaskPadding, 0, this._maskBitmap); // We are no longer based on battleback, we no longer to do shady shifting
+    this._addSprite(-lightMaskPadding, 0, this._maskBitmap); // We are no longer based on battleback, we no longer to do shady shifting
 
     var redhex = $gameTemp._MapTint.substring(1, 3);
     var greenhex = $gameTemp._MapTint.substring(3, 5);
@@ -3079,21 +3080,21 @@ Imported[Community.Lighting.name] = true;
       $gameVariables.SetDaynightColorArray(daynightcolors);
     }
   };
-  
+
   let _Tilemap_drawShadow = Tilemap.prototype._drawShadow;
   Tilemap.prototype._drawShadow = function (bitmap, shadowBits, dx, dy) {
-	if (!hideAutoShadow) {
+    if (!hideAutoShadow) {
       _Tilemap_drawShadow.call(this, bitmap, shadowBits, dx, dy);
     }
-	// Else, show no shadow
+    // Else, show no shadow
   };
-  
+
   let _ShaderTilemap_drawShadow = ShaderTilemap.prototype._drawShadow;
   ShaderTilemap.prototype._drawShadow = function (bitmap, shadowBits, dx, dy) {
-	if (!hideAutoShadow) {
+    if (!hideAutoShadow) {
       _ShaderTilemap_drawShadow.call(this, bitmap, shadowBits, dx, dy);
     }
-	// Else, show no shadow
+    // Else, show no shadow
   };
 })(Community.Lighting);
 
