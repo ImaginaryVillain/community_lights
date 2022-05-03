@@ -4,6 +4,25 @@
 /*=============================================================================
 Forked from Terrax Lighting
 =============================================================================*/
+
+if (typeof require !== "undefined" && typeof module != "undefined") {
+  var {
+    Game_Player,
+    Game_Interpreter,
+    Game_Event,
+    Game_Variables,
+    Game_Map,
+  } = require("../rpg_objects");
+  var {
+    PluginManager,
+    BattleManager,
+    ConfigManager,
+  } = require("../rpg_managers");
+  var { Window_Base, Window_Options } = require("../rpg_windows");
+  var { Spriteset_Map, Spriteset_Battle } = require("../rpg_sprites");
+  var { Scene_Map } = require("../rpg_scenes");
+  var { Bitmap, Tilemap, ShaderTilemap } = require("../rpg_core");
+}
 var Community = Community || {};
 Community.Lighting = Community.Lighting || {};
 Community.Lighting.name = "Community_Lighting";
@@ -915,8 +934,14 @@ Imported[Community.Lighting.name] = true;
 
   Game_Player.prototype.clearTransferInfo = function () {
     _Game_Player_clearTransferInfo.call(this);
-    $$.defaultBrightness = 0;
-    $$.mapBrightness = undefined;
+    if (reset_each_map) {
+      $gameVariables.SetLightArrayId([]);
+      $gameVariables.SetLightArrayState([]);
+      $gameVariables.SetLightArrayColor([]);
+      $$.defaultBrightness = 0;
+      $$.mapBrightness = undefined;
+      $gameVariables.SetTint(null);
+    }
   };
   /**
    *
@@ -1135,13 +1160,6 @@ Imported[Community.Lighting.name] = true;
       }
 
       $$.ReloadMapEvents();  // reload map events on map chance
-
-      if (reset_each_map) {
-        $gameVariables.SetLightArrayId([]);
-        $gameVariables.SetLightArrayState([]);
-        $gameVariables.SetLightArrayColor([]);
-        $gameVariables.SetTint(null);
-      }
     }
 
     // reload mapevents if event_data has chanced (deleted or spawned events/saves)
@@ -3387,3 +3405,11 @@ Spriteset_Map.prototype.createLowerLayer = function () {
   Community.Lighting.Spriteset_Map_prototype_createLowerLayer.call(this);
   this.createLightmask();
 };
+
+if (typeof require !== "undefined" && typeof module != "undefined") {
+  module.exports = {
+    Community,
+    Game_Player,
+    Game_Variables,
+  };
+}
