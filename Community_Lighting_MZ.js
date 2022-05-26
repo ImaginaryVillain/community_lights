@@ -36,11 +36,11 @@ Imported[Community.Lighting.name] = true;
 * @type boolean
 * @default false
 *
-* @param Lights Active Radius
-* @parent ---Offset and Sizes---
-* @desc The number of grid spaces away from the player that lights are turned on. (0 to not use this functionality)
-* Default: 0
-* @default 0
+* @param Daynight Cycle
+* @parent ---General Settings---
+* @desc Should the brightness change over time
+* @type boolean
+* @default true
 *
 * @param Reset Lights
 * @parent ---General Settings---
@@ -136,6 +136,12 @@ Imported[Community.Lighting.name] = true;
 *
 * @param ---Offset and Sizes---
 * @default
+*
+* @param Lights Active Radius
+* @parent ---Offset and Sizes---
+* @desc The number of grid spaces away from the player that lights are turned on. (0 to not use this functionality)
+* Default: 0
+* @default 0
 *
 * @param Player radius
 * @parent ---Offset and Sizes---
@@ -859,6 +865,7 @@ Imported[Community.Lighting.name] = true;
 	let dayNightSaveNight = Number(parameters["Save Night Switch"]) || 0;
 	let dayNightNoAutoshadow = eval(parameters["No Autoshadow During Night"]) || false;
 	let hideAutoShadow = false;
+	let brightnessOverTime = eval(parameters['Daynight Cycle']) || true;
 	let dayNightList = (function(dayNight, nightHours)
 	{
 		let result = [];
@@ -1800,7 +1807,7 @@ Imported[Community.Lighting.name] = true;
 
 		let daynightspeed = $gameVariables.GetDaynightSpeed();
 
-		if (daynightspeed > 0 && daynightspeed < 5000) {
+		if (daynightspeed > 0 && daynightspeed < 5000 && brightnessOverTime) {
 
 			let datenow = new Date();
 			let seconds = Math.floor(datenow.getTime() / 10);
