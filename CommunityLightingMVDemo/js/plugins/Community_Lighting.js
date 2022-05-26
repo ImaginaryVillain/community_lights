@@ -4,6 +4,25 @@
 /*=============================================================================
 Forked from Terrax Lighting
 =============================================================================*/
+
+if (typeof require !== "undefined" && typeof module != "undefined") {
+  var {
+    Game_Player,
+    Game_Interpreter,
+    Game_Event,
+    Game_Variables,
+    Game_Map,
+  } = require("../rpg_objects");
+  var {
+    PluginManager,
+    BattleManager,
+    ConfigManager,
+  } = require("../rpg_managers");
+  var { Window_Base, Window_Options } = require("../rpg_windows");
+  var { Spriteset_Map, Spriteset_Battle } = require("../rpg_sprites");
+  var { Scene_Map } = require("../rpg_scenes");
+  var { Bitmap, Tilemap, ShaderTilemap } = require("../rpg_core");
+}
 var Community = Community || {};
 Community.Lighting = Community.Lighting || {};
 Community.Lighting.name = "Community_Lighting";
@@ -700,13 +719,13 @@ Imported[Community.Lighting.name] = true;
     if (dayNightSaveMinutes > 0) $gameVariables.setValue(dayNightSaveMinutes, mm);
     if (dayNightSaveSeconds > 0 && ss !== null) $gameVariables.setValue(dayNightSaveSeconds, ss);
     if (dayNightSaveNight > 0 && dayNightList[hh] instanceof Object) $gameSwitches.setValue(dayNightSaveNight, dayNightList[hh].isNight);
-	if (dayNightNoAutoshadow && dayNightList[hh] instanceof Object && dayNightList[hh].isNight !== hideAutoShadow) {
-		hideAutoShadow = dayNightList[hh].isNight; // We can not use $$.isNight because DaynightCycle hasn't been updated yet!
-		// Update the shadow manually
-		if (SceneManager._scene && SceneManager._scene._spriteset && SceneManager._scene._spriteset._tilemap) {
-			SceneManager._scene._spriteset._tilemap.refresh();
-		}
-	}
+    if (dayNightNoAutoshadow && dayNightList[hh] instanceof Object && dayNightList[hh].isNight !== hideAutoShadow) {
+      hideAutoShadow = dayNightList[hh].isNight; // We can not use $$.isNight because DaynightCycle hasn't been updated yet!
+      // Update the shadow manually
+      if (SceneManager._scene && SceneManager._scene._spriteset && SceneManager._scene._spriteset._tilemap) {
+        SceneManager._scene._spriteset._tilemap.refresh();
+      }
+    }
   };
   $$.isNight = function () {
     let hour = $gameVariables.GetDaynightCycle();
@@ -915,8 +934,14 @@ Imported[Community.Lighting.name] = true;
 
   Game_Player.prototype.clearTransferInfo = function () {
     _Game_Player_clearTransferInfo.call(this);
-    $$.defaultBrightness = 0;
-    $$.mapBrightness = undefined;
+    if (reset_each_map) {
+      $gameVariables.SetLightArrayId([]);
+      $gameVariables.SetLightArrayState([]);
+      $gameVariables.SetLightArrayColor([]);
+      $$.defaultBrightness = 0;
+      $$.mapBrightness = undefined;
+      $gameVariables.SetTint(null);
+    }
   };
   /**
    *
@@ -1135,12 +1160,6 @@ Imported[Community.Lighting.name] = true;
       }
 
       $$.ReloadMapEvents();  // reload map events on map chance
-
-      if (reset_each_map) {
-        $gameVariables.SetLightArrayId([]);
-        $gameVariables.SetLightArrayState([]);
-        $gameVariables.SetLightArrayColor([]);
-      }
     }
 
     // reload mapevents if event_data has chanced (deleted or spawned events/saves)
@@ -1919,7 +1938,7 @@ Imported[Community.Lighting.name] = true;
     } else {
       this.addColorStop(brightness, color1);
     }
-	
+
     this.addColorStop(1, color2);
   }
   // *******************  NORMAL LIGHT SHAPE ***********************************
@@ -2226,7 +2245,7 @@ Imported[Community.Lighting.name] = true;
     this._createBitmap();
 
     //Initialize the bitmap
-	this._addSprite(-lightMaskPadding, 0, this._maskBitmap); // We are no longer based on battleback, we no longer to do shady shifting
+    this._addSprite(-lightMaskPadding, 0, this._maskBitmap); // We are no longer based on battleback, we no longer to do shady shifting
 
     var redhex = $gameTemp._MapTint.substring(1, 3);
     var greenhex = $gameTemp._MapTint.substring(3, 5);
@@ -3079,21 +3098,21 @@ Imported[Community.Lighting.name] = true;
       $gameVariables.SetDaynightColorArray(daynightcolors);
     }
   };
-  
+
   let _Tilemap_drawShadow = Tilemap.prototype._drawShadow;
   Tilemap.prototype._drawShadow = function (bitmap, shadowBits, dx, dy) {
-	if (!hideAutoShadow) {
+    if (!hideAutoShadow) {
       _Tilemap_drawShadow.call(this, bitmap, shadowBits, dx, dy);
     }
-	// Else, show no shadow
+    // Else, show no shadow
   };
-  
+
   let _ShaderTilemap_drawShadow = ShaderTilemap.prototype._drawShadow;
   ShaderTilemap.prototype._drawShadow = function (bitmap, shadowBits, dx, dy) {
-	if (!hideAutoShadow) {
+    if (!hideAutoShadow) {
       _ShaderTilemap_drawShadow.call(this, bitmap, shadowBits, dx, dy);
     }
-	// Else, show no shadow
+    // Else, show no shadow
   };
 })(Community.Lighting);
 
@@ -3386,3 +3405,11 @@ Spriteset_Map.prototype.createLowerLayer = function () {
   Community.Lighting.Spriteset_Map_prototype_createLowerLayer.call(this);
   this.createLightmask();
 };
+
+if (typeof require !== "undefined" && typeof module != "undefined") {
+  module.exports = {
+    Community,
+    Game_Player,
+    Game_Variables,
+  };
+}
