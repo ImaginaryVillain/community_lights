@@ -1678,7 +1678,7 @@ Imported[Community.Lighting.name] = true;
         let r3 = Math.floor(r + (stepR * tint_timer));
         let g3 = Math.floor(g + (stepG * tint_timer));
         let b3 = Math.floor(b + (stepB * tint_timer));
-        let a3 = Math.floor(b + (stepA * tint_timer));
+        let a3 = Math.floor(a + (stepA * tint_timer));
         if (r3 < 0) {
           r3 = 0
         }
