@@ -3522,6 +3522,7 @@ Window_TimeOfDay.prototype.initialize = function(rect)
 	this._baseX = rect.x;
 	this._baseY = rect.y;
 	this.setBackgroundType(0);
+	this.visible = $gameVariables._clShowTimeWindow;
 };
 Window_TimeOfDay.prototype.update = function()
 {
