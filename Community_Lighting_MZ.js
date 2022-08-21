@@ -657,7 +657,7 @@ Imported[Community.Lighting.name] = true;
 * change a bunch of event and map notes.
 
 *
-* 2. New with version 4.2+ is the option to place the lighting note tag 
+* 2. New with version 4.2+ is the option to place the lighting note tag
 * anywhere in an event page's comment field instead of the note box, as
 * long as the comment field is the first thing on the page.  This allows
 * for more advanced lighting tricks to be done on a per-page basis.  Page
@@ -759,7 +759,7 @@ Imported[Community.Lighting.name] = true;
 * Activates day/night cycle.  Put in map note or event note
 * - speed     Optional parameter to alter the speed at which time passes.
 *             10 is the default speed, higher numbers are slower, lower
-*             numbers are faster, and 0 stops the flow of time entirely. 
+*             numbers are faster, and 0 stops the flow of time entirely.
 *             If speed is not specified, then the current speed is used.
 *
 *
@@ -812,7 +812,7 @@ Imported[Community.Lighting.name] = true;
 * This allows you to decide how far away from the player lights are active,
 * anything beyond this range will not light up until the player gets
 * closer to it.
-* 
+*
 * It can be changed in the plugin parameters, or using the script call...
 *
 * $gameVariables.SetActiveRadius(#)
@@ -915,7 +915,7 @@ Imported[Community.Lighting.name] = true;
 	//let averagetime = [];
 	//let averagetimecount = 0;
 	let notetag_reg = RegExp("<" + noteTagKey + ":[ ]*([^>]+)>", "i");
-	
+
 	$$.getFirstComment = function()
 	{
 		let result = null;
@@ -931,7 +931,7 @@ Imported[Community.Lighting.name] = true;
 					result += "\n" + (page.list[line].parameters[0] || "");
 					line++;
 				}
-			}					
+			}
 		}
 		return result;
 	};
@@ -999,7 +999,7 @@ Imported[Community.Lighting.name] = true;
 		let value = Math.floor($gameVariables.GetDaynightTimer() - speed * $$.minutes());
 		return Math.floor(value / speed * 60);
 	};
-	
+
 	$$.time = function(showSeconds)
 	{
 		let result = $$.hours() + ":" + $$.minutes().padZero(2);
@@ -1031,7 +1031,7 @@ Imported[Community.Lighting.name] = true;
 	};
 	Game_Event.prototype.initLightData = function()
 	{
-		this._lastLightPage = this._pageIndex;		
+		this._lastLightPage = this._pageIndex;
 		let tagData = this.getCLTag().toLowerCase().split(" ");
 		let needsCycleDuration = false;
 		this._clType = tagData.shift();
@@ -1681,21 +1681,21 @@ Imported[Community.Lighting.name] = true;
 		for (let i = 0, len = this._sprites.length; i < len; i++) {	  // remove all old sprites
 			this._removeSprite();
 		}
-		
+
 		if (map_id <= 0) return;								// No lighting on map 0
 		if (options_lighting_on !== true) return;				// Plugin deactivated in the option
 		if ($gameVariables.GetScriptActive() !== true) return;	// Plugin deactivated by plugin command
-		
+
 		event_reload_counter++;  // reload map events every 200 cycles just in case.
 		if (event_reload_counter > 200) {
 			event_reload_counter = 0;
 			$$.ReloadMapEvents()
 		}
-		
+
 		if (light_event_required && eventObjId.length <= 0) return; // If no lightsources on this map, no lighting if light_event_required set to true.
-		
+
 		this._addSprite(-lightMaskPadding, 0, this._maskBitmap);
-		
+
 		// ******** GROW OR SHRINK GLOBE PLAYER *********
 		let firstrun = $gameVariables.GetFirstRun();
 		if (firstrun === true) {
@@ -1822,7 +1822,7 @@ Imported[Community.Lighting.name] = true;
 				let daynightminutes = Math.floor(daynighttimer / daynightspeed);
 				let daynighttimeover = daynighttimer - (daynightspeed * daynightminutes);
 				let daynightseconds = Math.floor(daynighttimeover / daynightspeed * 60);
-				
+
 				if (daynighttimer >= (daynightspeed * 60)) {
 					daynightcycle = daynightcycle + 1;
 					if (daynightcycle >= daynighthoursinday) daynightcycle = 0;
@@ -1841,7 +1841,7 @@ Imported[Community.Lighting.name] = true;
 			let evid = event_id[i];
 			let cur = $gameMap.events()[eventObjId[i]];
 			if (cur._lastLightPage !== cur._pageIndex) cur.resetLightData();
-			
+
 			let lightsOnRadius = $gameVariables.GetActiveRadius();
 		    if (lightsOnRadius > 0) {
 				let distanceApart = Math.round(Community.Lighting.distance($gamePlayer.x, $gamePlayer.y, cur._realX, cur._realY));
@@ -1849,7 +1849,7 @@ Imported[Community.Lighting.name] = true;
 					continue;
 				}
 			}
-			
+
 			let lightType = cur.getLightType();
 			if (lightType === "light" || lightType === "fire" || lightType === "flashlight")
 			{
@@ -1916,11 +1916,11 @@ Imported[Community.Lighting.name] = true;
 						if (!shift_lights_with_events) {
 							ly1 += $gameMap.events()[event_stacknumber[i]].shiftY();
 						}
-						
+
 						// apply offsets
 						lx1 += +xoffset;
 						ly1 += +yoffset;
-						
+
 						if (lightType === "flashlight")
 						{
 							let ldir = 0;
@@ -1931,7 +1931,7 @@ Imported[Community.Lighting.name] = true;
 							{
 								ldir = event_dir[i];
 							}
-							
+
 							let tldir = cur.getLightFlashlightDirection();
 							if (!isNaN(tldir)) {
 								switch(tldir) {
@@ -1951,7 +1951,7 @@ Imported[Community.Lighting.name] = true;
 										break;
 								}
 							}
-							
+
 							this._maskBitmap.radialgradientFillRect2(lx1, ly1, 0, light_radius, colorvalue, '#000000', ldir, flashlength, flashwidth);
 						} else {
 							this._maskBitmap.radialgradientFillRect(lx1, ly1, 0, light_radius, colorvalue, '#000000', objectflicker, brightness, direction);
@@ -3266,7 +3266,7 @@ Imported[Community.Lighting.name] = true;
 		$gameVariables.SetLightTags(tile_lights);
 		$gameVariables.SetBlockTags(tile_blocks);
 	};
-	
+
 	let _Tilemap_addShadow = Tilemap.prototype._addShadow;
 	Tilemap.prototype._addShadow = function (layer, shadowBits, dx, dy) {
 		if (!hideAutoShadow) {
