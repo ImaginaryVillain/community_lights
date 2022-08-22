@@ -70,6 +70,14 @@ Imported[Community.Lighting.name] = true;
 * @desc Specify a key (<Key: Light 25 ...>) to be used with all note tags or leave blank for Terrax compatibility (Light 25 ...)
 * @default cl
 *
+* @param Player Additive Lighting
+* @parent ---General Settings---
+* @desc Enable additive lighting effect for the player's light radius
+* @type boolean
+* @on Enable
+* @off Disable
+* @default false
+*
 * @param ---DayNight Settings---
 * @default
 *
@@ -277,6 +285,13 @@ Imported[Community.Lighting.name] = true;
 * @min 0
 * @default 0
 *
+* @arg enableAdditive
+* @text Additive Lighting
+* @type boolean
+* @on Enable
+* @off Disable
+* @default false
+*
 * @arg color
 * @text Color
 * @type text
@@ -324,6 +339,13 @@ Imported[Community.Lighting.name] = true;
 * @type boolean
 * @on On
 * @off Off
+* @default false
+*
+* @arg enableAdditive
+* @text Additive Lighting
+* @type boolean
+* @on Enable
+* @off Disable
 * @default false
 *
 * @arg beamLength
@@ -499,8 +521,12 @@ Imported[Community.Lighting.name] = true;
 * @type select
 * @option Light
 * @value light
+* @option Lighta
+* @value lighta
 * @option Fire
 * @value fire
+* @option Firea
+* @value firea
 * @option Glow
 * @value glow
 * @default light
@@ -573,6 +599,13 @@ Imported[Community.Lighting.name] = true;
 * @on On
 * @off Off
 * @default true
+*
+* @arg enableAdditive
+* @text Additive Lighting
+* @type boolean
+* @on Enable
+* @off Disable
+* @default false
 *
 * @arg color
 * @text Color
@@ -715,8 +748,14 @@ Imported[Community.Lighting.name] = true;
 *               Those should not begin with 'b', 'd', 'x' or 'y' otherwise
 *               they will be mistaken for one of the previous optional parameters.
 *
+* Lighta ...params
+* - Same as Light params above, but adds an additive lighting effect.
+*
 * Fire ...params
 * - Same as Light params above, but adds a subtle flicker
+*
+* Firea ...params
+* - Same as Light params above, but adds a subtle flicker and additive lighting effect.
 *
 * Flashlight [bl] [bw] [c] [onoff] [sdir] [x] [y] [id]
 * - Sets the light as a flashlight with beam length (bl) beam width (bw) color (c),
@@ -737,6 +776,9 @@ Imported[Community.Lighting.name] = true;
 * - id        1, 2, potato, etc. An id (alphanumeric) for plugin commands [optional]
 *             Those should not begin with 'd', 'x' or 'y' otherwise
 *             they will be mistaken for one of the previous optional parameters.
+*
+* Flashlighta ...params
+* - Same as Flashlight params above, but adds an additive lighting effect.
 *
 * Example note tags:
 *
@@ -859,6 +901,7 @@ Imported[Community.Lighting.name] = true;
 	let player_radius = Number(parameters['Player radius']) || 0;
 	let reset_each_map = eval(String(parameters['Reset Lights'])) || false;
 	let noteTagKey = parameters["Note Tag Key"] !== "" ? parameters["Note Tag Key"] : false;
+	let playerEnableAdditive = eval(String(parameters['Player Additive Lighting'])) || false;
 	let dayNightSaveHours = Number(parameters['Save DaynightHours']) || 0;
 	let dayNightSaveMinutes = Number(parameters['Save DaynightMinutes']) || 0;
 	let dayNightSaveSeconds = Number(parameters['Save DaynightSeconds']) || 0;
@@ -1035,7 +1078,8 @@ Imported[Community.Lighting.name] = true;
 		let tagData = this.getCLTag().toLowerCase().split(" ");
 		let needsCycleDuration = false;
 		this._clType = tagData.shift();
-		if (this._clType === "light" || this._clType === "fire")
+		if (this._clType === "light" || this._clType === "lighta" ||
+			this._clType === "fire" || this._clType === "firea")
 		{
 			this._clRadius = undefined;
 			for (let x of tagData)
@@ -1061,7 +1105,7 @@ Imported[Community.Lighting.name] = true;
 				else if (x.length > 0 && this._clId === undefined) this._clId = x;
 			}
 		}
-		else if (this._clType === "flashlight")
+		else if (this._clType === "flashlight" || this._clType === "flashlighta")
 		{
 			this._clBeamLength = undefined;
 			this._clBeamWidth = undefined;
@@ -1173,7 +1217,7 @@ Imported[Community.Lighting.name] = true;
 		let result = false;
 		if (this._clSwitch === undefined)
 		{
-			if (type === "flashlight" && this._clOnOff === 1) result = true;
+			if ((type === "flashlight" || type === "flashlighta") && this._clOnOff === 1) result = true;
 			else result = true;
 		}
 		else (result = this._clSwitch === "night" && $$.isNight())
@@ -1296,6 +1340,7 @@ Imported[Community.Lighting.name] = true;
 		let b_arg = ((+args.brightness || 0) * 0.01).clamp(0, 1);
 		let fadeSpeed = +args.fadeSpeed || 0;
 		playercolor = args.color;
+		$gameVariables.SetPlayerAdditiveLighting(args.enableAdditive === "true");
 		// light radiusgrow
 		if (fadeSpeed > 0)
 		{
@@ -1355,6 +1400,7 @@ Imported[Community.Lighting.name] = true;
 				$gameVariables.SetRadiusTarget(1);
 			}
 			$gameVariables.SetFlashlight(true);
+			$gameVariables.SetFlashlightAdditiveLighting(args.enableAdditive === "true");
 			$gameVariables.SetPlayerColor(playercolor);
 			$gameVariables.SetFlashlightWidth(flashlightwidth);
 			$gameVariables.SetFlashlightLength(flashlightlength);
@@ -1494,7 +1540,7 @@ Imported[Community.Lighting.name] = true;
 		let tilearray = $gameVariables.GetTileArray();
 		//let tilenumber = Number(eval(args[0])); // eval?  wtf?
 		const tileTypes = ["terrain", "region"];
-		const lightTypes = ["light", "fire", "glow"];
+		const lightTypes = ["light", "lighta", "fire", "firea", "glow"];
 		let tiletype = lightTypes.indexOf(args.lightType) * 2 + tileTypes.indexOf(args.tileType) + 3;
 		let tilenumber = +args.id || 0;
 		let tile_on = +(args.enabled === "true");
@@ -1611,6 +1657,13 @@ Imported[Community.Lighting.name] = true;
 		}
 	};
 */
+	class Mask_Bitmaps {
+		constructor(width, height) {
+			this.multiply = new Bitmap(width, height); // one big bitmap to fill the intire screen with black
+			this.additive = new Bitmap(width, height);
+		}
+	}
+
 	Spriteset_Map.prototype.createLightmask = function() {
 		this._lightmask = new Lightmask();
 		this.addChild(this._lightmask);
@@ -1628,7 +1681,7 @@ Imported[Community.Lighting.name] = true;
 		this._width = Graphics.width;
 		this._height = Graphics.height;
 		this._sprites = [];
-		this._createBitmap();
+		this._createBitmaps();
 	};
 
 	//Updates the Lightmask for each frame.
@@ -1639,9 +1692,8 @@ Imported[Community.Lighting.name] = true;
 
 	//@method _createBitmaps
 
-	Lightmask.prototype._createBitmap = function () {
-		this._maskBitmap = new Bitmap(maxX + lightMaskPadding, maxY);   // one big bitmap to fill the intire screen with black
-		let canvas = this._maskBitmap.canvas;             // a bit larger then setting to take care of screenshakes
+	Lightmask.prototype._createBitmaps = function () {
+		this._maskBitmaps = new Mask_Bitmaps(maxX + lightMaskPadding, maxY);
 	};
 
 	/**
@@ -1694,7 +1746,8 @@ Imported[Community.Lighting.name] = true;
 
 		if (light_event_required && eventObjId.length <= 0) return; // If no lightsources on this map, no lighting if light_event_required set to true.
 
-		this._addSprite(-lightMaskPadding, 0, this._maskBitmap);
+		this._addSprite(-lightMaskPadding, 0, this._maskBitmaps.multiply, blendMode=2 /*multiply*/)
+		this._addSprite(-lightMaskPadding, 0, this._maskBitmaps.additive, blendMode=1 /*Additive*/);
 
 		// ******** GROW OR SHRINK GLOBE PLAYER *********
 		let firstrun = $gameVariables.GetFirstRun();
@@ -1705,8 +1758,10 @@ Imported[Community.Lighting.name] = true;
 			Community_tint_target_old = '#000000';
 			$gameVariables.SetFirstRun(false);
 			player_radius = Number(parameters['Player radius']);
+			$gameVariables.SetPlayerAdditiveLighting(playerEnableAdditive);
 			$gameVariables.SetRadius(player_radius);
 		} else {
+			playerEnableAdditive = $gameVariables.GetPlayerAdditiveLighting();
 			player_radius = $gameVariables.GetRadius();
 		}
 		let lightgrow_value = player_radius;
@@ -1734,12 +1789,14 @@ Imported[Community.Lighting.name] = true;
 
 		// ****** PLAYER LIGHTGLOBE ********
 
-		let canvas = this._maskBitmap.canvas;
-		let ctx = canvas.getContext("2d");
-		this._maskBitmap.fillRect(0, 0, maxX + lightMaskPadding, maxY, '#000000');
+		let ctxMultiply = this._maskBitmaps.multiply.context;
+		let ctxAdditive = this._maskBitmaps.additive.context;
+		this._maskBitmaps.multiply.fillRect(0, 0, maxX + lightMaskPadding, maxY, '#000000');
+		this._maskBitmaps.additive.clearRect(0, 0, maxX + lightMaskPadding, maxY);
 
 
-		ctx.globalCompositeOperation = 'lighter';
+		ctxMultiply.globalCompositeOperation = 'lighter';
+		ctxAdditive.globalCompositeOperation = 'lighter';
 		let pw = $gameMap.tileWidth();
 		let ph = $gameMap.tileHeight();
 		let dx = $gameMap.displayX();
@@ -1762,6 +1819,7 @@ Imported[Community.Lighting.name] = true;
 
 		let playerflashlight = $gameVariables.GetFlashlight();
 		let playercolor = $gameVariables.GetPlayerColor();
+		let flashlightEnableAdditive = $gameVariables.GetFlashlightAdditiveLighting();
 		let flashlightlength = $gameVariables.GetFlashlightLength();
 		let flashlightwidth = $gameVariables.GetFlashlightWidth();
 		let playerflicker = $gameVariables.GetFire();
@@ -1772,7 +1830,7 @@ Imported[Community.Lighting.name] = true;
 
 		if (iplayer_radius > 0) {
 			if (playerflashlight == true) {
-				this._maskBitmap.radialgradientFillRect2(x1, y1, lightMaskPadding, iplayer_radius, playercolor, '#000000', pd, flashlightlength, flashlightwidth);
+				this._maskBitmaps.radialgradientFillRect2(x1, y1, lightMaskPadding, iplayer_radius, playercolor, '#000000', pd, flashlightlength, flashlightwidth, flashlightEnableAdditive);
 			}
 			x1 = x1 - flashlightXoffset;
 			y1 = y1 - flashlightYoffset;
@@ -1795,9 +1853,9 @@ Imported[Community.Lighting.name] = true;
 				}
 				let newcolor = "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
 
-				this._maskBitmap.radialgradientFillRect(x1, y1, 0, iplayer_radius, newcolor, '#000000', playerflicker, playerbrightness);
+				this._maskBitmaps.radialgradientFillRect(x1, y1, 0, iplayer_radius, newcolor, '#000000', playerflicker, playerbrightness, null, null, playerEnableAdditive);
 			} else {
-				this._maskBitmap.radialgradientFillRect(x1, y1, lightMaskPadding, iplayer_radius, playercolor, '#000000', playerflicker, playerbrightness);
+				this._maskBitmaps.radialgradientFillRect(x1, y1, lightMaskPadding, iplayer_radius, playercolor, '#000000', playerflicker, null, null, playerEnableAdditive);
 			}
 
 		}
@@ -1843,7 +1901,7 @@ Imported[Community.Lighting.name] = true;
 			if (cur._lastLightPage !== cur._pageIndex) cur.resetLightData();
 
 			let lightsOnRadius = $gameVariables.GetActiveRadius();
-		    if (lightsOnRadius > 0) {
+			if (lightsOnRadius > 0) {
 				let distanceApart = Math.round(Community.Lighting.distance($gamePlayer.x, $gamePlayer.y, cur._realX, cur._realY));
 				if (distanceApart > lightsOnRadius) {
 					continue;
@@ -1851,9 +1909,12 @@ Imported[Community.Lighting.name] = true;
 			}
 
 			let lightType = cur.getLightType();
-			if (lightType === "light" || lightType === "fire" || lightType === "flashlight")
+			if (lightType === "light" || lightType === "lighta" ||
+				lightType === "fire" || lightType === "firea" ||
+				lightType === "flashlight" || lightType === "flashlighta")
 			{
-				let objectflicker = lightType === "fire";
+				let enableAdditive = (lightType === "lighta" || lightType === "firea" || lightType === "flashlighta");
+				let objectflicker = (lightType === "fire" || lightType === "firea");
 				let light_radius = cur.getLightRadius();
 				let flashlength = cur.getLightFlashlightLength();
 				let flashwidth = cur.getLightFlashlightWidth();
@@ -1921,7 +1982,7 @@ Imported[Community.Lighting.name] = true;
 						lx1 += +xoffset;
 						ly1 += +yoffset;
 
-						if (lightType === "flashlight")
+						if (lightType === "flashlight" || lightType === "flashlighta")
 						{
 							let ldir = 0;
 							if (event_moving[i] > 0) {
@@ -1952,9 +2013,9 @@ Imported[Community.Lighting.name] = true;
 								}
 							}
 
-							this._maskBitmap.radialgradientFillRect2(lx1, ly1, 0, light_radius, colorvalue, '#000000', ldir, flashlength, flashwidth);
+							this._maskBitmaps.radialgradientFillRect2(lx1, ly1, 0, light_radius, colorvalue, '#000000', ldir, flashlength, flashwidth, enableAdditive);
 						} else {
-							this._maskBitmap.radialgradientFillRect(lx1, ly1, 0, light_radius, colorvalue, '#000000', objectflicker, brightness, direction);
+							this._maskBitmaps.radialgradientFillRect(lx1, ly1, 0, light_radius, colorvalue, '#000000', objectflicker, brightness, direction, enableAdditive);
 						}
 					}
 				}
@@ -2388,42 +2449,54 @@ Imported[Community.Lighting.name] = true;
 				}
 			}
 
-			if (tile_type == 3 || tile_type == 4) {
-				this._maskBitmap.radialgradientFillRect(x1, y1, 0, tile_radius, tile_color, '#000000', false, brightness); // Light
-			} else if (tile_type == 5 || tile_type == 6) {
-				this._maskBitmap.radialgradientFillRect(x1, y1, 0, tile_radius, tile_color, '#000000', true, brightness);  // Fire
-			} else {
+			switch (parseInt(tile_type)) {
+				case 3: // Terrain Light
+				case 4: // Region Light
+					this._maskBitmaps.radialgradientFillRect(x1, y1, 0, tile_radius, tile_color, '#000000', false, brightness, null, false);
+					break;
+				case 5: // Terrain Light Additive
+				case 6: // Region Light Additive
+					console.log("here?");
+					this._maskBitmaps.radialgradientFillRect(x1, y1, 0, tile_radius, tile_color, '#000000', false, brightness, null, true);
+					break;
+				case 7: // Terrain Fire
+				case 8: // Region Fire
+					this._maskBitmaps.radialgradientFillRect(x1, y1, 0, tile_radius, tile_color, '#000000', true, brightness, null, false);
+					break;
+				case 9: // Terrain Fire Additive
+				case 10: // Region Fire Additive
+					this._maskBitmaps.radialgradientFillRect(x1, y1, 0, tile_radius, tile_color, '#000000', true, brightness, null, true);
+					break;
+				default: // Glow
+					let r = $$.hexToRgb(tile_color).r;
+					let g = $$.hexToRgb(tile_color).g;
+					let b = $$.hexToRgb(tile_color).b;
 
-				let r = $$.hexToRgb(tile_color).r;
-				let g = $$.hexToRgb(tile_color).g;
-				let b = $$.hexToRgb(tile_color).b;
+					r = Math.floor(r + (60 - tileglow));
+					g = Math.floor(g + (60 - tileglow));
+					b = Math.floor(b + (60 - tileglow));
 
+					if (r < 0) {
+						r = 0;
+					}
+					if (g < 0) {
+						g = 0;
+					}
+					if (b < 0) {
+						b = 0;
+					}
+					if (r > 255) {
+						r = 255;
+					}
+					if (g > 255) {
+						g = 255;
+					}
+					if (b > 255) {
+						b = 255;
+					}
 
-				r = Math.floor(r + (60 - tileglow));
-				g = Math.floor(g + (60 - tileglow));
-				b = Math.floor(b + (60 - tileglow));
-
-				if (r < 0) {
-					r = 0;
-				}
-				if (g < 0) {
-					g = 0;
-				}
-				if (b < 0) {
-					b = 0;
-				}
-				if (r > 255) {
-					r = 255;
-				}
-				if (g > 255) {
-					g = 255;
-				}
-				if (b > 255) {
-					b = 255;
-				}
-
-				let newtile_color = "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
-				this._maskBitmap.radialgradientFillRect(x1, y1, 0, tile_radius, newtile_color, '#000000', false, brightness);
+					let newtile_color = "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+					this._maskBitmaps.radialgradientFillRect(x1, y1, 0, tile_radius, newtile_color, '#000000', false, brightness);
 			}
 
 
@@ -2431,7 +2504,7 @@ Imported[Community.Lighting.name] = true;
 
 
 
-		ctx.globalCompositeOperation = "multiply";
+		ctxMultiply.globalCompositeOperation = "multiply";
 		for (let i = 0, len = tile_blocks.length; i < len; i++) {
 			let tilestr = tile_blocks[i];
 			let tileargs = tilestr.split(";");
@@ -2462,20 +2535,20 @@ Imported[Community.Lighting.name] = true;
 				}
 			}
 			if (shape == 0) {
-				this._maskBitmap.FillRect(x1, y1, pw, ph, tile_color);
+				this._maskBitmaps.multiply.FillRect(x1, y1, pw, ph, tile_color);
 			}
 			if (shape == 1) {
 				x1 = x1 + Number(xo1);
 				y1 = y1 + Number(yo1);
-				this._maskBitmap.FillRect(x1, y1, Number(xo2), Number(yo2), tile_color);
+				this._maskBitmaps.multiply.FillRect(x1, y1, Number(xo2), Number(yo2), tile_color);
 			}
 			if (shape == 2) {
 				x1 = x1 + Number(xo1);
 				y1 = y1 + Number(yo1);
-				this._maskBitmap.FillCircle(x1, y1, Number(xo2), Number(yo2), tile_color);
+				this._maskBitmaps.multiply.FillCircle(x1, y1, Number(xo2), Number(yo2), tile_color);
 			}
 		}
-		ctx.globalCompositeOperation = 'lighter';
+		ctxMultiply.globalCompositeOperation = 'lighter';
 
 
 		// *********************************** DAY NIGHT CYCLE FILTER **************************
@@ -2514,7 +2587,7 @@ Imported[Community.Lighting.name] = true;
 			}
 			color1 = "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
 
-			this._maskBitmap.FillRect(-lightMaskPadding, 0, maxX + lightMaskPadding, maxY, color1);
+			this._maskBitmaps.multiply.FillRect(-lightMaskPadding, 0, maxX + lightMaskPadding, maxY, color1);
 		}
 		// *********************************** TINT **************************
 		else {
@@ -2604,23 +2677,23 @@ Imported[Community.Lighting.name] = true;
 			} else {
 				tint_timer = 0;
 			}
-			this._maskBitmap.FillRect(-lightMaskPadding, 0, maxX + lightMaskPadding, maxY, tcolor);
+			this._maskBitmaps.multiply.FillRect(-lightMaskPadding, 0, maxX + lightMaskPadding, maxY, tcolor);
 		}
 
 		// reset drawmode to normal
-		ctx.globalCompositeOperation = 'source-over';
+		ctxMultiply.globalCompositeOperation = 'source-over';
 	};
 
 	/**
 	 * @method _addSprite
 	 * @private
 	 */
-	Lightmask.prototype._addSprite = function (x1, y1, selectedbitmap) {
+	Lightmask.prototype._addSprite = function (x1, y1, selectedbitmap, blendMode=2 /*multiply*/) {
 
 		let sprite = new Sprite(this.viewport);
 		sprite.bitmap = selectedbitmap;
 		sprite.opacity = 255;
-		sprite.blendMode = 2;
+		sprite.blendMode = blendMode;
 		sprite.x = x1;
 		sprite.y = y1;
 		this._sprites.push(sprite);
@@ -2684,7 +2757,7 @@ Imported[Community.Lighting.name] = true;
 	// *******************  NORMAL LIGHT SHAPE ***********************************
 	// Fill gradient circle
 
-	Bitmap.prototype.radialgradientFillRect = function (x1, y1, r1, r2, color1, color2, flicker, brightness, direction) {
+	Mask_Bitmaps.prototype.radialgradientFillRect = function (x1, y1, r1, r2, color1, color2, flicker, brightness, direction, enableAdditive=false) {
 
 		//color1 = $$.validateColor(color1);
 		//color2 = $$.validateColor(color2);
@@ -2719,8 +2792,8 @@ Imported[Community.Lighting.name] = true;
 			if (!direction) {
 				direction = 0;
 			}
-			let context = this._context;
-			let grad;
+			let contextMultiply = this.multiply._context;
+			let contextAdditive = this.additive._context;
 			let wait = Math.floor((Math.random() * 8) + 1);
 			if (flicker == true && wait == 1) {
 				let flickerradiusshift = $gameVariables.GetFireRadius();
@@ -2742,65 +2815,63 @@ Imported[Community.Lighting.name] = true;
 				if (r2 < 0) r2 = 0;
 			}
 
-			grad = context.createRadialGradient(x1, y1, r1, x1, y1, r2);
+			grad = contextMultiply.createRadialGradient(x1, y1, r1, x1, y1, r2);
 			if (brightness) {
 				grad.addColorStop(0, '#FFFFFF');
 			}
 			grad.addColorStop(brightness, color1);
-
 			grad.addColorStop(1, color2);
 
-			context.save();
-			context.fillStyle = grad;
+			contextMultiply.save();
+
+			contextMultiply.fillStyle = grad;
+			contextAdditive.fillStyle = grad;
+
 			direction = Number(direction);
 			let pw = $gameMap.tileWidth() / 2;
 			let ph = $gameMap.tileHeight() / 2;
+			let xS1, yS1, xE1, yE1, xS2, yS2, xE2, yE2;
 			switch (direction) {
 				case 0:
-					context.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
-					break;
+					xS1=x1-r2;    yS1=y1-r2;    xE1=r2*2;       yE1=r2*2;       break;
 				case 1:
-					context.fillRect(x1 - r2, y1 - ph, r2 * 2, r2 * 2);
-					break;
+					xS1=x1-r2;    yS1=y1-ph;    xE1=r2*2;       yE1=r2*2;       break;
 				case 2:
-					context.fillRect(x1 - r2, y1 - r2, r2 * 1 + pw, r2 * 2);
-					break;
+					xS1=x1-r2;    yS1=y1-r2;    xE1=r2*1+pw;    yE1=r2*2;       break;
 				case 3:
-					context.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 1 + ph);
-					break;
+					xS1=x1-r2;    yS1=y1-r2;    xE1=r2*2;       yE1=r2*1+ph;    break;
 				case 4:
-					context.fillRect(x1 - pw, y1 - r2, r2 * 2, r2 * 2);
-					break;
+					xS1=x1-pw;    yS1=y1-r2;    xE1=r2*2;       yE1=r2*2;       break;
 				case 5:
-					context.fillRect(x1 - r2, y1 - ph, r2 * 1 + pw, r2 * 1 + ph);
-					break;
+					xS1=x1-r2;    yS1=y1-ph;    xE1=r2*1+pw;    yE1=r2*1+ph;    break;
 				case 6:
-					context.fillRect(x1 - r2, y1 - r2, r2 * 1 + pw, r2 * 1 + ph);
-					break;
+					xS1=x1-r2;    yS1=y1-r2;    xE1=r2*1+pw;    yE1=r2*1+ph;    break;
 				case 7:
-					context.fillRect(x1 - pw, y1 - r2, r2 * 1 + pw, r2 * 1 + ph);
-					break;
+					xS1=x1-pw;    yS1=y1-r2;    xE1=r2*1+pw;    yE1=r2*1+ph;    break;
 				case 8:
-					context.fillRect(x1 - pw, y1 - ph, r2 * 1 + pw, r2 * 1 + ph);
-					break;
+					xS1=x1-pw;    yS1=y1-ph;    xE1=r2*1+pw;    yE1=r2*1+ph;    break;
 				case 9:
-					context.fillRect(x1 - r2, y1 - ph, r2 * 2, r2 * 2);
-					context.fillRect(x1 - r2, y1 - r2, r2 * 1 - pw, r2 * 1 - ph);
-					break;
+					xS1=x1-r2;    yS1=y1-ph;    xE1=r2*2;       yE1=r2*2;
+					xS2=x1-r2;    yS2=y1-r2;    xE2=r2*1-pw;    yE2=r2*1-ph;    break;
 				case 10:
-					context.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 1 + ph);
-					context.fillRect(x1 - r2, y1 + pw, r2 * 1 - pw, r2 * 1 - ph);
-					break;
+					xS1=x1-r2;    yS1=y1-r2;    xE1=r2*2;       yE1=r2*1+ph;
+					xS2=x1-r2;    yS2=y1+pw;    xE2=r2*1-pw;    yE2=r2*1-ph;    break;
 				case 11:
-					context.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 1 + ph);
-					context.fillRect(x1 + pw, y1 + pw, r2 * 1 - pw, r2 * 1 - ph);
-					break;
+					xS1=x1-r2;    yS1=y1-r2;    xE1=r2*2;       yE1=r2*1+ph;
+					xS2=x1+pw;    yS2=y1+pw;    xE2=r2*1-pw;    yE2=r2*1-ph;    break;
 				case 12:
-					context.fillRect(x1 - r2, y1 - ph, r2 * 2, r2 * 2);
-					context.fillRect(x1 + pw, y1 - r2, r2 * 1 - pw, r2 * 1 - ph);
-					break;
+					xS1=x1-r2;    yS1=y1-ph;    xE1=r2*2;       yE1=r2*2;
+					xS2=x1+pw;    yS2=y1-r2;    xE2=r2*1-pw;    yE2=r2*1-ph;    break;
 			}
-			context.restore();
+
+			contextMultiply.fillRect(xS1, yS1, xE1, yE1);
+			enableAdditive && contextAdditive.fillRect(xS1, yS1, xE1, yE1);
+			if (direction > 8) {
+				contextMultiply.fillRect(xS2, yS2, xE2, yE2);
+				enableAdditive && contextAdditive.fillRect(xS2, yS2, xE2, yE2);
+			}
+
+			contextMultiply.restore();
 			//this._setDirty();
 		}
 	};
@@ -2809,28 +2880,31 @@ Imported[Community.Lighting.name] = true;
 	// ********************************** FLASHLIGHT *************************************
 	// Fill gradient Cone
 
-	Bitmap.prototype.radialgradientFillRect2 = function (x1, y1, r1, r2, color1, color2, direction, flashlength, flashwidth) {
+	Mask_Bitmaps.prototype.radialgradientFillRect2 = function (x1, y1, r1, r2, color1, color2, direction, flashlength, flashwidth, enableAdditive=false) {
 		x1 = x1 + lightMaskPadding;
 
 		//color1 = $$.validateColor(color1);
 		//color2 = $$.validateColor(color2);
 
-		let context = this._context;
-		let grad;
+		let contextMultiply = this.multiply._context;
+		let contextAdditive = this.additive._context;
 
 		// smal dim glove around player
-		context.save();
+		contextMultiply.save();
 		x1 = x1 - flashlightXoffset;
 		y1 = y1 - flashlightYoffset;
 
 		r1 = 1;
 		r2 = 40;
-		grad = context.createRadialGradient(x1, y1, r1, x1, y1, r2);
+		grad = contextMultiply.createRadialGradient(x1, y1, r1, x1, y1, r2);
 		grad.addColorStop(0, color1);
 		grad.addColorStop(1, color2);
 
-		context.fillStyle = grad;
-		context.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
+		contextMultiply.fillStyle = grad;
+		contextAdditive.fillStyle = grad;
+
+		contextMultiply.fillRect(x1-r2, y1-r2, r2*2, r2*2);
+		enableAdditive && contextAdditive.fillRect(x1-r2, y1-r2, r2*2, r2*2);
 
 		// flashlight
 
@@ -2855,17 +2929,23 @@ Imported[Community.Lighting.name] = true;
 			}
 
 
-			grad = context.createRadialGradient(x1, y1, r1, x1, y1, r2);
+			grad = contextMultiply.createRadialGradient(x1, y1, r1, x1, y1, r2);
 			grad.addColorStop(0, color1);
 			grad.addColorStop(1, color2);
 
-			context.fillStyle = grad;
-			context.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
-		}
-		context.fillStyle = grad;
-		context.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
+			contextMultiply.fillStyle = grad;
+			contextAdditive.fillStyle = grad;
 
-		context.restore();
+			contextMultiply.fillRect(x1-r2, y1-r2, r2*2, r2*2);
+			enableAdditive && contextAdditive.fillRect(x1-r2, y1-r2, r2*2, r2*2);
+		}
+		contextMultiply.fillStyle = grad;
+		contextAdditive.fillStyle = grad;
+
+		contextMultiply.fillRect(x1-r2, y1-r2, r2*2, r2*2);
+		enableAdditive && contextAdditive.fillRect(x1-r2, y1-r2, r2*2, r2*2);
+
+		contextMultiply.restore();
 		//this._setDirty();
 	};
 
@@ -3127,7 +3207,9 @@ Imported[Community.Lighting.name] = true;
 					let note_args = note.split(" ");
 					let note_command = note_args.shift().toLowerCase();
 
-					if (note_command == "light" || note_command == "fire" || note_command == "flashlight") {
+					if (note_command == "light" || note_command == "lighta" ||
+						note_command == "fire" || note_command == "firea" ||
+						note_command == "flashlight" || "flashlighta") {
 
 						eventObjId.push(i);
 						event_id.push($gameMap.events()[i]._eventId);
@@ -3227,12 +3309,12 @@ Imported[Community.Lighting.name] = true;
 					for (let y = 0, mapHeight = $dataMap.height; y < mapHeight; y++) {
 						for (let x = 0, mapWidth = $dataMap.width; x < mapWidth; x++) {
 							let tag = 0;
-							if (tile_type == 3 || tile_type == 5 || tile_type == 7) {
+							if (tile_type == 3 || tile_type == 5 || tile_type == 7 || tile_type == 9 || tile_type == 11) {
 								tag = $gameMap.terrainTag(x, y);
-							}          // tile light
-							if (tile_type == 4 || tile_type == 6 || tile_type == 8) {
+							} // <- tile light
+							if (tile_type == 4 || tile_type == 6 || tile_type == 8 || tile_type == 10 || tile_type == 12) {
 								tag = $dataMap.data[(5 * $dataMap.height + y) * $dataMap.width + x];
-							}  // region light
+							}  // <- region light
 							if (tag == tile_number) {
 								let tilecode = x + ";" + y + ";" + tile_type + ";" + tile_radius + ";" + tile_color + ";" + brightness;
 								tile_lights.push(tilecode);
@@ -3346,6 +3428,12 @@ Game_Variables.prototype.SetFlashlight = function (value) {
 Game_Variables.prototype.GetFlashlight = function () {
 	return this._Community_Lighting_Flashlight || false;
 };
+Game_Variables.prototype.SetFlashlightAdditiveLighting = function (value) {
+	this._Community_Lighting_FlashlightEnableAdditive = value;
+};
+Game_Variables.prototype.GetFlashlightAdditiveLighting = function () {
+	return this._Community_Lighting_FlashlightEnableAdditive || false;
+};
 Game_Variables.prototype.SetFlashlightDensity = function (value) {
 	this._Community_Lighting_FlashlightDensity = value;
 };
@@ -3376,6 +3464,12 @@ Game_Variables.prototype.SetPlayerBrightness = function (value) {
 };
 Game_Variables.prototype.GetPlayerBrightness = function () {
 	return this._Community_Lighting_PlayerBrightness || 0.0;
+};
+Game_Variables.prototype.SetPlayerAdditiveLighting = function (value) {
+	this._Community_Lighting_PlayerEnableAdditive = value;
+};
+Game_Variables.prototype.GetPlayerAdditiveLighting = function () {
+	return this._Community_Lighting_PlayerEnableAdditive || false;
 };
 Game_Variables.prototype.SetRadius = function (value) {
 	this._Community_Lighting_Radius = value;
