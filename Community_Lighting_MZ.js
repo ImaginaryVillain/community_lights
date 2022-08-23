@@ -1036,7 +1036,9 @@ Imported[Community.Lighting.name] = true;
           needsCycleDuration = false;
         }
         else if (x[0] === "#" && this._clColor === undefined) this._clColor = $$.validateColor(x);
-        else if (x[0] === "b" && this._clBrightness === undefined) this._clBrightness = Number(+(x.substr(1, x.length)) / 100).clamp(0, 1);
+        else if (x[0] === "b" && this._clBrightness === undefined) {
+          this._clBrightness = Number(+(x.substr(1, x.length)) / 100).clamp(0, 1);
+        }
         else if ((x === "night" || x === "day") && this._clSwitch === undefined) this._clSwitch = x;
         else if (x[0] === "d" && this._clDirection === undefined) this._clDirection = +(x.substr(1, x.length));
         else if (x[0] === "x" && this._clXOffset === undefined) this._clXOffset = +(x.substr(1, x.length));
@@ -2527,7 +2529,7 @@ Imported[Community.Lighting.name] = true;
   };
 
   let Community_Lighting_Spriteset_Battle_createBattleField = Spriteset_Battle.prototype.createBattleField;
-  Spriteset_Battle.prototype.createBattleField = function() {
+  Spriteset_Battle.prototype.createBattleField = function () {
     Community_Lighting_Spriteset_Battle_createBattleField.call(this);
     if (battleMaskPosition === 'Between') {
       this.createBattleLightmask();
@@ -2587,11 +2589,9 @@ Imported[Community.Lighting.name] = true;
     var canvas = this._maskBitmap.canvas;          // a bit larger then setting to take care of screenshakes
   };
 
-  BattleLightmask.prototype.update = function()
-  {
+  BattleLightmask.prototype.update = function () {
     var color1 = $$._BattleTint;
-    if ($$._BattleTintSpeed > 0)
-    {
+    if ($$._BattleTintSpeed > 0) {
       $$._BattleTintTimer += 1;
 
       var r = $$.hexToRgb($$._BattleTintFade).r;
@@ -2656,7 +2656,7 @@ Imported[Community.Lighting.name] = true;
 
     var sprite = new Sprite(this.viewport);
     sprite.bitmap = selectedbitmap;
-      sprite.opacity = 255;
+    sprite.opacity = 255;
     sprite.blendMode = 2;
     sprite.x = x1;
     sprite.y = y1;
@@ -2665,7 +2665,7 @@ Imported[Community.Lighting.name] = true;
     sprite.rotation = 0;
     sprite.ax = 0;
     sprite.ay = 0
-     sprite.opacity = 255;
+    sprite.opacity = 255;
   };
 
   /**
@@ -2679,15 +2679,17 @@ Imported[Community.Lighting.name] = true;
   // ALLIASED Move event location => reload map.
 
   $$.Game_Interpreter_command203 = Game_Interpreter.prototype.command203;
-  Game_Interpreter.prototype.command203 = function(params)
-  {
+  Game_Interpreter.prototype.command203 = function (params) {
     $$.Game_Interpreter_command203.call(this, params);
     $$.ReloadMapEvents();
     return true;
   };
 
+
   // ALIASED FROM RPG OBJECTS TO ADD LIGHTING TO CONFIG MENU
+
   ConfigManager.cLighting = true;
+
   Object.defineProperty(ConfigManager, 'cLighting', {
     get: function () {
       return options_lighting_on;
@@ -2832,13 +2834,13 @@ Imported[Community.Lighting.name] = true;
         let b_arg = tileargs[5];
         if (typeof b_arg != 'undefined') {
           let key = b_arg.substring(0, 1);
-          if (key == 'b' || key == 'B') {
+          if (key === 'b' || key === 'B') {
             brightness = Number(b_arg.substring(1)) / 100;
           }
         }
       }
 
-      if (tile_on == 1) {
+      if (tile_on === 1) {
 
         if (tile_type >= 3) {
           // *************************** TILE TAG LIGHTSOURCES *********
@@ -2983,6 +2985,10 @@ Game_Variables.prototype.GetFlashlightWidth = function () {
   return this._Community_Lighting_FlashlightWidth || 12;
 };
 
+/**
+ *
+ * @param {String} value
+ */
 Game_Variables.prototype.SetPlayerColor = function (value) {
   this._Community_Lighting_PlayerColor = value;
 };
@@ -2993,7 +2999,7 @@ Game_Variables.prototype.SetPlayerBrightness = function (value) {
   this._Community_Lighting_PlayerBrightness = value;
 };
 Game_Variables.prototype.GetPlayerBrightness = function () {
-  return this._Community_Lighting_PlayerBrightness || 0.0;
+  return this._Community_Lighting_PlayerBrightness || 0;
 };
 Game_Variables.prototype.SetRadius = function (value) {
   this._Community_Lighting_Radius = value;
@@ -3128,8 +3134,7 @@ Game_Variables.prototype.GetBlockTags = function () {
   let default_TA = [];
   return this._Community_Lighting_BlockTags || default_TA;
 };
-function Window_TimeOfDay()
-{
+function Window_TimeOfDay() {
   this.initialize(...arguments);
 };
 Window_TimeOfDay.prototype = Object.create(Window_Selectable.prototype);
@@ -3164,7 +3169,7 @@ Scene_Map.prototype.createAllWindows = function()
 };
 Scene_Map.prototype.createTimeWindow = function()
 {
-    this._timeWindow = new Window_TimeOfDay(this.timeWindowRect());
+  this._timeWindow = new Window_TimeOfDay(this.timeWindowRect());
   this.addWindow(this._timeWindow);
 };
 Scene_Map.prototype.timeWindowRect = function() {
