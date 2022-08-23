@@ -15,7 +15,7 @@ Imported[Community.Lighting.name] = true;
 * @target MZ
 * @plugindesc v4.6 Creates an extra layer that darkens a map and adds lightsources! Released under the MIT license!
 * @author Terrax, iVillain, Aesica, Eliaquim, Alexandre, Nekohime1989
-7
+*
 * @param ---General Settings---
 * @default
 *
@@ -79,7 +79,6 @@ Imported[Community.Lighting.name] = true;
 * @type number
 * @min 0
 * @default 10
-*
 *
 * @param Save DaynightHours
 * @parent ---DayNight Settings---
@@ -626,12 +625,12 @@ Imported[Community.Lighting.name] = true;
 * @help
 *
 * --------------------------------------------------------------------------
-* Important info about note tags and the note tag key plugin paramter:
+* Important info about note tags and the note tag key plugin parameter:
 *
 * 1. This plugin features an optional note tag key that lets this plugin's
 * note tags work alongside those of other plugins--a feature not found in the
 * original Terrax Lighting plugin. If a note tag key is set in the plugin
-* paramters, all of these commands must be enclosed in a note tag with that
+* parameters, all of these commands must be enclosed in a note tag with that
 * particular key in in order to be recognized.
 *
 * This note tag key applies to anything this plugin would have placed inside
@@ -651,7 +650,7 @@ Imported[Community.Lighting.name] = true;
 *
 * Using a note tag key is recommended since it allows for other things
 * (plugins, or even your own personal notes) to make use of the note box
-* without breaking things.  Omiting the key is intended primarily as legacy
+* without breaking things. Omitting the key is intended primarily as legacy
 * support, allowing this plugin to be used with older projects that have
 * been upgraded from Terrax Lighting so you don't have to go back and
 * change a bunch of event and map notes.
@@ -721,15 +720,15 @@ Imported[Community.Lighting.name] = true;
 * Flashlight [bl] [bw] [c] [onoff] [sdir] [x] [y] [id]
 * - Sets the light as a flashlight with beam length (bl) beam width (bw) color (c),
 *      0|1 (onoff), and 1=up, 2=right, 3=down, 4=left for static direction (sdir)
-* - bl:       Beam length:  Any number, optionally preceeded by "L", so 8, L8
-* - bw:       Beam width:  Any number, optionally preceeded by "W", so 12, W12
+* - bl:       Beam length:  Any number, optionally preceded by "L", so 8, L8
+* - bw:       Beam width:  Any number, optionally preceded by "W", so 12, W12
 * - cycle     Allows any number of color + duration pairs to follow that will be
 *             cycled through before repeating from the beginning:
 *             <cl: Flashlight l8 w12 cycle #f00 15 #ff0 15 #0f0 15 on someId d3>
 *             There's no limit to how many colors can be cycled. [optional]
 * - onoff:    Initial state:  0, 1, off, on
 * - sdir:     Forced direction (optional): 0:auto, 1:up, 2:right, 3:down, 4:left
-*             Can be preceeded by "D", so D4.  If omitted, defaults to 0
+*             Can be preceded by "D", so D4.  If omitted, defaults to 0
 * - x         x[offset] Work the same as regular light [optional]
 * - y         y[offset] [optional]
 * - day       Sets the event's light to only show during the day [optional]
@@ -769,7 +768,7 @@ Imported[Community.Lighting.name] = true;
 *
 * If the 'Kill Switch Auto' parameter has been set to true, any event with
 * a (non) active conditional light have their killswitch locked to ON(OFF).
-* You can use this difference to give alternate apparences to these events.
+* You can use this difference to give alternate appearances to these events.
 * For example, a conditional light event can have a page where it shows a
 * burning candle, and second page (active only when the kill switch is ON)
 * who shows an unlit candle
@@ -779,8 +778,8 @@ Imported[Community.Lighting.name] = true;
 * -------------------------------------------------------------------------------
 *
 * If the plugin is active while a battle begin, the battle screen will
-* be tinted like it was on the map. Too dark color will be automatically
-* set to '#666666' (dark gray).
+* be tinted like it was on the map. Too dark color will be automatically set
+* to '#666666' (dark gray).
 *
 * If there is no map to take the tint from (ex: battle test),
 * the screen will not be tinted.
@@ -866,8 +865,7 @@ Imported[Community.Lighting.name] = true;
   let dayNightNoAutoshadow = eval(parameters["No Autoshadow During Night"]) || false;
   let hideAutoShadow = false;
   let brightnessOverTime = eval(parameters['Daynight Cycle']) || true;
-  let dayNightList = (function(dayNight, nightHours)
-  {
+  let dayNightList = (function (dayNight, nightHours) {
     let result = [];
     try {
       dayNight = JSON.parse(dayNight);
@@ -877,7 +875,7 @@ Imported[Community.Lighting.name] = true;
         result[i] = { "color": dayNight[i], "isNight": nightHours.contains(i) };
     }
     catch (e) {
-      console.log("CommunitiyLighting: Night Hours and/or DayNight Colors contain invalid JSON data - cannot parse.");
+      console.log("CommunityLighting: Night Hours and/or DayNight Colors contain invalid JSON data - cannot parse.");
       result = new Array(24).fill(undefined).map(x => x = { "color": "#000000", "isNight": false });
     }
     return result;
@@ -889,7 +887,6 @@ Imported[Community.Lighting.name] = true;
     killswitch = 'None'; //Set any invalid value to no switch
   }
   let killSwitchAuto = eval(String(parameters['Kill Switch Auto'])) || false;
-  //let add_to_options = parameters['Add to options'] || 'Yes';
   let optionText = parameters["Options Menu Entry"] || "";
   let lightInBattle = eval(String(parameters['Battle Tinting'])) || false;
   let battleMaskPosition = parameters['Light Mask Position'] || 'Above';
@@ -916,18 +913,14 @@ Imported[Community.Lighting.name] = true;
   //let averagetimecount = 0;
   let notetag_reg = RegExp("<" + noteTagKey + ":[ ]*([^>]+)>", "i");
 
-  $$.getFirstComment = function()
-  {
+  $$.getFirstComment = function () {
     let result = null;
     let page = this.page();
-    if (page)
-    {
-      if (page.list[0].code === 108)
-      {
+    if (page) {
+      if (page.list[0].code === 108) {
         result = page.list[0].parameters[0] || "";
         let line = 1;
-        while (page.list[line].code === 408)
-        {
+        while (page.list[line].code === 408) {
           result += "\n" + (page.list[line].parameters[0] || "");
           line++;
         }
@@ -935,20 +928,23 @@ Imported[Community.Lighting.name] = true;
     }
     return result;
   };
-  $$.getCLTag = function(note)
-  {
+
+  /**
+   *
+   * @param {String} note
+   * @returns {String}
+   */
+  $$.getCLTag = function (note) {
     let result = false;
     note = String(note);
-    if (noteTagKey)
-    {
+    if (noteTagKey) {
       result = note.match(notetag_reg);
       result = result ? result[1].trim() : "";
     }
     else result = note.trim();
     return result;
   };
-  Game_Event.prototype.getCLTag = function()
-  {
+  Game_Event.prototype.getCLTag = function () {
     let result;
     let pageNote = noteTagKey ? $$.getFirstComment.call(this) : null;
     let note = this.event().note;
@@ -956,17 +952,16 @@ Imported[Community.Lighting.name] = true;
     if (!result) result = $$.getCLTag(note);
     return result || "";
   };
-  $$.validateColor = function(color, defaultColor="#ffffff")
-  {
+  $$.validateColor = function (color, defaultColor = "#ffffff") {
     let isValid = /^#(?:[A-Fa-f0-9]{3}){1,2}$/.test(color);
     if (!isValid) console.log("Community_Lighting_MZ - Invalid Color: " + color);
     let result = isValid ? color : defaultColor;
-    return result.length < 7 ? result[0] + result[1] + result[1] + result[2] + result[2] +result[3] +  result[3] : result;
+    return result.length < 7 ? result[0] + result[1] + result[1] + result[2] + result[2] + result[3] + result[3] : result;
   };
-  $$.getDayNightList = function() {
+  $$.getDayNightList = function () {
     return dayNightList;
   };
-  $$.saveTime = function(hh, mm, ss = null) {
+  $$.saveTime = function (hh, mm, ss = null) {
     let dayNightList = $gameVariables.GetDaynightColorArray();
     if (dayNightSaveHours > 0) $gameVariables.setValue(dayNightSaveHours, hh);
     if (dayNightSaveMinutes > 0) $gameVariables.setValue(dayNightSaveMinutes, mm);
@@ -980,35 +975,28 @@ Imported[Community.Lighting.name] = true;
       }
     }
   };
-  $$.isNight = function()
-  {
+  $$.isNight = function () {
     let hour = $gameVariables.GetDaynightCycle();
     return dayNightList[hour] instanceof Object ? dayNightList[hour].isNight : false;
   };
-  $$.hours = function()
-  {
+  $$.hours = function () {
     return $gameVariables.GetDaynightCycle();
   };
-  $$.minutes = function()
-  {
+  $$.minutes = function () {
     return Math.floor($gameVariables.GetDaynightTimer() / $gameVariables.GetDaynightSpeed());
   };
-  $$.seconds = function()
-  {
+  $$.seconds = function () {
     let speed = $gameVariables.GetDaynightSpeed();
     let value = Math.floor($gameVariables.GetDaynightTimer() - speed * $$.minutes());
     return Math.floor(value / speed * 60);
   };
-
-  $$.time = function(showSeconds)
-  {
+  $$.time = function (showSeconds) {
     let result = $$.hours() + ":" + $$.minutes().padZero(2);
     if (showSeconds) result = result + ":" + $$.seconds().padZero(2);
     return result;
   };
   // Event note tag caching
-  Game_Event.prototype.resetLightData = function()
-  {
+  Game_Event.prototype.resetLightData = function () {
     this._clType = undefined;
     this._lastLightPage = undefined;
     this._clRadius = undefined;
@@ -1029,26 +1017,21 @@ Imported[Community.Lighting.name] = true;
     this._clCycleIndex = undefined;
     this.initLightData();
   };
-  Game_Event.prototype.initLightData = function()
-  {
+  Game_Event.prototype.initLightData = function () {
     this._lastLightPage = this._pageIndex;
-    let tagData = this.getCLTag().toLowerCase().split(" ");
+    let tagData = this.getCLTag().toLowerCase().split(/\s+/);
     let needsCycleDuration = false;
     this._clType = tagData.shift();
-    if (this._clType === "light" || this._clType === "fire")
-    {
+    if (this._clType === "light" || this._clType === "fire") {
       this._clRadius = undefined;
-      for (let x of tagData)
-      {
+      for (let x of tagData) {
         if (!isNaN(+x) && this._clRadius === undefined) this._clRadius = +x;
         else if (x === "cycle" && this._clColor === undefined) this._clCycle = [];
-        else if (this._clCycle && !needsCycleDuration && x[0] === "#")
-        {
-          this._clCycle.push({"color":$$.validateColor(x), "duration":1});
+        else if (this._clCycle && !needsCycleDuration && x[0] === "#") {
+          this._clCycle.push({ "color": $$.validateColor(x), "duration": 1 });
           needsCycleDuration = true;
         }
-        else if (this._clCycle && needsCycleDuration && !isNaN(+x))
-        {
+        else if (this._clCycle && needsCycleDuration && !isNaN(+x)) {
           this._clCycle[this._clCycle.length - 1].duration = +x || 1;
           needsCycleDuration = false;
         }
@@ -1061,27 +1044,23 @@ Imported[Community.Lighting.name] = true;
         else if (x.length > 0 && this._clId === undefined) this._clId = x;
       }
     }
-    else if (this._clType === "flashlight")
-    {
+    else if (this._clType === "flashlight") {
       this._clBeamLength = undefined;
       this._clBeamWidth = undefined;
       this._clOnOff = undefined;
       this._clFlashlightDirection = undefined;
       this._clRadius = 1;
-      for (let x of tagData)
-      {
+      for (let x of tagData) {
         if (!isNaN(+x) && this._clBeamLength === undefined) this._clBeamLength = +x;
         else if (!isNaN(+x) && this._clBeamWidth === undefined) this._clBeamWidth = +x;
         else if (x[0] === "l" && this._clBeamLength === undefined) this._clBeamLength = this._clBeamLength = +(x.substr(1, x.length));
         else if (x[0] === "w" && this._clBeamWidth === undefined) this._clBeamWidth = this._clBeamWidth = +(x.substr(1, x.length));
         else if (x === "cycle" && this._clColor === undefined) this._clCycle = [];
-        else if (this._clCycle && !needsCycleDuration && x[0] === "#")
-        {
-          this._clCycle.push({"color":$$.validateColor(x), "duration":1});
+        else if (this._clCycle && !needsCycleDuration && x[0] === "#") {
+          this._clCycle.push({ "color": $$.validateColor(x), "duration": 1 });
           needsCycleDuration = true;
         }
-        else if (this._clCycle && needsCycleDuration && !isNaN(+x))
-        {
+        else if (this._clCycle && needsCycleDuration && !isNaN(+x)) {
           this._clCycle[this._clCycle.length - 1].duration = +x || 1;
           needsCycleDuration = false;
         }
@@ -1112,67 +1091,54 @@ Imported[Community.Lighting.name] = true;
     this._clCycleTimer = 0;
     this._clCycleIndex = 0;
   };
-  Game_Event.prototype.getLightType = function()
-  {
+  Game_Event.prototype.getLightType = function () {
     if (this._clType === undefined) this.initLightData();
     return this._clType;
   };
-  Game_Event.prototype.getLightRadius = function()
-  {
+  Game_Event.prototype.getLightRadius = function () {
     if (this._clType === undefined) this.initLightData();
     return this._clRadius;
   };
-  Game_Event.prototype.getLightColor = function()
-  {
+  Game_Event.prototype.getLightColor = function () {
     if (this._clType === undefined) this.initLightData();
     return this._clColor;
   };
-  Game_Event.prototype.getLightBrightness = function()
-  {
+  Game_Event.prototype.getLightBrightness = function () {
     if (this._clType === undefined) this.initLightData();
     return this._clBrightness;
   };
-  Game_Event.prototype.getLightDirection = function()
-  {
+  Game_Event.prototype.getLightDirection = function () {
     if (this._clType === undefined) this.initLightData();
     return this._clDirection;
   };
-  Game_Event.prototype.getLightId = function()
-  {
+  Game_Event.prototype.getLightId = function () {
     if (this._clType === undefined) this.initLightData();
     return this._clId;
   };
-  Game_Event.prototype.getLightFlashlightLength = function()
-  {
+  Game_Event.prototype.getLightFlashlightLength = function () {
     if (this._clType === undefined) this.initLightData();
     return this._clBeamLength;
   };
-  Game_Event.prototype.getLightFlashlightWidth = function()
-  {
+  Game_Event.prototype.getLightFlashlightWidth = function () {
     if (this._clType === undefined) this.initLightData();
     return this._clBeamWidth;
   };
-  Game_Event.prototype.getLightFlashlightDirection = function()
-  {
+  Game_Event.prototype.getLightFlashlightDirection = function () {
     if (this._clType === undefined) this.initLightData();
     return this._clFlashlightDirection;
   };
-  Game_Event.prototype.getLightXOffset = function()
-  {
+  Game_Event.prototype.getLightXOffset = function () {
     if (this._clType === undefined) this.initLightData();
     return this._clXOffset;
   };
-  Game_Event.prototype.getLightYOffset = function()
-  {
+  Game_Event.prototype.getLightYOffset = function () {
     if (this._clType === undefined) this.initLightData();
     return this._clYOffset;
   };
-  Game_Event.prototype.getLightEnabled = function()
-  {
+  Game_Event.prototype.getLightEnabled = function () {
     let type = this.getLightType();
     let result = false;
-    if (this._clSwitch === undefined)
-    {
+    if (this._clSwitch === undefined) {
       if (type === "flashlight" && this._clOnOff === 1) result = true;
       else result = true;
     }
@@ -1180,18 +1146,14 @@ Imported[Community.Lighting.name] = true;
       || (result = this._clSwitch === "day" && !$$.isNight())
     return result;
   };
-  Game_Event.prototype.getLightCycle = function()
-  {
+  Game_Event.prototype.getLightCycle = function () {
     if (this._clType === undefined) this.initLightData();
     return this._clCycle;
   };
-  Game_Event.prototype.incrementLightCycle = function()
-  {
-    if (this._clCycle)
-    {
+  Game_Event.prototype.incrementLightCycle = function () {
+    if (this._clCycle) {
       this._clCycleTimer--;
-      if (this._clCycleTimer < 1)
-      {
+      if (this._clCycleTimer < 1) {
         let cycleList = this.getLightCycle();
         this._clCycleIndex++;
         if (this._clCycleIndex >= cycleList.length) this._clCycleIndex = 0;
@@ -1204,9 +1166,9 @@ Imported[Community.Lighting.name] = true;
   PluginManager.registerCommand($$.name, "masterSwitch", args => $gameVariables.SetScriptActive(args.enabled === "true"));
   PluginManager.registerCommand($$.name, "resetLightSwitches", args =>
   {
-    $gameVariables.SetLightArrayId([]);
-    $gameVariables.SetLightArrayState([]);
-    $gameVariables.SetLightArrayColor([]);
+      $gameVariables.SetLightArrayId([]);
+      $gameVariables.SetLightArrayState([]);
+      $gameVariables.SetLightArrayColor([]);
   });
   PluginManager.registerCommand($$.name, "activateById", args =>
   {
@@ -1574,7 +1536,7 @@ Imported[Community.Lighting.name] = true;
     $$.DayNight(args);
   };
 
-  Game_Interpreter.prototype.flashLight = function(command, args){
+  Game_Interpreter.prototype.flashLight = function (command, args) {
     $$.flashlight(args);
   };
 
@@ -1586,7 +1548,7 @@ Imported[Community.Lighting.name] = true;
     }
   };
 
-  Game_Interpreter.prototype.fire = function(command, args){
+  Game_Interpreter.prototype.fire = function (command, args) {
     if (args[0].toLowerCase() == 'deactivate') {
       $gameVariables.SetScriptActive(false);
     } else {
@@ -1595,7 +1557,7 @@ Imported[Community.Lighting.name] = true;
     $$.fireLight(args);
   };
 
-  Game_Interpreter.prototype.light = function(command, args){
+  Game_Interpreter.prototype.light = function (command, args) {
     $gameVariables.SetFire(false);
     if (args[0].toLowerCase() == 'deactivate') {
       $gameVariables.SetScriptActive(false);
@@ -1605,13 +1567,13 @@ Imported[Community.Lighting.name] = true;
     $$.fireLight(args);
   };
 
-  Game_Interpreter.prototype.reload = function(command, args){
+  Game_Interpreter.prototype.reload = function (command, args) {
     if (args[0].toLowerCase() == 'events') {
       $$.ReloadMapEvents();
     }
   };
 */
-  Spriteset_Map.prototype.createLightmask = function() {
+  Spriteset_Map.prototype.createLightmask = function () {
     this._lightmask = new Lightmask();
     this.addChild(this._lightmask);
   };
@@ -1678,15 +1640,17 @@ Imported[Community.Lighting.name] = true;
     }
 
     // remove old sprites
-    for (let i = 0, len = this._sprites.length; i < len; i++) {    // remove all old sprites
+    for (let i = 0, len = this._sprites.length; i < len; i++) { // remove all old sprites
       this._removeSprite();
     }
 
-    if (map_id <= 0) return;                // No lighting on map 0
-    if (options_lighting_on !== true) return;        // Plugin deactivated in the option
-    if ($gameVariables.GetScriptActive() !== true) return;  // Plugin deactivated by plugin command
+    if (map_id <= 0) return;                               // No lighting on map 0
+    if (options_lighting_on !== true) return;              // Plugin deactivated in the option
+    if ($gameVariables.GetScriptActive() !== true) return; // Plugin deactivated by plugin command
 
-    event_reload_counter++;  // reload map events every 200 cycles just in case.
+
+    // reload map events every 200 cycles just in case or when a refresh is requested
+    event_reload_counter++;
     if (event_reload_counter > 200) {
       event_reload_counter = 0;
       $$.ReloadMapEvents()
@@ -1737,7 +1701,6 @@ Imported[Community.Lighting.name] = true;
     let canvas = this._maskBitmap.canvas;
     let ctx = canvas.getContext("2d");
     this._maskBitmap.fillRect(0, 0, maxX + lightMaskPadding, maxY, '#000000');
-
 
     ctx.globalCompositeOperation = 'lighter';
     let pw = $gameMap.tileWidth();
@@ -1836,14 +1799,15 @@ Imported[Community.Lighting.name] = true;
 
     // ********** OTHER LIGHTSOURCES **************
 
-    for (let i = 0, len = eventObjId.length; i < len; i++)
-    {
+
+
+    for (let i = 0, len = eventObjId.length; i < len; i++) {
       let evid = event_id[i];
       let cur = $gameMap.events()[eventObjId[i]];
       if (cur._lastLightPage !== cur._pageIndex) cur.resetLightData();
 
       let lightsOnRadius = $gameVariables.GetActiveRadius();
-        if (lightsOnRadius > 0) {
+      if (lightsOnRadius > 0) {
         let distanceApart = Math.round(Community.Lighting.distance($gamePlayer.x, $gamePlayer.y, cur._realX, cur._realY));
         if (distanceApart > lightsOnRadius) {
           continue;
@@ -1851,16 +1815,14 @@ Imported[Community.Lighting.name] = true;
       }
 
       let lightType = cur.getLightType();
-      if (lightType === "light" || lightType === "fire" || lightType === "flashlight")
-      {
+      if (lightType === "light" || lightType === "fire" || lightType === "flashlight") {
         let objectflicker = lightType === "fire";
         let light_radius = cur.getLightRadius();
         let flashlength = cur.getLightFlashlightLength();
         let flashwidth = cur.getLightFlashlightWidth();
         let xoffset = cur.getLightXOffset() * $gameMap.tileWidth();
         let yoffset = cur.getLightYOffset() * $gameMap.tileHeight();
-        if (light_radius >= 0)
-        {
+        if (light_radius >= 0) {
 
           // light color
           let colorvalue = cur.getLightColor();
@@ -1875,42 +1837,39 @@ Imported[Community.Lighting.name] = true;
           // conditional lighting
           let lightid = cur.getLightId();
           let state = cur.getLightEnabled();
-          if (lightid)
-          {
+          if (lightid) {
             state = false;
             let lightarray_id = $gameVariables.GetLightArrayId();
             let lightarray_state = $gameVariables.GetLightArrayState();
             let lightarray_color = $gameVariables.GetLightArrayColor();
 
             for (let j = 0, jlen = lightarray_id.length; j < jlen; j++) {
-              if (lightarray_id[j] == lightid)
-              {
+              if (lightarray_id[j] == lightid) {
                 // idfound = true;
                 state = lightarray_state[j];
                 let newcolor = lightarray_color[j];
-                if (newcolor != 'defaultcolor') colorvalue = newcolor;
+                if (newcolor != 'defaultcolor') {
+                  colorvalue = newcolor;
+                }
               }
             }
 
             // Set kill switch to ON if the conditional light is deactivated,
             // or to OFF if it is active.
-            if (killSwitchAuto && killswitch !== 'None')
-            {
+            if (killSwitchAuto && killswitch !== 'None') {
               key = [map_id, evid, killswitch];
               if ($gameSelfSwitches.value(key) === state) $gameSelfSwitches.setValue(key, !state);
             }
           }
 
           // kill switch
-          if (killswitch !== 'None' && state)
-          {
+          if (killswitch !== 'None' && state) {
             key = [map_id, evid, killswitch];
             if ($gameSelfSwitches.value(key) === true) state = false;
           }
 
           // show light
-          if (state === true)
-          {
+          if (state === true) {
             let lx1 = $gameMap.events()[event_stacknumber[i]].screenX();
             let ly1 = $gameMap.events()[event_stacknumber[i]].screenY() - 24;
             if (!shift_lights_with_events) {
@@ -1921,20 +1880,17 @@ Imported[Community.Lighting.name] = true;
             lx1 += +xoffset;
             ly1 += +yoffset;
 
-            if (lightType === "flashlight")
-            {
+            if (lightType === "flashlight") { // flashlight
               let ldir = 0;
               if (event_moving[i] > 0) {
                 ldir = $gameMap.events()[event_stacknumber[i]]._direction;
-              }
-              else
-              {
+              } else {
                 ldir = event_dir[i];
               }
 
               let tldir = cur.getLightFlashlightDirection();
               if (!isNaN(tldir)) {
-                switch(tldir) {
+                switch (tldir) {
                   case 1:
                     ldir = 8;
                     break;
@@ -1951,9 +1907,8 @@ Imported[Community.Lighting.name] = true;
                     break;
                 }
               }
-
               this._maskBitmap.radialgradientFillRect2(lx1, ly1, 0, light_radius, colorvalue, '#000000', ldir, flashlength, flashwidth);
-            } else {
+            } else { // regular light
               this._maskBitmap.radialgradientFillRect(lx1, ly1, 0, light_radius, colorvalue, '#000000', objectflicker, brightness, direction);
             }
           }
@@ -1961,385 +1916,6 @@ Imported[Community.Lighting.name] = true;
       }
     }
 
-
-    /*
-
-    for (let i = 0, len = eventObjId.length; i < len; i++) {
-      let note = eventObjId[i];
-      let evid = event_id[i];
-
-      let note_args = note.split(" ");
-      let note_command = note_args.shift().toLowerCase();
-
-
-      if (note_command == "light" || note_command == "fire" || note_command == "flashlight") {
-
-        let objectflicker = false;
-        if (note_command == "fire") {
-          objectflicker = true;
-        }
-
-        let light_radius = 1;
-        let flashlength = 8;
-        let flashwidth = 12;
-        if (note_command == "flashlight") {
-          flashlength = Number(note_args.shift());
-          flashwidth = Number(note_args.shift());
-          if (flashlength == 0) {
-            flashlightlength = 8
-          }
-          if (flashwidth == 0) {
-            flashlightlength = 12
-          }
-        } else {
-          light_radius = note_args.shift();
-        }
-        // light radius
-        if (light_radius >= 0) {
-
-          // light color
-          let colorvalue = note_args.shift();
-
-          // Cycle colors
-
-
-          if (colorvalue == 'cycle' && evid < 1000) {
-
-            let cyclecolor0 = note_args.shift();
-            let cyclecount0 = Number(note_args.shift());
-            let cyclecolor1 = note_args.shift();
-            let cyclecount1 = Number(note_args.shift());
-            let cyclecolor2 = '#000000';
-            let cyclecount2 = 0;
-            let cyclecolor3 = '#000000';
-            let cyclecount3 = 0;
-
-            let morecycle = note_args.shift();
-            if (typeof morecycle != 'undefined') {
-              if (morecycle.substring(0, 1) == "#") {
-                cyclecolor2 = morecycle;
-                cyclecount2 = Number(note_args.shift());
-                morecycle = note_args.shift();
-                if (typeof morecycle != 'undefined') {
-                  if (morecycle.substring(0, 1) == "#") {
-                    cyclecolor3 = morecycle;
-                    cyclecount3 = Number(note_args.shift());
-
-                  } else {
-                    note_args.unshift(morecycle);
-                  }
-                }
-              } else {
-                note_args.unshift(morecycle);
-              }
-            }
-
-            let switch0 = '0';
-            let switch1 = '0';
-            let switch2 = '0';
-            let switch3 = '0';
-
-            let switches = note_args.shift();
-            if (typeof switches != 'undefined') {
-              if (switches.length == 7) {
-                if (switches.substring(0, 3) == "SS:") {
-                  switch0 = switches.substring(3, 4);
-                  switch1 = switches.substring(4, 5);
-                  switch2 = switches.substring(5, 6);
-                  switch3 = switches.substring(6, 7);
-                } else {
-                  note_args.unshift(switches);
-                }
-              } else {
-                note_args.unshift(switches);
-              }
-            }
-
-            // set cycle color
-            switch (colorcycle_count[evid]) {
-              case 0:
-                colorvalue = cyclecolor0;
-                break;
-              case 1:
-                colorvalue = cyclecolor1;
-                break;
-              case 2:
-                colorvalue = cyclecolor2;
-                break;
-              case 3:
-                colorvalue = cyclecolor3;
-                break;
-              default:
-                colorvalue = '#FFFFFF';
-            }
-
-            // cycle timing
-            //let datenow = new Date();
-            //let seconds = Math.floor(datenow.getTime() / 100);
-            cyclecolor_counter = cyclecolor_counter + 1;
-
-            if (cyclecolor_counter > 10) {
-              cyclecolor_counter = 0;
-
-              //reset all switches
-              if (switch0 != '0') {
-                key = [map_id, evid, switch0];
-                $gameSelfSwitches.setValue(key, false);
-              }
-              if (switch1 != '0') {
-                key = [map_id, evid, switch1];
-                $gameSelfSwitches.setValue(key, false);
-              }
-              if (switch2 != '0') {
-                key = [map_id, evid, switch2];
-                $gameSelfSwitches.setValue(key, false);
-              }
-              if (switch3 != '0') {
-                key = [map_id, evid, switch3];
-                $gameSelfSwitches.setValue(key, false);
-              }
-
-
-              if (colorcycle_count[evid] == 0) {
-                colorcycle_timer[evid]++;
-
-                if (colorcycle_timer[evid] > cyclecount0) {
-                  colorcycle_count[evid] = 1;
-                  colorcycle_timer[evid] = 0;
-                  if (switch1 != '0') {
-                    key = [map_id, evid, switch1];
-                    $gameSelfSwitches.setValue(key, true);
-                  }
-                } else {
-                  if (switch0 != '0') {
-                    key = [map_id, evid, switch0];
-                    $gameSelfSwitches.setValue(key, true);
-                  }
-                }
-
-              }
-              if (colorcycle_count[evid] == 1) {
-                colorcycle_timer[evid]++;
-                if (colorcycle_timer[evid] > cyclecount1) {
-                  colorcycle_count[evid] = 2;
-                  colorcycle_timer[evid] = 0;
-                  if (switch2 != '0') {
-                    key = [map_id, evid, switch2];
-                    $gameSelfSwitches.setValue(key, true);
-                  }
-                } else {
-                  if (switch1 != '0') {
-                    key = [map_id, evid, switch1];
-                    $gameSelfSwitches.setValue(key, true);
-                  }
-                }
-              }
-              if (colorcycle_count[evid] == 2) {
-                colorcycle_timer[evid]++;
-                if (colorcycle_timer[evid] > cyclecount2) {
-                  colorcycle_count[evid] = 3;
-                  colorcycle_timer[evid] = 0;
-                  if (switch3 != '0') {
-                    key = [map_id, evid, switch3];
-                    $gameSelfSwitches.setValue(key, true);
-                  }
-                } else {
-                  if (switch2 != '0') {
-                    key = [map_id, evid, switch2];
-                    $gameSelfSwitches.setValue(key, true);
-                  }
-                }
-              }
-              if (colorcycle_count[evid] == 3) {
-                colorcycle_timer[evid]++;
-                if (colorcycle_timer[evid] > cyclecount3) {
-                  colorcycle_count[evid] = 0;
-                  colorcycle_timer[evid] = 0;
-                  if (switch0 != '0') {
-                    key = [map_id, evid, switch0];
-                    $gameSelfSwitches.setValue(key, true);
-                  }
-                } else {
-                  if (switch3 != '0') {
-                    key = [map_id, evid, switch3];
-                    $gameSelfSwitches.setValue(key, true);
-                  }
-                }
-              }
-            }
-
-          } else {
-            let isValidColor = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)/i.test(colorvalue);
-            if (!isValidColor) {
-              colorvalue = '#FFFFFF'
-            }
-          }
-
-          // brightness and direction
-
-          let brightness = 0.0;
-          let direction = 0;
-          let next_arg = note_args.shift();
-
-          if (typeof next_arg != 'undefined') {
-            let key = next_arg.substring(0, 1);
-            if (key == 'b' || key == 'B') {
-              brightness = Number(next_arg.substring(1)) / 100;
-              next_arg = note_args.shift();
-              if (typeof next_arg != 'undefined') {
-                key = next_arg.substring(0, 1);
-              }
-            }
-            if (key == 'd' || key == 'D') {
-              direction = next_arg.substring(1);
-              next_arg = note_args.shift();
-            }
-          }
-
-          // conditional lighting
-          let lightid = 0;
-          if (typeof next_arg != 'undefined') {
-            lightid = next_arg;
-          }
-
-          let state = true;
-          if (lightid > 0) {
-            state = false;
-
-            let lightarray_id = $gameVariables.GetLightArrayId();
-            let lightarray_state = $gameVariables.GetLightArrayState();
-            let lightarray_color = $gameVariables.GetLightArrayColor();
-
-            for (let j = 0, jlen = lightarray_id.length; j < jlen; j++) {
-              if (lightarray_id[j] == lightid) {
-                // idfound = true;
-                state = lightarray_state[j];
-
-                let newcolor = lightarray_color[j];
-
-                if (newcolor != 'defaultcolor') {
-                  colorvalue = newcolor;
-                }
-              }
-            }
-
-            // Set kill switch to ON if the conditional light is deactivated,
-            // or to OFF if it is active.
-            if (killSwitchAuto && killswitch !== 'None') {
-              key = [map_id, evid, killswitch];
-              if ($gameSelfSwitches.value(key) === state){
-                $gameSelfSwitches.setValue(key, !state);
-              }
-            }
-          }
-
-
-          // kill switch
-          if (killswitch !== 'None' && state) {
-            key = [map_id, evid, killswitch];
-            if ($gameSelfSwitches.value(key) === true) {
-              state = false;
-            }
-          }
-
-
-          // show light
-          if (state == true) {
-
-            let lpx = 0;
-            let lpy = 0;
-            let ldir = 0;
-            if (event_moving[i] > 0) {
-              lpx = $gameMap.events()[event_stacknumber[i]]._realX;
-              lpy = $gameMap.events()[event_stacknumber[i]]._realY;
-              ldir = $gameMap.events()[event_stacknumber[i]]._direction;
-
-            } else {
-              lpx = event_x[i];
-              lpy = event_y[i];
-              ldir = event_dir[i];
-            }
-
-            // moving lightsources
-            let flashlight = false;
-            if (note_command == "flashlight") {
-              flashlight = true;
-
-              let walking = event_moving[i];
-              if (walking == false) {
-                let tldir = Number(note_args.shift());
-                if (!isNaN(tldir)) {
-                  if (tldir < 0 || ldir >= 5) {
-                    ldir = 4
-                  }
-                  if (tldir == 1) {
-                    ldir = 8
-                  }
-                  if (tldir == 2) {
-                    ldir = 6
-                  }
-                  if (tldir == 3) {
-                    ldir = 2
-                  }
-                  if (tldir == 4) {
-                    ldir = 4
-                  }
-                }
-              }
-
-
-            }
-            let lx1 = (pw / 2) + ((lpx - dx) * pw);
-            let ly1 = (ph / 2) + ((lpy - dy) * ph);
-            // paralaxloop does something weird with coordinates.. recalc needed
-
-            if ($dataMap.scrollType === 2 || $dataMap.scrollType === 3) {
-              if (dx - 10 > lpx) {
-                let lxjump = $gameMap.width() - (dx - lpx);
-                lx1 = (pw / 2) + (lxjump * pw);
-              }
-            }
-            if ($dataMap.scrollType === 1 || $dataMap.scrollType === 3) {
-              if (dy - 10 > lpy) {
-                let lyjump = $gameMap.height() - (dy - lpy);
-                ly1 = (ph / 2) + (lyjump * ph);
-              }
-            }
-
-            let visible = true;
-            if ($gameMap.useUltraMode7) {
-              let position = UltraMode7.mapToScreen(lx1, ly1 + ph / 2);
-              if ($gameMap.ultraMode7Fov > 0) {
-                let z = position.z;
-                if (z <= UltraMode7.NEAR_CLIP_Z && z >= UltraMode7.FAR_CLIP_Z) {
-                  visible = false;
-                }
-              }
-              if (visible) {
-                let scale = UltraMode7.mapToScreenScale(lx1, ly1);
-                lx1 = position.x;
-                ly1 = position.y -= ph / 2 * scale;
-                light_radius *= scale;
-              }
-            }
-            if (visible) {
-              if (flashlight == true) {
-                this._maskBitmap.radialgradientFillRect2(lx1, ly1, 0, light_radius, colorvalue, '#000000', ldir, flashlength, flashwidth);
-              } else {
-                this._maskBitmap.radialgradientFillRect(lx1, ly1, 0, light_radius, colorvalue, '#000000', objectflicker, brightness, direction);
-              }
-            }
-
-
-          }
-
-
-
-        }
-      }
-    }
-
-*/
 
     // *************************** TILE TAG *********************
     //glow/colorfade
@@ -2361,6 +1937,7 @@ Imported[Community.Lighting.name] = true;
     tile_lights = $gameVariables.GetLightTags();
     tile_blocks = $gameVariables.GetBlockTags();
 
+    // Tile lights
     for (let i = 0, len = tile_lights.length; i < len; i++) {
       let tilestr = tile_lights[i];
 
@@ -2425,12 +2002,9 @@ Imported[Community.Lighting.name] = true;
         let newtile_color = "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
         this._maskBitmap.radialgradientFillRect(x1, y1, 0, tile_radius, newtile_color, '#000000', false, brightness);
       }
-
-
     }
 
-
-
+    // Tile blocks
     ctx.globalCompositeOperation = "multiply";
     for (let i = 0, len = tile_blocks.length; i < len; i++) {
       let tilestr = tile_blocks[i];
@@ -2642,6 +2216,14 @@ Imported[Community.Lighting.name] = true;
 
   // *******************  NORMAL BOX SHAPE ***********************************
 
+  /**
+   *
+   * @param {Number} x1
+   * @param {Number} y1
+   * @param {Number} x2
+   * @param {Number} y2
+   * @param {String} color1
+   */
   Bitmap.prototype.FillRect = function (x1, y1, x2, y2, color1) {
     x1 = x1 + lightMaskPadding;
     //x2=x2+lightMaskPadding;
@@ -2655,6 +2237,13 @@ Imported[Community.Lighting.name] = true;
 
   // *******************  CIRCLE/OVAL SHAPE ***********************************
   // from http://scienceprimer.com/draw-oval-html5-canvas
+  /**
+   * @param {Number} centerX
+   * @param {Number} centerY
+   * @param {Number} xradius
+   * @param {Number} yradius
+   * @param {String} color1
+   */
   Bitmap.prototype.FillCircle = function (centerX, centerY, xradius, yradius, color1) {
     centerX = centerX + lightMaskPadding;
 
@@ -2684,6 +2273,18 @@ Imported[Community.Lighting.name] = true;
   // *******************  NORMAL LIGHT SHAPE ***********************************
   // Fill gradient circle
 
+  /**
+   *
+   * @param {Number} x1
+   * @param {Number} y1
+   * @param {Number}  r1
+   * @param {Number} r2
+   * @param {String} color1
+   * @param {String} color2
+   * @param {Boolean} flicker
+   * @param {Number} brightness
+   * @param {Number} direction
+   */
   Bitmap.prototype.radialgradientFillRect = function (x1, y1, r1, r2, color1, color2, flicker, brightness, direction) {
 
     //color1 = $$.validateColor(color1);
@@ -2809,6 +2410,18 @@ Imported[Community.Lighting.name] = true;
   // ********************************** FLASHLIGHT *************************************
   // Fill gradient Cone
 
+  /**
+   *
+   * @param {Number} x1
+   * @param {Number} y1
+   * @param {Number} r1
+   * @param {Number} r2
+   * @param {String} color1
+   * @param {String} color2
+   * @param {Number} direction
+   * @param {Number} flashlength
+   * @param {Number} flashwidth
+   */
   Bitmap.prototype.radialgradientFillRect2 = function (x1, y1, r1, r2, color1, color2, direction, flashlength, flashwidth) {
     x1 = x1 + lightMaskPadding;
 
@@ -2870,6 +2483,11 @@ Imported[Community.Lighting.name] = true;
   };
 
 
+  /**
+   *
+   * @param {String} hex
+   * @returns {{r:number,g:number,b:number}}
+   */
   $$.hexToRgb = function(hex) {
     let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
     result = result ? {
@@ -2883,12 +2501,12 @@ Imported[Community.Lighting.name] = true;
   // ALIASED Begin battle: prepare battle lighting
 
   let Community_Lighting_BattleManager_setup = BattleManager.setup;
-  BattleManager.setup = function(troopId, canEscape, canLose) {
+  BattleManager.setup = function (troopId, canEscape, canLose) {
     $$._MapTint = '#FFFFFF';                                          // By default, no darkness during battle
-    if (!DataManager.isBattleTest() && !DataManager.isEventTest() && $gameMap.mapId() >= 0) {          // If we went there from a map...
-      if ($gameVariables.GetScriptActive() === true) {                            // If the script is active...
-        if (options_lighting_on && lightInBattle) {                              // If configuration autorise using lighting effects
-          if (eventObjId.length > 0) {                                  // If there is lightsource on this map...
+    if (!DataManager.isBattleTest() && !DataManager.isEventTest() && $gameMap.mapId() >= 0) { // If we went there from a map...
+      if ($gameVariables.GetScriptActive() === true) {                                        // If the script is active...
+        if (options_lighting_on && lightInBattle) {                                           // If configuration autorise using lighting effects
+          if (eventObjId.length > 0) {                                                        // If there is lightsource on this map...
             $$._MapTint = $$.daynightset ? $gameVariables.GetTintByTime() : $gameVariables.GetTint();  // ... Use the tint of the map.
           }
         }
@@ -2901,7 +2519,7 @@ Imported[Community.Lighting.name] = true;
   // ALIASED Scene_Battle initialisation: create the light mask.
 
   let Community_Lighting_Spriteset_Battle_createLowerLayer = Spriteset_Battle.prototype.createLowerLayer;
-  Spriteset_Battle.prototype.createLowerLayer = function() {
+  Spriteset_Battle.prototype.createLowerLayer = function () {
     Community_Lighting_Spriteset_Battle_createLowerLayer.call(this);
     if (battleMaskPosition === 'Above') {
       this.createBattleLightmask();
@@ -2916,10 +2534,10 @@ Imported[Community.Lighting.name] = true;
     }
   };
 
-  Spriteset_Battle.prototype.createBattleLightmask = function() {
-    if ($gameVariables.GetScriptActive()){              // If the script is active
-      if (lightInBattle) {                    // If is active during battles.
-        this._battleLightmask = new BattleLightmask();      // ... Create the light mask.
+  Spriteset_Battle.prototype.createBattleLightmask = function () {
+    if ($gameVariables.GetScriptActive()) {             // If the script is active
+      if (lightInBattle) {                              // If is active during battles.
+        this._battleLightmask = new BattleLightmask();  // ... Create the light mask.
         if (battleMaskPosition === 'Above') {
           this.addChild(this._battleLightmask);
         } else if (battleMaskPosition === 'Between') {
@@ -2930,18 +2548,18 @@ Imported[Community.Lighting.name] = true;
   };
 
   function BattleLightmask() {
-      this.initialize.apply(this, arguments);
+    this.initialize.apply(this, arguments);
   };
 
   BattleLightmask.prototype = Object.create(PIXI.Container.prototype);
   BattleLightmask.prototype.constructor = BattleLightmask;
 
-  BattleLightmask.prototype.initialize = function() {
-      PIXI.Container.call(this);
-      this._width = Graphics.width;
-      this._height = Graphics.height;
-      this._sprites = [];
-      this._createBitmap();
+  BattleLightmask.prototype.initialize = function () {
+    PIXI.Container.call(this);
+    this._width = Graphics.width;
+    this._height = Graphics.height;
+    this._sprites = [];
+    this._createBitmap();
 
     //Initialize the bitmap
     this._addSprite(-lightMaskPadding, 24, this._maskBitmap); // The +24 is to offset the 24 pixels shift of Spriteset_Battle.prototype.battleFieldOffsetY
@@ -2953,7 +2571,7 @@ Imported[Community.Lighting.name] = true;
     var green = parseInt(greenhex, 16);
     var blue = parseInt(bluehex, 16);
     var color = red + green + blue;
-    if (color < 200 && red < 66 && green < 66 && blue < 66){
+    if (color < 200 && red < 66 && green < 66 && blue < 66) {
       $$._MapTint = '#666666' // Prevent the battle scene from being too dark.
     }
     $$._BattleTintFade = $$._BattleTint = $$._MapTint
@@ -2964,9 +2582,9 @@ Imported[Community.Lighting.name] = true;
 
   //@method _createBitmaps
 
-  BattleLightmask.prototype._createBitmap = function() {
+  BattleLightmask.prototype._createBitmap = function () {
     this._maskBitmap = new Bitmap(maxX + lightMaskPadding, maxY);   // one big bitmap to fill the intire screen with black
-      var canvas = this._maskBitmap.canvas;          // a bit larger then setting to take care of screenshakes
+    var canvas = this._maskBitmap.canvas;          // a bit larger then setting to take care of screenshakes
   };
 
   BattleLightmask.prototype.update = function()
@@ -3034,19 +2652,19 @@ Imported[Community.Lighting.name] = true;
    * @method _addSprite
    * @private
    */
-  BattleLightmask.prototype._addSprite = function(x1, y1, selectedbitmap) {
+  BattleLightmask.prototype._addSprite = function (x1, y1, selectedbitmap) {
 
-      var sprite = new Sprite(this.viewport);
-      sprite.bitmap = selectedbitmap;
+    var sprite = new Sprite(this.viewport);
+    sprite.bitmap = selectedbitmap;
       sprite.opacity = 255;
-      sprite.blendMode = 2;
-      sprite.x = x1;
-     sprite.y = y1;
-      this._sprites.push(sprite);
-      this.addChild(sprite);
-      sprite.rotation = 0;
-      sprite.ax = 0;
-      sprite.ay = 0
+    sprite.blendMode = 2;
+    sprite.x = x1;
+    sprite.y = y1;
+    this._sprites.push(sprite);
+    this.addChild(sprite);
+    sprite.rotation = 0;
+    sprite.ax = 0;
+    sprite.ay = 0
      sprite.opacity = 255;
   };
 
@@ -3054,8 +2672,8 @@ Imported[Community.Lighting.name] = true;
    * @method _removeSprite
    * @private
    */
-  BattleLightmask.prototype._removeSprite = function() {
-      this.removeChild(this._sprites.pop());
+  BattleLightmask.prototype._removeSprite = function () {
+    this.removeChild(this._sprites.pop());
   };
 
   // ALLIASED Move event location => reload map.
@@ -3145,18 +2763,18 @@ Imported[Community.Lighting.name] = true;
     // *********************************** DAY NIGHT Setting **************************
     $$.daynightset = false;
     let mapnote = $$.getCLTag($dataMap.note);
-    if (mapnote) {
+      if (mapnote) {
       mapnote = mapnote.toLowerCase();
       if (mapnote.match(/^daynight/i)) {
-        $$.daynightset = true;
+          $$.daynightset = true;
         let dnspeed = mapnote.match(/\d+/);
-        if (dnspeed) {
-          daynightspeed = +dnspeed[0];
-          if (daynightspeed < 1) daynightspeed = 5000;
-          $gameVariables.SetDaynightSpeed(daynightspeed);
+          if (dnspeed) {
+            daynightspeed = +dnspeed[0];
+            if (daynightspeed < 1) daynightspeed = 5000;
+            $gameVariables.SetDaynightSpeed(daynightspeed);
+          }
         }
-      }
-    }
+        }
   };
 
 
@@ -3547,7 +3165,7 @@ Scene_Map.prototype.createAllWindows = function()
 Scene_Map.prototype.createTimeWindow = function()
 {
     this._timeWindow = new Window_TimeOfDay(this.timeWindowRect());
-    this.addWindow(this._timeWindow);
+  this.addWindow(this._timeWindow);
 };
 Scene_Map.prototype.timeWindowRect = function() {
     const ww = 150;
