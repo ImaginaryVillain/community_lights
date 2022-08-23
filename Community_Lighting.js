@@ -268,7 +268,7 @@ Imported[Community.Lighting.name] = true;
 * change a bunch of event and map notes.
 
 *
-* 2. New with version 4.2+ is the option to place the lighting note tag 
+* 2. New with version 4.2+ is the option to place the lighting note tag
 * anywhere in an event page's comment field instead of the note box, as
 * long as the comment field is the first thing on the page.  This allows
 * for more advanced lighting tricks to be done on a per-page basis.  Page
@@ -335,7 +335,7 @@ Imported[Community.Lighting.name] = true;
 * - cycle     Allows any number of color + duration pairs to follow that will be
 *             cycled through before repeating from the beginning:
 *             <cl: Flashlight l8 w12 cycle #f00 15 #ff0 15 #0f0 15 on someId d3>
-*             There's no limit to how many colors can cycled. [optional]
+*             There's no limit to how many colors can be cycled. [optional]
 * - onoff:    Initial state:  0, 1, off, on
 * - sdir:     Forced direction (optional): 0:auto, 1:up, 2:right, 3:down, 4:left
 *             Can be preceded by "D", so D4.  If omitted, defaults to 0
@@ -380,16 +380,16 @@ Imported[Community.Lighting.name] = true;
 * -------------------------------------------------------------------------------
 * Using the smooth lights options make it look extremely close.
 * The default light radius that Khas appears to be around 122. Smooth lights
-* need to be turned on to get similar effects. 
-* 
+* need to be turned on to get similar effects.
+*
 * All [light_size] tags should be combined with the initial light radius tag.
 *
-* Eg. 
-* Original: 
+* Eg.
+* Original:
 * [light cyan]
 * [light size 75]
 *
-* Replacement: 
+* Replacement:
 * <cl: light 75 #00FFFF>
 *
 * All [region_light] tags need to be replaced with <cl: region light> tags.
@@ -404,14 +404,10 @@ Imported[Community.Lighting.name] = true;
 * -------------------------------------------------------------------------------
 * DayNight [speed]
 * Activates day/night cycle.  Put in map note or event note
-* - speed     Optional parameter to alter the speed at which time passes.  10 is
-*         the default speed, higher numbers are slower, lower numbers are
-*         faster, and 0 stops the flow of time entirely.  If speed is not
-*         specified, then the current speed is used.
-* RegionLight id ON c r
-* - Turns on lights for tile tag or region tag (id) using color (c) and radius (r)
-* - Replace ON with OFF to turn them off
-* - Put in map note
+* - speed     Optional parameter to alter the speed at which time passes.
+*             10 is the default speed, higher numbers are slower, lower
+*             numbers are faster, and 0 stops the flow of time entirely.
+*             If speed is not specified, then the current speed is used.
 *
 * RegionFire, RegionGlow
 * - Same as above, but different lighting effects
@@ -577,7 +573,7 @@ Imported[Community.Lighting.name] = true;
 * This allows you to decide how far away from the player lights are active,
 * anything beyond this range will not light up until the player gets
 * closer to it.
-* 
+*
 * It can be changed in the plugin parameters, or using the script call...
 *
 * $gameVariables.SetActiveRadius(#)
@@ -683,8 +679,8 @@ Imported[Community.Lighting.name] = true;
   };
 
   /**
-   * 
-   * @param {String} note 
+   *
+   * @param {String} note
    * @returns {String}
    */
   $$.getCLTag = function (note) {
@@ -1031,9 +1027,9 @@ Imported[Community.Lighting.name] = true;
   };
 
   /**
-   * 
-   * @param {String} command 
-   * @param {String[]} args 
+   *
+   * @param {String} command
+   * @param {String[]} args
    */
   Game_Interpreter.prototype.light = function (command, args) {
     if (args.contains("radius") || args.contains("radiusgrow")) $gameVariables.SetFire(false);
@@ -1054,9 +1050,9 @@ Imported[Community.Lighting.name] = true;
   };
 
   /**
-   * 
-   * @param {String} command 
-   * @param {String[]} args 
+   *
+   * @param {String} command
+   * @param {String[]} args
    */
   Game_Interpreter.prototype.reload = function (command, args) {
     if (args[0] === "events") {
@@ -1726,7 +1722,7 @@ Imported[Community.Lighting.name] = true;
         }
 
 
-        // Less than   
+        // Less than
 
         if (stepR <= 0 && r3 <= r2) {
           bluedone = true;
@@ -1789,12 +1785,12 @@ Imported[Community.Lighting.name] = true;
   // *******************  NORMAL BOX SHAPE ***********************************
 
   /**
-   * 
-   * @param {Number} x1 
-   * @param {Number} y1 
-   * @param {Number} x2 
-   * @param {Number} y2 
-   * @param {String} color1 
+   *
+   * @param {Number} x1
+   * @param {Number} y1
+   * @param {Number} x2
+   * @param {Number} y2
+   * @param {String} color1
    */
   Bitmap.prototype.FillRect = function (x1, y1, x2, y2, color1) {
     x1 = x1 + lightMaskPadding;
@@ -1810,11 +1806,11 @@ Imported[Community.Lighting.name] = true;
   // *******************  CIRCLE/OVAL SHAPE ***********************************
   // from http://scienceprimer.com/draw-oval-html5-canvas
   /**
-   * @param {Number} centerX 
-   * @param {Number} centerY 
-   * @param {Number} xradius 
-   * @param {Number} yradius 
-   * @param {String} color1 
+   * @param {Number} centerX
+   * @param {Number} centerY
+   * @param {Number} xradius
+   * @param {Number} yradius
+   * @param {String} color1
    */
   Bitmap.prototype.FillCircle = function (centerX, centerY, xradius, yradius, color1) {
     centerX = centerX + lightMaskPadding;
@@ -1859,8 +1855,8 @@ Imported[Community.Lighting.name] = true;
   /**
    * Function to convert the
    * RGB code to Hex color code
-   * @param {Number} R 
-   * @param {Number} G 
+   * @param {Number} R
+   * @param {Number} G
    * @param {Number} B
    * @param {Number} A
    * @returns {String}
@@ -1946,16 +1942,16 @@ Imported[Community.Lighting.name] = true;
   // Fill gradient circle
 
   /**
-   * 
-   * @param {Number} x1 
-   * @param {Number} y1 
+   *
+   * @param {Number} x1
+   * @param {Number} y1
    * @param {Number}  r1
    * @param {Number} r2
-   * @param {String} color1 
-   * @param {String} color2 
-   * @param {Boolean} flicker 
-   * @param {Number} brightness 
-   * @param {Number} direction 
+   * @param {String} color1
+   * @param {String} color2
+   * @param {Boolean} flicker
+   * @param {Number} brightness
+   * @param {Number} direction
    */
   Bitmap.prototype.radialgradientFillRect = function (x1, y1, r1, r2, color1, color2, flicker, brightness, direction) {
 
@@ -2088,16 +2084,16 @@ Imported[Community.Lighting.name] = true;
   // Fill gradient Cone
 
   /**
-   * 
-   * @param {Number} x1 
+   *
+   * @param {Number} x1
    * @param {Number} y1
    * @param {Number} r1
    * @param {Number} r2
-   * @param {String} color1 
-   * @param {String} color2 
-   * @param {Number} direction 
-   * @param {Number} flashlength 
-   * @param {Number} flashwidth 
+   * @param {String} color1
+   * @param {String} color2
+   * @param {Number} direction
+   * @param {Number} flashlength
+   * @param {Number} flashwidth
    */
   Bitmap.prototype.radialgradientFillRect2 = function (x1, y1, r1, r2, color1, color2, direction, flashlength, flashwidth) {
     x1 = x1 + lightMaskPadding;
@@ -2166,8 +2162,8 @@ Imported[Community.Lighting.name] = true;
 
 
   /**
-   * 
-   * @param {String} hex 
+   *
+   * @param {String} hex
    * @returns {{r:number,g:number,b:number,a:number}}
    */
   function hexToRgb(hex) {
@@ -2669,8 +2665,8 @@ Imported[Community.Lighting.name] = true;
   };
 
   /**
-   * 
-   * @param {String[]} args 
+   *
+   * @param {String[]} args
    */
   $$.flashlight = function (args) {
     if (args[0] == 'on') {
@@ -2720,8 +2716,8 @@ Imported[Community.Lighting.name] = true;
   };
 
   /**
-   * 
-   * @param {String[]} args 
+   *
+   * @param {String[]} args
    */
   $$.fireLight = function (args) {
     //******************* Light radius 100 #FFFFFF ************************
@@ -2887,7 +2883,7 @@ Imported[Community.Lighting.name] = true;
 
   /**
    * @param {String} tileType
-   * @param {String[]} args 
+   * @param {String[]} args
    */
   $$.tile = function (tiletype, args) {
     let tilearray = $gameVariables.GetTileArray();
@@ -2963,8 +2959,8 @@ Imported[Community.Lighting.name] = true;
   };
 
   /**
-   * 
-   * @param {String[]} args 
+   *
+   * @param {String[]} args
    */
   $$.tint = function (args) {
     if (args[0].trim().toLowerCase() === 'set') {
@@ -2984,8 +2980,8 @@ Imported[Community.Lighting.name] = true;
   };
 
   /**
-   * 
-   * @param {String[]} args 
+   *
+   * @param {String[]} args
    */
   $$.DayNight = function (args) {
     let daynightspeed = $gameVariables.GetDaynightSpeed();
@@ -3201,8 +3197,8 @@ Game_Variables.prototype.GetFlashlightWidth = function () {
 };
 
 /**
- * 
- * @param {String} value 
+ *
+ * @param {String} value
  */
 Game_Variables.prototype.SetPlayerColor = function (value) {
   this._Community_Lighting_PlayerColor = value;
@@ -3364,9 +3360,9 @@ Window_TimeOfDay.prototype = Object.create(Window_Base.prototype);
 Window_TimeOfDay.prototype.constructor = Window_TimeOfDay;
 
 /**
- * 
- * @param {Number} x 
- * @param {Number} y 
+ *
+ * @param {Number} x
+ * @param {Number} y
  * @param {Number} width
  * @param {Number} height
  */
