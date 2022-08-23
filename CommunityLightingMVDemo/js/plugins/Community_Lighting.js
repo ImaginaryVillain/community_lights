@@ -453,8 +453,9 @@ Imported[Community.Lighting.name] = true;
 * Light radius r c b
 * - Change player light radius (r), color (c), and brightness (b)
 *
-* Light radiusgrow r c b
-* - Same as above, but apply changes over time
+* Light radiusgrow r c b t
+* - Same as above, but apply changes over time.
+*		The duration is either (t) frames or 500 frames if (t) isn't specified.
 *
 * Setfire r s
 * - Alters fire settings with radius shift (r) and red/yellow color shift (s)
@@ -2753,7 +2754,7 @@ Imported[Community.Lighting.name] = true;
       }
     }
 
-    //******************* Light radiusgrow 100 #FFFFFF ************************
+    //******************* Light radiusgrow 100 #FFFFFF Brightness Frames ************************
     if (args[0] === 'radiusgrow') {
       let newradius = Number(args[1]);
       if (newradius >= 0) {
@@ -2762,13 +2763,7 @@ Imported[Community.Lighting.name] = true;
         let lightgrow_target = newradius;
         let lightgrow_speed = 0.0;
         if (args.length >= 4) {
-          if (player_radius > newradius) {
-            //shrinking
-            lightgrow_speed = (player_radius * 0.012) / Number(args[4]);
-          } else {
-            //growing
-            lightgrow_speed = (newradius * 0.012) / Number(args[4]);
-          }
+		  lightgrow_speed = (Math.abs(newradius - player_radius)) / Math.max(1, Number(args[4]));
         } else {
           lightgrow_speed = (Math.abs(newradius - player_radius)) / 500;
         }
@@ -3380,6 +3375,7 @@ Window_TimeOfDay.prototype.initialize = function (x, y, width, height) {
   height = 65;
   Window_Base.prototype.initialize.call(this, Graphics.boxWidth - width, 0, width, height);
   this.setBackgroundType(0);
+  this.visible = $gameVariables._clShowTimeWindow;
 };
 Window_TimeOfDay.prototype.update = function () {
   this.visible = $gameVariables._clShowTimeWindow;
