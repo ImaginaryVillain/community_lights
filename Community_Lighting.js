@@ -1165,13 +1165,13 @@ Imported[Community.Lighting.name] = true;
     }
 
     // remove old sprites
-    for (let i = 0, len = this._sprites.length; i < len; i++) {	  // remove all old sprites
+    for (let i = 0, len = this._sprites.length; i < len; i++) { // remove all old sprites
       this._removeSprite();
     }
 
-    if (map_id <= 0) return;								// No lighting on map 0
-    if (options_lighting_on !== true) return;				// Plugin deactivated in the option
-    if ($gameVariables.GetScriptActive() !== true) return;	// Plugin deactivated by plugin command
+    if (map_id <= 0) return;                               // No lighting on map 0
+    if (options_lighting_on !== true) return;              // Plugin deactivated in the option
+    if ($gameVariables.GetScriptActive() !== true) return; // Plugin deactivated by plugin command
 
 
     // reload map events every 200 cycles just in case or when a refresh is requested
@@ -2182,12 +2182,12 @@ Imported[Community.Lighting.name] = true;
 
   let Community_Lighting_BattleManager_setup = BattleManager.setup;
   BattleManager.setup = function (troopId, canEscape, canLose) {
-    $gameTemp._MapTint = '#FFFFFF';																// By default, no darkness during battle
-    if (!DataManager.isBattleTest() && !DataManager.isEventTest() && $gameMap.mapId() >= 0) {	// If we went there from a map...
-      if ($gameVariables.GetScriptActive() === true) {										// If the script is active...
-        if (options_lighting_on && lightInBattle) {											// If configuration autorise using lighting effects
-          if (eventObjId.length > 0) {													// If there is lightsource on this map...
-            $gameTemp._MapTint = $gameVariables.GetTint();								// ... Use the tint of the map.
+    $$._MapTint = '#FFFFFF';                                          // By default, no darkness during battle
+    if (!DataManager.isBattleTest() && !DataManager.isEventTest() && $gameMap.mapId() >= 0) { // If we went there from a map...
+      if ($gameVariables.GetScriptActive() === true) {                                        // If the script is active...
+        if (options_lighting_on && lightInBattle) {                                           // If configuration autorise using lighting effects
+          if (eventObjId.length > 0) {                                                        // If there is lightsource on this map...
+            $gameTemp._MapTint = $gameVariables.GetTint();                                    // ... Use the tint of the map.
           }
         }
         // Add daylight tint?
@@ -2215,9 +2215,9 @@ Imported[Community.Lighting.name] = true;
   };
 
   Spriteset_Battle.prototype.createBattleLightmask = function () {
-    if ($gameVariables.GetScriptActive()) {					// If the script is active
-      if (lightInBattle) {								// If is active during battles.
-        this._battleLightmask = new BattleLightmask();	// ... Create the light mask.
+    if ($gameVariables.GetScriptActive()) {             // If the script is active
+      if (lightInBattle) {                              // If is active during battles.
+        this._battleLightmask = new BattleLightmask();  // ... Create the light mask.
         if (battleMaskPosition === 'Above') {
           this.addChild(this._battleLightmask);
         } else if (battleMaskPosition === 'Between') {
