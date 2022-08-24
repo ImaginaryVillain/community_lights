@@ -2992,7 +2992,7 @@ Imported[Community.Lighting.name] = true;
     let daynighttimer = $gameVariables.GetDaynightTimer();     // timer = minutes * speed
     let daynightcycle = $gameVariables.GetDaynightCycle();     // cycle = hours
     let daynighthoursinday = $gameVariables.GetDaynightHoursinDay();   // 24
-    //let daynightcolors = $gameVariables.GetDaynightColorArray();
+    let daynightcolors = $gameVariables.GetDaynightColorArray();
 
     if (args[0] === 'speed') {
       daynightspeed = Number(args[1]);
