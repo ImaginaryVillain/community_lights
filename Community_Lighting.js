@@ -3078,13 +3078,7 @@ Imported[Community.Lighting.name] = true;
 
     if (args[0] === 'color') {
 
-      let hour = Number(args[1]);
-      if (hour < 0) {
-        hour = 0;
-      }
-      if (hour >= daynighthoursinday) {
-        hour = (daynighthoursinday - 1);
-      }
+      let hour = (+args[1] || 0).clamp(0, daynighthoursinday - 1);
       let hourcolor = args[2];
       let isValidColor = isValidColorRegex.test(hourcolor.trim());
       if (isValidColor) {
