@@ -2267,31 +2267,31 @@ Imported[Community.Lighting.name] = true;
   };
 
   BattleLightmask.prototype.update = function () {
-    var color1 = $gameTemp._BattleTint;
+    let color1 = $gameTemp._BattleTint;
     if ($gameTemp._BattleTintSpeed > 0) {
 
       $gameTemp._BattleTintTimer += 1;
 
-      var r = hexToRgb($gameTemp._BattleTintFade).r;
-      var g = hexToRgb($gameTemp._BattleTintFade).g;
-      var b = hexToRgb($gameTemp._BattleTintFade).b;
-      var a = hexToRgb($gameTemp._BattleTintFade).a;
+      let r = hexToRgb($gameTemp._BattleTintFade).r;
+      let g = hexToRgb($gameTemp._BattleTintFade).g;
+      let b = hexToRgb($gameTemp._BattleTintFade).b;
+      let a = hexToRgb($gameTemp._BattleTintFade).a;
 
       var r2 = hexToRgb($gameTemp._BattleTint).r;
       var g2 = hexToRgb($gameTemp._BattleTint).g;
-      var b2 = hexToRgb($gameTemp._BattleTint).b;
-      var a2 = hexToRgb($gameTemp._BattleTint).a;
+      let b2 = hexToRgb($gameTemp._BattleTint).b;
+      let a2 = hexToRgb($gameTemp._BattleTint).a;
 
 
-      var stepR = (r2 - r) / (60 * $gameTemp._BattleTintSpeed);
-      var stepG = (g2 - g) / (60 * $gameTemp._BattleTintSpeed);
-      var stepB = (b2 - b) / (60 * $gameTemp._BattleTintSpeed);
-      var stepA = (a2 - a) / (60 * $gameTemp._BattleTintSpeed);
+      let stepR = (r2 - r) / (60 * $gameTemp._BattleTintSpeed);
+      let stepG = (g2 - g) / (60 * $gameTemp._BattleTintSpeed);
+      let stepB = (b2 - b) / (60 * $gameTemp._BattleTintSpeed);
+      let stepA = (a2 - a) / (60 * $gameTemp._BattleTintSpeed);
 
-      var r3 = Math.floor(r + (stepR * $gameTemp._BattleTintTimer));
-      var g3 = Math.floor(g + (stepG * $gameTemp._BattleTintTimer));
-      var b3 = Math.floor(b + (stepB * $gameTemp._BattleTintTimer));
-      var a3 = Math.floor(a + (stepA * $gameTemp._BattleTintTimer));
+      let r3 = Math.floor(r + (stepR * $gameTemp._BattleTintTimer));
+      let g3 = Math.floor(g + (stepG * $gameTemp._BattleTintTimer));
+      let b3 = Math.floor(b + (stepB * $gameTemp._BattleTintTimer));
+      let a3 = Math.floor(a + (stepA * $gameTemp._BattleTintTimer));
       if (r3 < 0) { r3 = 0 }
       if (g3 < 0) { g3 = 0 }
       if (b3 < 0) { b3 = 0 }
@@ -2300,10 +2300,10 @@ Imported[Community.Lighting.name] = true;
       if (g3 > 255) { g3 = 255 }
       if (b3 > 255) { b3 = 255 }
       if (a3 > 255) { a3 = 255 }
-      var reddone = false;
-      var greendone = false;
-      var bluedone = false;
-      var alphadone = false;
+      let reddone = false;
+      let greendone = false;
+      let bluedone = false;
+      let alphadone = false;
       if (stepR >= 0 && r3 >= r2) {
         reddone = true;
       }
@@ -2333,7 +2333,7 @@ Imported[Community.Lighting.name] = true;
         $gameTemp._BattleTintSpeed = 0;
         $gameTemp._BattleTintTimer = 0;
       }
-      color1 = rgba2hex(r, g, b, a);
+      color1 = rgba2hex(r3, g3, b3, a3);
       $gameTemp._BattleTintFade = color1;
     }
     this._maskBitmap.FillRect(-lightMaskPadding, 0, maxX + lightMaskPadding, maxY, color1);
