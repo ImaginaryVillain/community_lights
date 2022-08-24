@@ -3058,8 +3058,8 @@ Imported[Community.Lighting.name] = true;
           daynightcolors.push({ "color": "#ffffff", "isNight": false });
         }
       }
-      $gameVariables.setDayNightColorArray(daynightcolors);
-      $gameVariables.setDayNightHoursInDay(daynighthoursinday);
+      $gameVariables.SetDaynightColorArray(daynightcolors);
+      $gameVariables.SetDaynightHoursinDay(daynighthoursinday);
     }
 
     if (args[0] === 'show') {
