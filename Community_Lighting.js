@@ -2709,6 +2709,10 @@ Imported[Community.Lighting.name] = true;
       $gameVariables.SetFlashlightLength(flashlightlength);
       $gameVariables.SetFlashlightDensity(flashlightdensity);
 
+      if ($gameVariables.GetRadius() < 1) {
+        $gameVariables.SetRadius(1);
+        $gameVariables.SetRadiusTarget(1);
+      }
     }
     if (args[0] === 'off') {
       $gameVariables.SetFlashlight(false);
