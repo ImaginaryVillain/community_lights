@@ -3064,6 +3064,7 @@ Imported[Community.Lighting.name] = true;
 
     if (args[0] === 'show') {
       $gameVariables._clShowTimeWindow = true;
+      $gameVariables._clShowTimeWindowSeconds = false;
     }
 
     if (args[0] === 'showseconds') {
