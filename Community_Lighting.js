@@ -1159,7 +1159,7 @@ Imported[Community.Lighting.name] = true;
         colorcycle_timer[i] = 0;
       }
 
-      $$.ReloadMapEvents();  // reload map events on map chance
+      $$.ReloadMapEvents();  // reload map events on map change
     }
 
     // reload mapevents if event_data has chanced (deleted or spawned events/saves)
@@ -2998,10 +2998,7 @@ Imported[Community.Lighting.name] = true;
     let daynightcolors = $gameVariables.GetDaynightColorArray();
 
     if (args[0] === 'speed') {
-      daynightspeed = Number(args[1]);
-      if (daynightspeed < 0) {
-        daynightspeed = 5000;
-      }
+      daynightspeed = +args[1] || 5000;
       $gameVariables.SetDaynightSpeed(daynightspeed);
     }
 
