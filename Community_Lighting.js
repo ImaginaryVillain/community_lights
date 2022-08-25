@@ -1046,9 +1046,9 @@ Imported[Community.Lighting.name] = true;
 
   Game_Interpreter.prototype.scriptF = function (command, args) {
     if (args[0] === "deactivate" || (args[0].toLowerCase() === "off" && args.length == 1)) {
-      $gameVariables.SetScriptActive(true);
-    } else if (args[0] === "activate") {
       $gameVariables.SetScriptActive(false);
+    } else if (args[0] === "activate") {
+      $gameVariables.SetScriptActive(true);
     }
   };
 
