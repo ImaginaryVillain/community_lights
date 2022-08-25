@@ -473,7 +473,10 @@ Imported[Community.Lighting.name] = true;
 * - Sets the hour (h) to use color (c)
 *
 * Daynight add h m
-* - Adds the specified hours (h) and minutes (m) to the ingame clock
+* - Adds the specified hours (h) and minutes (m) to the in game clock
+*
+* Daynight subtract h m
+* - Subtracts the specified hours (h) and minutes (m) from the in game clock
 *
 * Daynight show
 * - Shows the current time of day in the upper right corner of the map screen (h:mm)
@@ -3002,31 +3005,30 @@ Imported[Community.Lighting.name] = true;
       $gameVariables.SetDaynightSpeed(daynightspeed);
     }
 
-    if (args[0] === 'add') {
-      let houradd = Number(args[1]);
-      let minuteadd = 0;
-      if (args.length > 2) {
-        minuteadd = Number(args[2]);
-      }
-
+    function addTime(houradd, minuteadd) {
       let daynightminutes = Math.floor(daynighttimer / daynightspeed);
-      daynightminutes = daynightminutes + minuteadd;
-      if (daynightminutes > 60) {
-        daynightminutes = daynightminutes - 60;
-        daynightcycle = daynightcycle + 1;
-      }
-      daynightcycle = daynightcycle + houradd;
+      daynightminutes = daynightminutes + minuteadd + 60*(daynightcycle + houradd);
+      daynightcycle = Math.trunc(daynightminutes/60)%daynighthoursinday;
+      daynightminutes = daynightminutes%60;
+      if (daynightminutes < 0) { daynightminutes += 60; daynightcycle--; };
+      if (daynightcycle < 0) { daynightcycle += daynighthoursinday; };
+
+
       daynighttimer = daynightminutes * daynightspeed;
 
-      if (daynightcycle < 0) daynightcycle = 0;
-      if (daynightcycle >= daynighthoursinday) daynightcycle = daynightcycle - daynighthoursinday;
       $$.saveTime(daynightcycle, daynightminutes);
 
       $gameVariables.SetDaynightTimer(daynighttimer);     // timer = minutes * speed
       $gameVariables.SetDaynightCycle(daynightcycle);     // cycle = hours
-
     }
 
+    if (args[0] === 'add') {
+      addTime(+args[1], args.length > 2 ? +args[2] : 0);
+    }
+
+    if (args[0] === 'subtract') {
+      addTime(+args[1]*-1, args.length > 2 ? +args[2]*-1 : 0);
+    }
 
     if (args[0] === 'hour') {
       daynightcycle = Number(args[1]);
