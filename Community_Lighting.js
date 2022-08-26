@@ -3358,14 +3358,6 @@ function Window_TimeOfDay() {
 };
 Window_TimeOfDay.prototype = Object.create(Window_Base.prototype);
 Window_TimeOfDay.prototype.constructor = Window_TimeOfDay;
-
-/**
- *
- * @param {Number} x
- * @param {Number} y
- * @param {Number} width
- * @param {Number} height
- */
 Window_TimeOfDay.prototype.initialize = function () {
   const ww = 150;
   const wh = 65;
