@@ -490,14 +490,17 @@ Imported[Community.Lighting.name] = true;
 * Daynight hoursinday h
 * - Sets the number of hours in a day to [h] (set hour colors  if doing this)
 *
-* Tint set c
-* - Sets the current screen tint to the color (c)
+* Tint set c [s]
+* Tint fade c [s]
+* - Sets or fades the current screen tint to the color (c)
+* - The optional argument speed (s) sets the fade speed (1 = fast, 20 = very slow)
+* - Both commands operate identically.
 *
-* Tint fade c s
-* - Same as above, but fades (1 = fast, 20 = very slow)
-*
-* Tint daylight
-* - Sets the tint based on the current hour.
+* Tint reset [s]
+* Tint daylight [s]
+* - Resets or fades the tint based on the current hour.
+* - The optional argument speed (s) sets the fade speed (1 = fast, 20 = very slow)
+* - Both commands operate identically.
 *
 * TileLight   id ON c r
 * RegionLight id ON c r
@@ -558,17 +561,18 @@ Imported[Community.Lighting.name] = true;
 * Plugin Commands - Battle
 * -------------------------------------------------------------------------------
 *
-* TintBattle set [color]
-* - Tint the battle screen to the color used as argument.
+* TintBattle set [c] [s]
+* TintBattle fade [c] [s]
+* - Sets or fades the battle screen to the color (c)
+* - The optional argument speed (s) sets the fade speed (1 = fast, 20 = very slow)
 * - Automatically set too dark color to '#666666' (dark gray).
+* - Both commands operate identically.
 *
-* TintBattle reset
-* - Reset the battle screen to its original color.
-*
-* TintBattle fade [color] [speed]
-* - Fade the battle screen to the color used as first argument.
-* - The second argument is speed of the fade (1 very fast, 20 more slow)
-* - Still automatically set too dark color to '#666666' (dark gray).
+* TintBattle reset [s]
+* TintBattle daylight [s]
+* - Resets or fades the battle screen to its original color.
+* - The optional argument speed (s) sets the fade speed (1 = fast, 20 = very slow)
+* - Both commands operate identically.
 *
 * --------------------------------------------------------------------------
 * Lights Active Radius
@@ -1065,20 +1069,17 @@ Imported[Community.Lighting.name] = true;
 
   Game_Interpreter.prototype.tintbattle = function (command, args) {
     if ($gameParty.inBattle()) {
-
-      if (args[0].toLowerCase() === 'reset') {
-        $gameTemp._BattleTint = $gameTemp._MapTint;
-        $gameTemp._BattleTintSpeed = 0;
-      } else if (args[0] === "set") {
-        $gameTemp._BattleTint = this.determineBattleTint(args[1]);
-        $gameTemp._BattleTintSpeed = 0;
-
-      } else if (args[0].toLowerCase() === 'fade') {
-
+      let cmd = args[0].trim().toLowerCase();
+      if (cmd === "set" || cmd === 'fade') {
         $gameTemp._BattleTintFade = $gameTemp._BattleTint;
         $gameTemp._BattleTintTimer = 0;
         $gameTemp._BattleTint = this.determineBattleTint(args[1]);
-        $gameTemp._BattleTintSpeed = args[2];
+        $gameTemp._BattleTintSpeed = +args[2] || 0;
+      }
+      else if (cmd === 'reset' || cmd === 'daylight') {
+        $gameTemp._BattleTintTimer = 0;
+        $gameTemp._BattleTint = $gameTemp._MapTint;
+        $gameTemp._BattleTintSpeed = +args[1] || 0;
       }
     }
   };
@@ -1162,7 +1163,7 @@ Imported[Community.Lighting.name] = true;
       $$.ReloadMapEvents();  // reload map events on map change
     }
 
-    // reload mapevents if event_data has chanced (deleted or spawned events/saves)
+    // reload mapevents if event_data has changed (deleted or spawned events/saves)
     if (event_eventcount != $gameMap.events().length) {
       $$.ReloadMapEvents();
     }
@@ -2970,19 +2971,20 @@ Imported[Community.Lighting.name] = true;
    * @param {String[]} args
    */
   $$.tint = function (args) {
-    if (args[0].trim().toLowerCase() === 'set') {
-
-      $gameVariables.SetTint(args[1]);
-      $gameVariables.SetTintTarget(args[1]);
-    }
-    if (args[0].trim().toLowerCase() === 'fade') {
-      $gameVariables.SetTintTarget(args[1]);
-      $gameVariables.SetTintSpeed(args[2]);
-    }
-    else if (args[0].trim().toLowerCase() === "daylight") {
-      let currentColor = $gameVariables.GetTintByTime();
-      $gameVariables.SetTint(currentColor);
+    let cmd = args[0].trim().toLowerCase();
+    if (cmd === 'set' || cmd == 'fade') {
+      let currentColor = args[1];
+      let speed = +args[2] || 0;
+      if (speed == 0) $gameVariables.SetTint(args[1]);
       $gameVariables.SetTintTarget(currentColor);
+      $gameVariables.SetTintSpeed(speed);
+    }
+    else if (cmd === "reset" || cmd === "daylight") {
+      let currentColor = $gameVariables.GetTintByTime();
+      let speed = +args[1] || 0;
+      if (speed == 0) $gameVariables.SetTint(currentColor);
+      $gameVariables.SetTintTarget(currentColor);
+      $gameVariables.SetTintSpeed(speed);
     }
   };
 
