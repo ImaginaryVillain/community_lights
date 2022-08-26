@@ -1636,7 +1636,7 @@ Imported[Community.Lighting.name] = true;
       }
     }
 
-    // reload mapevents if event_data has chanced (deleted or spawned events/saves)
+    // reload mapevents if event_data has changed (deleted or spawned events/saves)
     if (event_eventcount != $gameMap.events().length) {
       $$.ReloadMapEvents();
     }
@@ -2234,7 +2234,7 @@ Imported[Community.Lighting.name] = true;
     context.fillStyle = color1;
     context.fillRect(x1, y1, x2, y2);
     context.restore();
-    //this._setDirty();
+    //this._setDirty(); // doesn't exist in RMMZ
   };
 
   // *******************  CIRCLE/OVAL SHAPE ***********************************
@@ -2269,7 +2269,7 @@ Imported[Community.Lighting.name] = true;
     context.fill();
     context.closePath();
     context.restore();
-    //this._setDirty();
+    //this._setDirty(); // doesn't exist in RMMZ
   };
 
   // *******************  NORMAL LIGHT SHAPE ***********************************
@@ -2404,7 +2404,7 @@ Imported[Community.Lighting.name] = true;
           break;
       }
       context.restore();
-      //this._setDirty();
+      //this._setDirty(); // doesn't exist in RMMZ
     }
   };
 
@@ -2481,7 +2481,7 @@ Imported[Community.Lighting.name] = true;
     context.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
 
     context.restore();
-    //this._setDirty();
+    //this._setDirty(); // doesn't exist in RMMZ
   };
 
 
@@ -2528,7 +2528,7 @@ Imported[Community.Lighting.name] = true;
     }
   };
 
-  let Community_Lighting_Spriteset_Battle_createBattleField = Spriteset_Battle.prototype.createBattleField;
+  let Community_Lighting_Spriteset_Battle_createBattleField = Spriteset_Battle.prototype.createBattleField; // API change in RMMZ
   Spriteset_Battle.prototype.createBattleField = function () {
     Community_Lighting_Spriteset_Battle_createBattleField.call(this);
     if (battleMaskPosition === 'Between') {
@@ -2678,9 +2678,9 @@ Imported[Community.Lighting.name] = true;
 
   // ALLIASED Move event location => reload map.
 
-  $$.Game_Interpreter_command203 = Game_Interpreter.prototype.command203;
-  Game_Interpreter.prototype.command203 = function (params) {
-    $$.Game_Interpreter_command203.call(this, params);
+  let Alias_Game_Interpreter_command203 = Game_Interpreter.prototype.command203;
+  Game_Interpreter.prototype.command203 = function (params) { // API change in RMMZ
+    Alias_Game_Interpreter_command203.call(this, params);
     $$.ReloadMapEvents();
     return true;
   };
@@ -2700,22 +2700,22 @@ Imported[Community.Lighting.name] = true;
     configurable: true
   });
 
-  $$.ConfigManager_makeData = ConfigManager.makeData;
+  let Alias_ConfigManager_makeData = ConfigManager.makeData;
   ConfigManager.makeData = function () {
-    let config = $$.ConfigManager_makeData.call(this);
+    let config = Alias_ConfigManager_makeData.call(this);
     config.cLighting = options_lighting_on;
     return config;
   };
 
-  $$.ConfigManager_applyData = ConfigManager.applyData;
+  let Alias_ConfigManager_applyData = ConfigManager.applyData;
   ConfigManager.applyData = function (config) {
-    $$.ConfigManager_applyData.call(this, config);
+    Alias_ConfigManager_applyData.call(this, config);
     this.cLighting = this.readFlag2(config, 'cLighting');
   };
 
-  $$.Window_Options_addGeneralOptions = Window_Options.prototype.addGeneralOptions;
+  let Window_Options_addGeneralOptions = Window_Options.prototype.addGeneralOptions;
   Window_Options.prototype.addGeneralOptions = function () {
-    $$.Window_Options_addGeneralOptions.call(this);
+    Window_Options_addGeneralOptions.call(this);
     if (optionText !== "") this.addCommand(optionText, 'cLighting');
   };
 
@@ -2847,12 +2847,12 @@ Imported[Community.Lighting.name] = true;
           for (let y = 0, mapHeight = $dataMap.height; y < mapHeight; y++) {
             for (let x = 0, mapWidth = $dataMap.width; x < mapWidth; x++) {
               let tag = 0;
-              if (tile_type == 3 || tile_type == 5 || tile_type == 7) {
+              if (tile_type == 3 || tile_type == 5 || tile_type == 7) { // tile light
                 tag = $gameMap.terrainTag(x, y);
-              }          // tile light
-              if (tile_type == 4 || tile_type == 6 || tile_type == 8) {
+              }
+              if (tile_type == 4 || tile_type == 6 || tile_type == 8) { // region light
                 tag = $dataMap.data[(5 * $dataMap.height + y) * $dataMap.width + x];
-              }  // region light
+              }
               if (tag == tile_number) {
                 let tilecode = x + ";" + y + ";" + tile_type + ";" + tile_radius + ";" + tile_color + ";" + brightness;
                 tile_lights.push(tilecode);
@@ -2867,12 +2867,12 @@ Imported[Community.Lighting.name] = true;
           for (let y = 0, mapHeight = $dataMap.height; y < mapHeight; y++) {
             for (let x = 0, mapWidth = $dataMap.width; x < mapWidth; x++) {
               let tag = 0;
-              if (tile_type == 1) {
+              if (tile_type == 1) { // tile block
                 tag = $gameMap.terrainTag(x, y);
-              }                  // tile block
-              if (tile_type == 2) {
+              }
+              if (tile_type == 2) { // region block
                 tag = $dataMap.data[(5 * $dataMap.height + y) * $dataMap.width + x];
-              }  // region block
+              }
               if (tag == tile_number) {
                 let tilecode = x + ";" + y + ";" + shape + ";" + xo1 + ";" + yo1 + ";" + xo2 + ";" + yo2 + ";" + tile_color;
                 tile_blocks.push(tilecode);
@@ -2887,7 +2887,7 @@ Imported[Community.Lighting.name] = true;
     $gameVariables.SetBlockTags(tile_blocks);
   };
 
-  let _Tilemap_addShadow = Tilemap.prototype._addShadow;
+  let _Tilemap_addShadow = Tilemap.prototype._addShadow; // API change in RMMZ
   Tilemap.prototype._addShadow = function (layer, shadowBits, dx, dy) {
     if (!hideAutoShadow) {
       _Tilemap_addShadow.call(this, layer, shadowBits, dx, dy);
@@ -3139,7 +3139,7 @@ function Window_TimeOfDay() {
 };
 Window_TimeOfDay.prototype = Object.create(Window_Selectable.prototype);
 Window_TimeOfDay.prototype.constructor = Window_TimeOfDay;
-Window_TimeOfDay.prototype.initialize = function(rect)
+Window_TimeOfDay.prototype.initialize = function (rect)
 {
     Window_Selectable.prototype.initialize.call(this, rect);
   this._baseX = rect.x;
@@ -3147,11 +3147,9 @@ Window_TimeOfDay.prototype.initialize = function(rect)
   this.setBackgroundType(0);
   this.visible = $gameVariables._clShowTimeWindow;
 };
-Window_TimeOfDay.prototype.update = function()
-{
+Window_TimeOfDay.prototype.update = function () {
   this.visible = $gameVariables._clShowTimeWindow;
-  if (this.visible)
-  {
+  if (this.visible) {
     let time = Community.Lighting.time(!!$gameVariables._clShowTimeWindowSeconds);
     let rect = this.itemLineRect(0);
     let size = this.textSizeEx(time);
@@ -3162,13 +3160,11 @@ Window_TimeOfDay.prototype.update = function()
   Window_Selectable.prototype.update.call(this);
 };
 Community.Lighting.Scene_Map_createAllWindows = Scene_Map.prototype.createAllWindows;
-Scene_Map.prototype.createAllWindows = function()
-{
+Scene_Map.prototype.createAllWindows = function () {
   Community.Lighting.Scene_Map_createAllWindows.call(this);
   this.createTimeWindow();
 };
-Scene_Map.prototype.createTimeWindow = function()
-{
+Scene_Map.prototype.createTimeWindow = function () {
   this._timeWindow = new Window_TimeOfDay(this.timeWindowRect());
   this.addWindow(this._timeWindow);
 };
