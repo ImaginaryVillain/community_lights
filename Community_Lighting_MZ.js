@@ -331,7 +331,7 @@ Imported[Community.Lighting.name] = true;
 * @min 0
 * @default 8
 *
-* @arg beamWdth
+* @arg beamWidth
 * @text Beam Width
 * @type number
 * @min 0
@@ -606,7 +606,7 @@ Imported[Community.Lighting.name] = true;
 * @max 99999
 * @default 0
 *
-* @arg blockwidth
+* @arg blockWidth
 * @text Width
 * @type number
 * @min -99999
