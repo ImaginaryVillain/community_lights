@@ -24,6 +24,12 @@ Imported[Community.Lighting.name] = true;
 * @desc Adds an option to disable this plugin's lighting effects to the options menu (leave blank to omit)
 * @default Lighting Effects
 *
+* @param Use smoother lights
+* @parent ---General Settings---
+* @desc Instead of looking like spotlights, the lights get blended further. Does not work on old browsers.
+* @type boolean
+* @default false
+*
 * @param Light event required
 * @parent ---General Settings---
 * @desc At least one light event on the current is needed to make the plugin active (as in original TerraxLighting)
@@ -35,6 +41,12 @@ Imported[Community.Lighting.name] = true;
 * @desc Should a light be shifted 6 pixel up if its associated event does?
 * @type boolean
 * @default false
+*
+* @param Lights Active Radius
+* @parent ---Offset and Sizes---
+* @desc The number of grid spaces away from the player that lights are turned on. (0 to not use this functionality)
+* Default: 0
+* @default 0
 *
 * @param Daynight Cycle
 * @parent ---General Settings---
@@ -135,12 +147,6 @@ Imported[Community.Lighting.name] = true;
 *
 * @param ---Offset and Sizes---
 * @default
-*
-* @param Lights Active Radius
-* @parent ---Offset and Sizes---
-* @desc The number of grid spaces away from the player that lights are turned on. (0 to not use this functionality)
-* Default: 0
-* @default 0
 *
 * @param Player radius
 * @parent ---Offset and Sizes---
@@ -853,6 +859,7 @@ Imported[Community.Lighting.name] = true;
 
   let parameters = $$.parameters;
   let lightMaskPadding = Number(parameters["Lightmask Padding"]) || 0;
+  let useSmootherLights = eval(String(parameters['Use smoother lights'])) || false;
   let light_event_required = eval(parameters["Light event required"]) || false;
   let shift_lights_with_events = eval(String(parameters['Shift lights with events'])) || false;
   let player_radius = Number(parameters['Player radius']) || 0;
@@ -912,7 +919,8 @@ Imported[Community.Lighting.name] = true;
   //let averagetime = [];
   //let averagetimecount = 0;
   let notetag_reg = RegExp("<" + noteTagKey + ":[ ]*([^>]+)>", "i");
-
+  let radialColor2 = useSmootherLights == true ? "#00000000" : "#000000";
+  let isValidColorRegex = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)|(^#[0-9A-F]{8}$)/i;
   $$.getFirstComment = function () {
     let result = null;
     let page = this.page();
@@ -1737,32 +1745,36 @@ Imported[Community.Lighting.name] = true;
 
     if (iplayer_radius > 0) {
       if (playerflashlight == true) {
-        this._maskBitmap.radialgradientFillRect2(x1, y1, lightMaskPadding, iplayer_radius, playercolor, '#000000', pd, flashlightlength, flashlightwidth);
+        this._maskBitmap.radialgradientFillRect2(x1, y1, lightMaskPadding, iplayer_radius, playercolor, radialColor2, pd, flashlightlength, flashlightwidth);
       }
       x1 = x1 - flashlightXoffset;
       y1 = y1 - flashlightYoffset;
       if (iplayer_radius < 100) {
         // dim the light a bit at lower lightradius for a less focused effect.
-        let r = $$.hexToRgb(playercolor).r;
-        let g = $$.hexToRgb(playercolor).g;
-        let b = $$.hexToRgb(playercolor).b;
-        g = g - 50;
-        r = r - 50;
-        b = b - 50;
-        if (g < 0) {
-          g = 0;
+        let red = hexToRgb(playercolor).r;
+        let green = hexToRgb(playercolor).g;
+        let blue = hexToRgb(playercolor).b;
+        let alpha = hexToRgb(playercolor).a;
+        green = green - 50;
+        red = red - 50;
+        blue = blue - 50;
+        if (green < 0) {
+          green = 0;
         }
-        if (r < 0) {
-          r = 0;
+        if (red < 0) {
+          red = 0;
         }
-        if (b < 0) {
-          b = 0;
+        if (blue < 0) {
+          blue = 0;
         }
-        let newcolor = "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+        if (alpha < 0) {
+          alpha = 0;
+        }
+        let newcolor = rgba2hex(red, green, blue, alpha);
 
-        this._maskBitmap.radialgradientFillRect(x1, y1, 0, iplayer_radius, newcolor, '#000000', playerflicker, playerbrightness);
+        this._maskBitmap.radialgradientFillRect(x1, y1, 0, iplayer_radius, newcolor, radialColor2, playerflicker, playerbrightness);
       } else {
-        this._maskBitmap.radialgradientFillRect(x1, y1, lightMaskPadding, iplayer_radius, playercolor, '#000000', playerflicker, playerbrightness);
+        this._maskBitmap.radialgradientFillRect(x1, y1, lightMaskPadding, iplayer_radius, playercolor, radialColor2, playerflicker, playerbrightness);
       }
 
     }
@@ -1968,19 +1980,21 @@ Imported[Community.Lighting.name] = true;
       }
 
       if (tile_type == 3 || tile_type == 4) {
-        this._maskBitmap.radialgradientFillRect(x1, y1, 0, tile_radius, tile_color, '#000000', false, brightness); // Light
+        this._maskBitmap.radialgradientFillRect(x1, y1, 0, tile_radius, tile_color, radialColor2, false, brightness); // Light
       } else if (tile_type == 5 || tile_type == 6) {
-        this._maskBitmap.radialgradientFillRect(x1, y1, 0, tile_radius, tile_color, '#000000', true, brightness);  // Fire
+        this._maskBitmap.radialgradientFillRect(x1, y1, 0, tile_radius, tile_color, radialColor2, true, brightness);  // Fire
+
       } else {
 
-        let r = $$.hexToRgb(tile_color).r;
-        let g = $$.hexToRgb(tile_color).g;
-        let b = $$.hexToRgb(tile_color).b;
-
+        let r = hexToRgb(tile_color).r;
+        let g = hexToRgb(tile_color).g;
+        let b = hexToRgb(tile_color).b;
+        let a = hexToRgb(tile_color).a;
 
         r = Math.floor(r + (60 - tileglow));
         g = Math.floor(g + (60 - tileglow));
         b = Math.floor(b + (60 - tileglow));
+        a = Math.floor(a + (60 - tileglow));
 
         if (r < 0) {
           r = 0;
@@ -1991,6 +2005,9 @@ Imported[Community.Lighting.name] = true;
         if (b < 0) {
           b = 0;
         }
+        if (a < 0) {
+          a = 0;
+        }
         if (r > 255) {
           r = 255;
         }
@@ -2000,9 +2017,11 @@ Imported[Community.Lighting.name] = true;
         if (b > 255) {
           b = 255;
         }
-
-        let newtile_color = "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
-        this._maskBitmap.radialgradientFillRect(x1, y1, 0, tile_radius, newtile_color, '#000000', false, brightness);
+        if (a > 255) {
+          a = 255;
+        }
+        let newtile_color = rgba2hex(r, g, b, a)
+        this._maskBitmap.radialgradientFillRect(x1, y1, 0, tile_radius, newtile_color, radialColor2, false, brightness);
       }
     }
 
@@ -2070,25 +2089,29 @@ Imported[Community.Lighting.name] = true;
           nextcolor = 0;
         }
         let color2 = daynightcolors[nextcolor].color;
-        let rgb = $$.hexToRgb(color1);
+        let rgb = hexToRgb(color1);
         r = rgb.r;
         g = rgb.g;
         b = rgb.b;
+        a = rgb.a;
 
-        rgb = $$.hexToRgb(color2);
+        rgb = hexToRgb(color2);
         let r2 = rgb.r;
         let g2 = rgb.g;
         let b2 = rgb.b;
+        let a2 = rgb.a;
 
         let stepR = (r2 - r) / (60 * daynightspeed);
         let stepG = (g2 - g) / (60 * daynightspeed);
         let stepB = (b2 - b) / (60 * daynightspeed);
+        let stepA = (a2 - a) / (60 * daynightspeed);
 
         r = Math.floor(r + (stepR * daynighttimer));
         g = Math.floor(g + (stepG * daynighttimer));
         b = Math.floor(b + (stepB * daynighttimer));
+        a = Math.floor(a + (stepA * daynighttimer));
       }
-      color1 = "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+      color1 = rgba2hex(r, g, b, a);
 
       this._maskBitmap.FillRect(-lightMaskPadding, 0, maxX + lightMaskPadding, maxY, color1);
     }
@@ -2119,21 +2142,25 @@ Imported[Community.Lighting.name] = true;
           tint_timer++;
         }
 
-        let r = $$.hexToRgb(tint_value).r;
-        let g = $$.hexToRgb(tint_value).g;
-        let b = $$.hexToRgb(tint_value).b;
+        let r = hexToRgb(tint_value).r;
+        let g = hexToRgb(tint_value).g;
+        let b = hexToRgb(tint_value).b;
+        let a = hexToRgb(tint_value).a;
 
-        let r2 = $$.hexToRgb(tint_target).r;
-        let g2 = $$.hexToRgb(tint_target).g;
-        let b2 = $$.hexToRgb(tint_target).b;
+        let r2 = hexToRgb(tint_target).r;
+        let g2 = hexToRgb(tint_target).g;
+        let b2 = hexToRgb(tint_target).b;
+        let a2 = hexToRgb(tint_target).a;
 
         let stepR = (r2 - r) / (60 * tint_speed);
         let stepG = (g2 - g) / (60 * tint_speed);
         let stepB = (b2 - b) / (60 * tint_speed);
+        let stepA = (a2 - a) / (60 * tint_speed);
 
         let r3 = Math.floor(r + (stepR * tint_timer));
         let g3 = Math.floor(g + (stepG * tint_timer));
         let b3 = Math.floor(b + (stepB * tint_timer));
+        let a3 = Math.floor(a + (stepA * tint_timer));
         if (r3 < 0) {
           r3 = 0
         }
@@ -2142,6 +2169,9 @@ Imported[Community.Lighting.name] = true;
         }
         if (b3 < 0) {
           b3 = 0
+        }
+        if (a3 < 0) {
+          a3 = 0;
         }
         if (r3 > 255) {
           r3 = 255
@@ -2152,31 +2182,52 @@ Imported[Community.Lighting.name] = true;
         if (b3 > 255) {
           b3 = 255
         }
+        if (a3 > 255) {
+          a3 = 255;
+        }
         let reddone = false;
         let greendone = false;
         let bluedone = false;
+        let alphadone = false;
+
+        //Greater than
+
+
         if (stepR >= 0 && r3 >= r2) {
-          reddone = true;
-        }
-        if (stepR <= 0 && r3 <= r2) {
           reddone = true;
         }
         if (stepG >= 0 && g3 >= g2) {
           greendone = true;
         }
-        if (stepG <= 0 && g3 <= g2) {
+        if (stepB >= 0 && b3 >= b2) {
           greendone = true;
         }
-        if (stepB >= 0 && b3 >= b2) {
+        if (stepA >= 0 && a3 >= a2) {
+          alphadone = true;
+        }
+
+
+        // Less than
+
+        if (stepR <= 0 && r3 <= r2) {
           bluedone = true;
+        }
+        if (stepG <= 0 && g3 <= g2) {
+          greendone = true;
         }
         if (stepB <= 0 && b3 <= b2) {
           bluedone = true;
         }
-        if (reddone == true && bluedone == true && greendone == true) {
+        if (stepA <= 0 && a3 <= a2) {
+          alphadone = true;
+        }
+
+        if (reddone == true && bluedone == true && greendone == true && alphadone == true) {
           $gameVariables.SetTint(tint_target);
         }
-        tcolor = "#" + ((1 << 24) + (r3 << 16) + (g3 << 8) + b3).toString(16).slice(1);
+
+        let hex = rgba2hex(r3, g3, b3, a3);
+        tcolor = hex;
       } else {
         tint_timer = 0;
       }
@@ -2272,6 +2323,106 @@ Imported[Community.Lighting.name] = true;
     //this._setDirty(); // doesn't exist in RMMZ
   };
 
+  /**
+   *
+   * @param {Number} r
+   * @param {Number} g
+   * @param {Number} b
+   * @param {Number} a
+   * @returns {String}
+   */
+  function rgba(r, g, b, a) {
+    return "rgba(" + r + "," + g + "," + b + "," + a + ")";
+  }
+
+
+
+  /**
+   * Function to convert the
+   * RGB code to Hex color code
+   * @param {Number} R
+   * @param {Number} G
+   * @param {Number} B
+   * @param {Number} A
+   * @returns {String}
+   */
+  function rgba2hex(R, G, B, A = 255) {
+    if ((R >= 0 && R <= 255)
+      && (G >= 0 && G <= 255)
+      && (B >= 0 && B <= 255) &&
+      (A >= 0 && A <= 255)) {
+
+      let hexCode = "#";
+      let redHex = R.toString(16);
+      if (redHex.length < 2) {
+        redHex = "0" + redHex;
+      }
+
+      let greenHex = G.toString(16);
+      if (greenHex.length < 2) {
+        greenHex = "0" + greenHex;
+      }
+
+      let blueHex = B.toString(16);
+      if (blueHex.length < 2) {
+        blueHex = "0" + blueHex;
+      }
+
+      let alphaHex = A.toString(16);
+      if (alphaHex.length < 2) {
+        alphaHex = "0" + alphaHex;
+      }
+
+      hexCode += redHex;
+      hexCode += greenHex;
+      hexCode += blueHex;
+      hexCode += alphaHex;
+
+      return hexCode;
+    }
+
+    // The hex color code doesn't exist
+    else {
+      return "-1";
+    }
+
+  }
+
+  /**
+  * @param {Number} brightness
+  * @param {String} color1
+  * @param {String} color2
+  */
+  CanvasGradient.prototype.addTransparentColorStops = function (brightness, color1, color2) {
+
+    if (brightness) {
+      if (!useSmootherLights) {
+        var alpha = Math.floor(brightness * 100 * 2.55).toString(16);
+        if (alpha.length < 2) {
+          alpha = "0" + alpha;
+        }
+        this.addColorStop(0, '#FFFFFF' + alpha);
+      }
+    }
+
+    if (useSmootherLights) {
+      for (let distanceFromCenter = 0; distanceFromCenter < 1; distanceFromCenter += 0.1) {
+        let data = hexToRgb(color1);
+        var newRed = data.r - (distanceFromCenter * 100 * 2.55);
+        var newGreen = data.g - (distanceFromCenter * 100 * 2.55);
+        let newBlue = data.b - (distanceFromCenter * 100 * 2.55);
+        let newAlpha = 1 - distanceFromCenter;
+        if (brightness > 0) {
+          newAlpha = Math.max(0, brightness - distanceFromCenter);
+        }
+        this.addColorStop(distanceFromCenter, rgba(~~newRed, ~~newGreen, ~~newBlue, newAlpha));
+      }
+    } else {
+      this.addColorStop(brightness, color1);
+    }
+
+    this.addColorStop(1, color2);
+  }
   // *******************  NORMAL LIGHT SHAPE ***********************************
   // Fill gradient circle
 
@@ -2289,8 +2440,14 @@ Imported[Community.Lighting.name] = true;
    */
   Bitmap.prototype.radialgradientFillRect = function (x1, y1, r1, r2, color1, color2, flicker, brightness, direction) {
 
-    //color1 = $$.validateColor(color1);
-    //color2 = $$.validateColor(color2);
+    let isValidColor = isValidColorRegex.test(color1.trim());
+    if (!isValidColor) {
+      color1 = '#000000'
+    }
+    let isValidColor2 = isValidColorRegex.test(color2.trim());
+    if (!isValidColor2) {
+      color2 = '#000000'
+    }
 
     x1 = x1 + lightMaskPadding;
 
@@ -2330,9 +2487,12 @@ Imported[Community.Lighting.name] = true;
         let flickercolorshift = $gameVariables.GetFireColorshift();
         let gradrnd = Math.floor((Math.random() * flickerradiusshift) + 1);
         let colorrnd = Math.floor((Math.random() * flickercolorshift) - (flickercolorshift / 2));
-        let r = $$.hexToRgb(color1).r;
-        let g = $$.hexToRgb(color1).g;
-        let b = $$.hexToRgb(color1).b;
+
+        let r = hexToRgb(color1).r;
+        let g = hexToRgb(color1).g;
+        let b = hexToRgb(color1).b;
+        let a = hexToRgb(color1).a;
+
         g = g + colorrnd;
         if (g < 0) {
           g = 0;
@@ -2340,24 +2500,20 @@ Imported[Community.Lighting.name] = true;
         if (g > 255) {
           g = 255;
         }
-        color1 = "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+        color1 = rgba2hex(r, g, b, a);
         r2 = r2 - gradrnd;
         if (r2 < 0) r2 = 0;
       }
 
       grad = context.createRadialGradient(x1, y1, r1, x1, y1, r2);
-      if (brightness) {
-        grad.addColorStop(0, '#FFFFFF');
-      }
-      grad.addColorStop(brightness, color1);
-
-      grad.addColorStop(1, color2);
+      grad.addTransparentColorStops(brightness, color1, color2);
 
       context.save();
       context.fillStyle = grad;
       direction = Number(direction);
       let pw = $gameMap.tileWidth() / 2;
       let ph = $gameMap.tileHeight() / 2;
+      let hackishFix = 0; // I'm not proud of having to do this...
       switch (direction) {
         case 0:
           context.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
@@ -2369,7 +2525,7 @@ Imported[Community.Lighting.name] = true;
           context.fillRect(x1 - r2, y1 - r2, r2 * 1 + pw, r2 * 2);
           break;
         case 3:
-          context.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 1 + ph);
+          context.fillRect(x1 - r2, y1 - r2 + hackishFix, r2 * 2, r2 * 1 + ph);
           break;
         case 4:
           context.fillRect(x1 - pw, y1 - r2, r2 * 2, r2 * 2);
@@ -2378,29 +2534,29 @@ Imported[Community.Lighting.name] = true;
           context.fillRect(x1 - r2, y1 - ph, r2 * 1 + pw, r2 * 1 + ph);
           break;
         case 6:
-          context.fillRect(x1 - r2, y1 - r2, r2 * 1 + pw, r2 * 1 + ph);
+          context.fillRect(x1 - r2, y1 - r2 + hackishFix, r2 * 1 + pw, r2 * 1 + ph);
           break;
         case 7:
-          context.fillRect(x1 - pw, y1 - r2, r2 * 1 + pw, r2 * 1 + ph);
+          context.fillRect(x1 - pw, y1 - r2 + hackishFix, r2 * 1 + pw, r2 * 1 + ph);
           break;
         case 8:
           context.fillRect(x1 - pw, y1 - ph, r2 * 1 + pw, r2 * 1 + ph);
           break;
         case 9:
-          context.fillRect(x1 - r2, y1 - ph, r2 * 2, r2 * 2);
-          context.fillRect(x1 - r2, y1 - r2, r2 * 1 - pw, r2 * 1 - ph);
+          context.fillRect(x1 - r2, y1 - ph + hackishFix, r2 * 2, r2 * 2);
+          context.fillRect(x1 - r2, y1 - r2 + hackishFix, r2 * 1 - pw, r2 * 1 - ph);
           break;
         case 10:
-          context.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 1 + ph);
-          context.fillRect(x1 - r2, y1 + pw, r2 * 1 - pw, r2 * 1 - ph);
+          context.fillRect(x1 - r2, y1 - r2 + hackishFix, r2 * 2, r2 * 1 + ph);
+          context.fillRect(x1 - r2, y1 + pw + hackishFix, r2 * 1 - pw, r2 * 1 - ph);
           break;
         case 11:
-          context.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 1 + ph);
-          context.fillRect(x1 + pw, y1 + pw, r2 * 1 - pw, r2 * 1 - ph);
+          context.fillRect(x1 - r2, y1 - r2 + hackishFix, r2 * 2, r2 * 1 + ph);
+          context.fillRect(x1 + pw, y1 + pw + hackishFix, r2 * 1 - pw, r2 * 1 - ph);
           break;
         case 12:
-          context.fillRect(x1 - r2, y1 - ph, r2 * 2, r2 * 2);
-          context.fillRect(x1 + pw, y1 - r2, r2 * 1 - pw, r2 * 1 - ph);
+          context.fillRect(x1 - r2, y1 - ph + hackishFix, r2 * 2, r2 * 2);
+          context.fillRect(x1 + pw, y1 - r2 + hackishFix, r2 * 1 - pw, r2 * 1 - ph);
           break;
       }
       context.restore();
@@ -2427,8 +2583,14 @@ Imported[Community.Lighting.name] = true;
   Bitmap.prototype.radialgradientFillRect2 = function (x1, y1, r1, r2, color1, color2, direction, flashlength, flashwidth) {
     x1 = x1 + lightMaskPadding;
 
-    //color1 = $$.validateColor(color1);
-    //color2 = $$.validateColor(color2);
+    let isValidColor = isValidColorRegex.test(color1.trim());
+    if (!isValidColor) {
+      color1 = '#000000'
+    }
+    let isValidColor2 = isValidColorRegex.test(color2.trim());
+    if (!isValidColor2) {
+      color2 = '#000000'
+    }
 
     let context = this._context;
     let grad;
@@ -2441,7 +2603,8 @@ Imported[Community.Lighting.name] = true;
     r1 = 1;
     r2 = 40;
     grad = context.createRadialGradient(x1, y1, r1, x1, y1, r2);
-    grad.addColorStop(0, color1);
+
+    grad.addColorStop(0, '#999999');
     grad.addColorStop(1, color2);
 
     context.fillStyle = grad;
@@ -2471,9 +2634,7 @@ Imported[Community.Lighting.name] = true;
 
 
       grad = context.createRadialGradient(x1, y1, r1, x1, y1, r2);
-      grad.addColorStop(0, color1);
-      grad.addColorStop(1, color2);
-
+      grad.addTransparentColorStops(0, color1, color2);
       context.fillStyle = grad;
       context.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
     }
@@ -2488,14 +2649,16 @@ Imported[Community.Lighting.name] = true;
   /**
    *
    * @param {String} hex
-   * @returns {{r:number,g:number,b:number}}
+   * @returns {{r:number,g:number,b:number,a:number}}
    */
-  $$.hexToRgb = function(hex) {
-    let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  function hexToRgb(hex) {
+    var regex = new RegExp(/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})?$/i);
+    let result = regex.exec(hex);
     result = result ? {
       r: parseInt(result[1], 16),
       g: parseInt(result[2], 16),
-      b: parseInt(result[3], 16)
+      b: parseInt(result[3], 16),
+      a: result[4] == null ? 255 : parseInt(result[4], 16)
     } : null;
     return result;
   }
@@ -2564,22 +2727,21 @@ Imported[Community.Lighting.name] = true;
     this._createBitmap();
 
     //Initialize the bitmap
-    this._addSprite(-lightMaskPadding, 24, this._maskBitmap); // The +24 is to offset the 24 pixels shift of Spriteset_Battle.prototype.battleFieldOffsetY
+    this._addSprite(-lightMaskPadding, 0, this._maskBitmap); // We are no longer based on battleback, we no longer to do shady shifting
 
-    var redhex = $$._MapTint.substring(1, 3);
-    var greenhex = $$._MapTint.substring(3, 5);
-    var bluehex = $$._MapTint.substring(5);
+    var redhex = $gameTemp._MapTint.substring(1, 3);
+    var greenhex = $gameTemp._MapTint.substring(3, 5);
+    var bluehex = $gameTemp._MapTint.substring(5);
     var red = parseInt(redhex, 16);
     var green = parseInt(greenhex, 16);
     var blue = parseInt(bluehex, 16);
     var color = red + green + blue;
     if (color < 200 && red < 66 && green < 66 && blue < 66) {
-      $$._MapTint = '#666666' // Prevent the battle scene from being too dark.
+      $gameTemp._MapTint = '#666666' // Prevent the battle scene from being too dark.
     }
-    $$._BattleTintFade = $$._BattleTint = $$._MapTint
-    this._maskBitmap.FillRect(-lightMaskPadding, 0, maxX + lightMaskPadding, maxY, $$._BattleTint);
-    $$._BattleTintSpeed = 0;
-    $$._BattleTintTimer = 0;
+    $gameTemp._BattleTint = $$.daynightset ? $gameVariables.GetTintByTime() : $gameTemp._MapTint;
+    this._maskBitmap.FillRect(-lightMaskPadding, 0, maxX + lightMaskPadding, maxY, $gameTemp._BattleTint);
+    $gameTemp._BattleTintSpeed = 0;
   };
 
   //@method _createBitmaps
@@ -2590,34 +2752,43 @@ Imported[Community.Lighting.name] = true;
   };
 
   BattleLightmask.prototype.update = function () {
-    var color1 = $$._BattleTint;
-    if ($$._BattleTintSpeed > 0) {
-      $$._BattleTintTimer += 1;
+    let color1 = $gameTemp._BattleTint;
+    if ($gameTemp._BattleTintSpeed > 0) {
 
-      var r = $$.hexToRgb($$._BattleTintFade).r;
-      var g = $$.hexToRgb($$._BattleTintFade).g;
-      var b = $$.hexToRgb($$._BattleTintFade).b;
+      $gameTemp._BattleTintTimer += 1;
 
-      var r2 = $$.hexToRgb($$._BattleTint).r;
-      var g2 = $$.hexToRgb($$._BattleTint).g;
-      var b2 = $$.hexToRgb($$._BattleTint).b;
+      let r = hexToRgb($gameTemp._BattleTintFade).r;
+      let g = hexToRgb($gameTemp._BattleTintFade).g;
+      let b = hexToRgb($gameTemp._BattleTintFade).b;
+      let a = hexToRgb($gameTemp._BattleTintFade).a;
 
-      var stepR = (r2-r)/(60 * $$._BattleTintSpeed);
-      var stepG = (g2-g)/(60 * $$._BattleTintSpeed);
-      var stepB = (b2-b)/(60 * $$._BattleTintSpeed);
+      var r2 = hexToRgb($gameTemp._BattleTint).r;
+      var g2 = hexToRgb($gameTemp._BattleTint).g;
+      let b2 = hexToRgb($gameTemp._BattleTint).b;
+      let a2 = hexToRgb($gameTemp._BattleTint).a;
 
-      var r3 = Math.floor(r + (stepR * $$._BattleTintTimer));
-      var g3 = Math.floor(g + (stepG * $$._BattleTintTimer));
-      var b3 = Math.floor(b + (stepB * $$._BattleTintTimer));
+
+      let stepR = (r2 - r) / (60 * $gameTemp._BattleTintSpeed);
+      let stepG = (g2 - g) / (60 * $gameTemp._BattleTintSpeed);
+      let stepB = (b2 - b) / (60 * $gameTemp._BattleTintSpeed);
+      let stepA = (a2 - a) / (60 * $gameTemp._BattleTintSpeed);
+
+      let r3 = Math.floor(r + (stepR * $gameTemp._BattleTintTimer));
+      let g3 = Math.floor(g + (stepG * $gameTemp._BattleTintTimer));
+      let b3 = Math.floor(b + (stepB * $gameTemp._BattleTintTimer));
+      let a3 = Math.floor(a + (stepA * $gameTemp._BattleTintTimer));
       if (r3 < 0) { r3 = 0 }
       if (g3 < 0) { g3 = 0 }
       if (b3 < 0) { b3 = 0 }
+      if (a3 < 0) { a3 = 0 }
       if (r3 > 255) { r3 = 255 }
       if (g3 > 255) { g3 = 255 }
       if (b3 > 255) { b3 = 255 }
-      var reddone = false;
-      var greendone = false;
-      var bluedone = false;
+      if (a3 > 255) { a3 = 255 }
+      let reddone = false;
+      let greendone = false;
+      let bluedone = false;
+      let alphadone = false;
       if (stepR >= 0 && r3 >= r2) {
         reddone = true;
       }
@@ -2636,16 +2807,22 @@ Imported[Community.Lighting.name] = true;
       if (stepB <= 0 && b3 <= b2) {
         bluedone = true;
       }
-      if (reddone == true && bluedone == true && greendone == true) {
-        $$._BattleTintFade = $$._BattleTint;
-        $$._BattleTintSpeed = 0;
-        $$._BattleTintTimer = 0;
+      if (stepA >= 0 && a3 >= a2) {
+        alphadone = true;
       }
-      color1 = "#" + ((1 << 24) + (r3 << 16) + (g3 << 8) + b3).toString(16).slice(1);
-      $$._BattleTintFade = color1;
+      if (stepA <= 0 && a3 <= a2) {
+        alphadone = true;
+      }
+      if (reddone == true && bluedone == true && greendone == true && alphadone) {
+        $gameTemp._BattleTintFade = $gameTemp._BattleTint;
+        $gameTemp._BattleTintSpeed = 0;
+        $gameTemp._BattleTintTimer = 0;
+      }
+      color1 = rgba2hex(r3, g3, b3, a3);
+      $gameTemp._BattleTintFade = color1;
     }
     this._maskBitmap.FillRect(-lightMaskPadding, 0, maxX + lightMaskPadding, maxY, color1);
-    this._maskBitmap._baseTexture.update();
+    this._maskBitmap._baseTexture.update(); // Required to update battle texture in RMMZ
   };
 
   /**
@@ -2656,7 +2833,7 @@ Imported[Community.Lighting.name] = true;
 
     var sprite = new Sprite(this.viewport);
     sprite.bitmap = selectedbitmap;
-    sprite.opacity = 255;
+    //sprite.opacity = 255;
     sprite.blendMode = 2;
     sprite.x = x1;
     sprite.y = y1;
@@ -2665,7 +2842,7 @@ Imported[Community.Lighting.name] = true;
     sprite.rotation = 0;
     sprite.ax = 0;
     sprite.ay = 0
-    sprite.opacity = 255;
+    //sprite.opacity = 255;
   };
 
   /**
