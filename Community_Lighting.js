@@ -3366,17 +3366,19 @@ Window_TimeOfDay.prototype.constructor = Window_TimeOfDay;
  * @param {Number} width
  * @param {Number} height
  */
-Window_TimeOfDay.prototype.initialize = function (x, y, width, height) {
-  width = 150;
-  height = 65;
-  Window_Base.prototype.initialize.call(this, Graphics.boxWidth - width, 0, width, height);
+Window_TimeOfDay.prototype.initialize = function () {
+  const ww = 150;
+  const wh = 65;
+  const wx = Graphics.boxWidth - ww;
+  const wy = 0;
+  Window_Base.prototype.initialize.call(this, wx, wy, ww, wh);
   this.setBackgroundType(0);
   this.visible = $gameVariables._clShowTimeWindow;
 };
 Window_TimeOfDay.prototype.update = function () {
   this.visible = $gameVariables._clShowTimeWindow;
   if (this.visible) {
-    let time = Community.Lighting.time($gameVariables._clShowTimeWindowSeconds);
+    let time = Community.Lighting.time(!!$gameVariables._clShowTimeWindowSeconds);
     let textWidth = this.textWidth(time);
     this.contents.clear();
     this.resetTextColor();
