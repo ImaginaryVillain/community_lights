@@ -717,27 +717,25 @@ Imported[Community.Lighting.name] = true;
 * DayNight
 * - Activates day/night cycle.  Put in map note or event note
 *
-* Light radius color [brightness] [direction] [x] [y] [id]
+* Light radius [cycle] color [day|night] [brightness] [direction] [x] [y] [id]
 * - Light
 * - radius      100, 250, etc
-* - color       #ffffff, #ff0000, etc
 * - cycle       Allows any number of color + duration pairs to follow that will be
 *               cycled through before repeating from the beginning:
 *               <cl: light 100 cycle #f00 15 #0f0 15 #00f 15 ...etc>
 *               In Terrax Lighting, there was a hard limit of 4, but now you can use
 *               as many as you want. [optional]
+* - color       #ffffff, #ff0000, etc
+* - day         Causes the light to only come on during the day [optional]
+* - night       Causes the light to only come on during the night [optional]
 * - brightness  B50, B25, etc [optional]
 * - direction   D1: n.wall, D2: e.wall, D3: s.wall, D4: w.wall
 *               D5 n.+e. walls, D6 s.+e. walls, D7 s.+w. walls,
 *               D8 n.+w. walls, D9 n.-e. corner, D10 s.-e. corner
 *               D11 s.-w. corner, D12 n.-w. corner  [optional]
-* - x           x[offset] (0.5: half tile, 1 = full tile, etc), so x0.5, x-1,... [optional]
-* - y           y[offset] so y0.5, y1,... (Remember y-axis is top-down in rpgmz) [optional]
-* - day         Sets the event's light to only show during the day [optional]
-* - night       Sets the event's light to only show during night time [optional]
-* - id          1, 2, potato, etc. An id (alphanumeric) for plugin commands [optional]
-*               Those should not begin with 'b', 'd', 'x' or 'y' otherwise
-*               they will be mistaken for one of the previous optional parameters.
+* - x           x offset [optional] (0.5: half tile, 1 = full tile, etc)
+* - y           y offset [optional]
+* - id          1, 2, 2345, etc--an id number for plugin commands [optional]
 *
 * Fire ...params
 * - Same as Light params above, but adds a subtle flicker
@@ -776,6 +774,44 @@ Imported[Community.Lighting.name] = true;
 * <cl: Flashlight l8 w12 #ff0000 on asdf>
 * Creates a flashlight beam with id asdf which can be turned on or off via
 * plugin commands
+*
+* --------------------------------------------------------------------------
+* Easy hex color references
+* --------------------------------------------------------------------------
+* white - #FFFFFF
+* blue - #0000FF
+* red - #FF0000
+* orange - #FFA500
+* green - #008000
+* cyan - #00FFFF
+* yellow - #FFFF00
+* purple - #800080
+* pink - #FFC0CB
+* black - #000000
+* -------------------------------------------------------------------------------
+* Migrating from Khas Ultra Lights
+* -------------------------------------------------------------------------------
+* Using the smooth lights options make it look extremely close.
+* The default light radius that Khas appears to be around 122. Smooth lights
+* need to be turned on to get similar effects.
+*
+* All [light_size] tags should be combined with the initial light radius tag.
+*
+* Eg.
+* Original:
+* [light cyan]
+* [light size 75]
+*
+* Replacement:
+* <cl: light 75 #00FFFF>
+*
+* All [region_light] tags need to be replaced with <cl: region light> tags.
+* Eg.
+* Original:
+* [region_light 5 red]
+*
+* Replacement:
+* <cl: RegionLight 5 #FF0000 122>
 * -------------------------------------------------------------------------------
 * Maps
 * -------------------------------------------------------------------------------
@@ -786,6 +822,21 @@ Imported[Community.Lighting.name] = true;
 *             numbers are faster, and 0 stops the flow of time entirely.
 *             If speed is not specified, then the current speed is used.
 *
+* RegionFire, RegionGlow
+* - Same as above, but different lighting effects
+*
+* RegionBlock id ON color
+* - Turns on light blocking for tile with region id (id) using color (color)
+*
+* RegionBlock id OFF
+* - Turns off light blocking for tile with region id (id)
+*
+* defaultbrightness
+* - Sets the default brightness of all the lights in the map
+* Tint set c
+* - Sets the current screen tint to the color (c)
+* Tint daylight
+* - Sets the tint based on the current hour.
 *
 * --------------------------------------------------------------------------
 * Kill Switch and conditional lighting
@@ -817,18 +868,14 @@ Imported[Community.Lighting.name] = true;
 * Plugin Commands - Battle
 * -------------------------------------------------------------------------------
 *
-* TintBattle set [color]
-* - Tint the battle screen to the color used as argument.
+* Set Tint [c] [s]
+* - Sets or fades the battle screen to the color (c)
+* - The optional argument speed (s) sets the fade speed (1 = fast, 20 = very slow)
 * - Automatically set too dark color to '#666666' (dark gray).
 *
-* TintBattle reset [speed]
-* - Reset the battle screen to its original color.
-* - The argument is the speed of the fade (1 very fast, 20 more slow)
-*
-* TintBattle fade [color] [speed]
-* - Fade the battle screen to the color used as first argument.
-* - The second argument is speed of the fade (1 very fast, 20 more slow)
-* - Still automatically set too dark color to '#666666' (dark gray).
+* Reset Battle Tint [s]
+* - Resets or fades the battle screen to its original color.
+* - The optional argument speed (s) sets the fade speed (1 = fast, 20 = very slow)
 *
 * --------------------------------------------------------------------------
 * Lights Active Radius
@@ -1176,394 +1223,144 @@ Imported[Community.Lighting.name] = true;
       }
     }
   };
+  let _Game_Interpreter_pluginCommand = Game_Interpreter.prototype.pluginCommand;
 
-  PluginManager.registerCommand($$.name, "masterSwitch", args => $gameVariables.SetScriptActive(args.enabled === "true"));
-  PluginManager.registerCommand($$.name, "resetLightSwitches", args =>
-  {
+  /**
+   *
+   * @param {String} command
+   * @param {String[]} args
+   */
+  Game_Interpreter.prototype.pluginCommand = function (command, args) {
+    _Game_Interpreter_pluginCommand.call(this, command, args);
+    if (typeof command != 'undefined') {
+      this.communityLighting_Commands(command, args);
+    }
+  };
+
+  let _Game_Player_clearTransferInfo = Game_Player.prototype.clearTransferInfo;
+
+  Game_Player.prototype.clearTransferInfo = function () {
+    _Game_Player_clearTransferInfo.call(this);
+    if (reset_each_map) {
       $gameVariables.SetLightArrayId([]);
       $gameVariables.SetLightArrayState([]);
       $gameVariables.SetLightArrayColor([]);
-  });
-  PluginManager.registerCommand($$.name, "activateById", args =>
-  {
-    if (args.enabled === "true")
-    {
+      $$.defaultBrightness = 0;
+      $$.mapBrightness = undefined;
+      $gameVariables.SetTint(null);
+    }
+  };
+  /**
+   *
+   * @param {String} command
+   * @param {String[]} args
+   */
+  Game_Interpreter.prototype.communityLighting_Commands = function (command, args) {
+    command = command.toLowerCase();
 
-      let lightarray_id = $gameVariables.GetLightArrayId();
-      let lightarray_state = $gameVariables.GetLightArrayState();
-      let lightarray_color = $gameVariables.GetLightArrayColor();
-
-      let lightid = args.id || 0;
-      let idfound;
-      for (let i = 0, len = lightarray_id.length; i < len; i++) {
-        if (lightarray_id[i] == lightid)
-        {
-          idfound = true;
-          lightarray_state[i] = true;
-        }
-      }
-      if (!idfound) {
-        lightarray_id.push(lightid);
-        lightarray_state.push(true);
-        lightarray_color.push('defaultcolor');
-      }
-      $gameVariables.SetLightArrayId(lightarray_id);
-      $gameVariables.SetLightArrayState(lightarray_state);
-      $gameVariables.SetLightArrayColor(lightarray_color);
+    const allCommands = {
+      tileblock: 'tileType', regionblock: 'tileType', tilelight: 'tileType', regionlight: 'tileType', tilefire: 'tileType', regionfire: 'tileType',
+      tileglow: 'tileType', regionglow: 'tileType', tint: 'tint', daynight: 'dayNight', flashlight: 'flashLight', setfire: 'setFire', fire: 'fire', light: 'light',
+      script: 'scriptF', reload: 'reload', tintbattle: 'tintbattle'
+    };
+    const result = allCommands[command];
+    if (result) {
+      this[result](command, args);
     }
-    else
-    {
-      let lightarray_id = $gameVariables.GetLightArrayId();
-      let lightarray_state = $gameVariables.GetLightArrayState();
-      let lightarray_color = $gameVariables.GetLightArrayColor();
-
-      let lightid = args.id || 0;
-      let idfound = false;
-      for (let i = 0, len = lightarray_id.length; i < len; i++)
-      {
-        if (lightarray_id[i] == lightid)
-        {
-          idfound = true;
-          lightarray_state[i] = false;
-        }
-      }
-      if (!idfound)
-      {
-        lightarray_id.push(lightid);
-        lightarray_state.push(false);
-        lightarray_color.push('defaultcolor');
-      }
-      $gameVariables.SetLightArrayId(lightarray_id);
-      $gameVariables.SetLightArrayState(lightarray_state);
-      $gameVariables.SetLightArrayColor(lightarray_color);
-    }
-  });
-  PluginManager.registerCommand($$.name, "lightColor", args =>
-  {
-    // *********************** SET COLOR *********************
-    let lightid = args.id || 0;
-    let newcolor;
-    if (args.color && args.color.toLowerCase() === 'defaultcolor') {
-      newcolor = 'defaultcolor';
-    } else {
-      newcolor = $$.validateColor(args.color) || "#ffffff";
-    }
-    let lightarray_id = $gameVariables.GetLightArrayId();
-    let lightarray_state = $gameVariables.GetLightArrayState();
-    let lightarray_color = $gameVariables.GetLightArrayColor();
-    let idfound;
-    for (let i = 0, len = lightarray_id.length; i < len; i++) {
-      if (lightarray_id[i] == lightid)
-      {
-        idfound = true;
-        //lightarray_state[i] = true;
-        lightarray_color[i] = newcolor;
-        break;
-      }
-    }
-    $gameVariables.SetLightArrayId(lightarray_id);
-    $gameVariables.SetLightArrayState(lightarray_state);
-    $gameVariables.SetLightArrayColor(lightarray_color);
-
-  });
-  PluginManager.registerCommand($$.name, "playerLightRadius", args =>
-  {
-    let newradius = +args.radius || 0;
-    let b_arg = ((+args.brightness || 0) * 0.01).clamp(0, 1);
-    let fadeSpeed = +args.fadeSpeed || 0;
-    playercolor = args.color;
-    // light radiusgrow
-    if (fadeSpeed > 0)
-    {
-      if (newradius >= 0)
-      {
-        let lightgrow_value = $gameVariables.GetRadius();
-        let lightgrow_target = newradius;
-        let lightgrow_speed = 0.0;
-        if (player_radius > newradius) lightgrow_speed = player_radius * 0.012 / fadeSpeed; // shirnk
-        else lightgrow_speed = newradius * 0.012 / fadeSpeed; // grow
-        // formerly part of a now-unused if statement
-        //else lightgrow_speed = (Math.abs(newradius - player_radius)) / 500;
-        $gameVariables.SetRadius(lightgrow_value);
-        $gameVariables.SetRadiusTarget(lightgrow_target);
-        $gameVariables.SetRadiusSpeed(lightgrow_speed);
-      }
-      // player color
-      $gameVariables.SetPlayerColor($$.validateColor(playercolor));
-      // player brightness
-      $gameVariables.SetPlayerBrightness(b_arg);
-    }
-    // light radius
-    else
-    {
-      if (newradius >= 0)
-      {
-        $gameVariables.SetRadius(newradius);
-        $gameVariables.SetRadiusTarget(newradius);
-      }
-      $gameVariables.SetPlayerColor($$.validateColor(playercolor));
-      // player brightness
-      $gameVariables.SetPlayerBrightness(b_arg);
-    }
-  });
-
-  PluginManager.registerCommand($$.name, "setFire", args =>
-  {
-    flickerradiusshift = args.radiusShift;
-    flickercolorshift = args.colorShift;
-    $gameVariables.SetFireRadius(flickerradiusshift);
-    $gameVariables.SetFireColorshift(flickercolorshift);
-  });
-
-  PluginManager.registerCommand($$.name, "flashlight", args =>
-  {
-    if (args.enabled === "true")
-    {
-
-      let flashlightlength = +args.beamLength || $gameVariables.GetFlashlightLength() || 8;
-      let flashlightwidth = +args.beamWidth || $gameVariables.GetFlashlightWidth() || 12;
-      let flashlightdensity = +args.density || $gameVariables.GetFlashlightDensity() || 3;
-      let playercolor = args.color !== "" ? args.color : $gameVariables.GetPlayerColor();
-      playercolor = $$.validateColor(playercolor);
-      if ($gameVariables.GetRadius() < 1)
-      {
-        $gameVariables.SetRadius(1);
-        $gameVariables.SetRadiusTarget(1);
-      }
-      $gameVariables.SetFlashlight(true);
-      $gameVariables.SetPlayerColor(playercolor);
-      $gameVariables.SetFlashlightWidth(flashlightwidth);
-      $gameVariables.SetFlashlightLength(flashlightlength);
-      $gameVariables.SetFlashlightDensity(flashlightdensity);
-    }
-    else $gameVariables.SetFlashlight(false);
-  });
-
-  PluginManager.registerCommand($$.name, "setTimeSpeed", args =>
-  {
-    let daynightspeed = +args.speed || 5000;
-    $gameVariables.SetDaynightSpeed(daynightspeed);
-  });
-
-  PluginManager.registerCommand($$.name, "setTime", args =>
-  {
-    let daynightspeed = $gameVariables.GetDaynightSpeed();
-    let daynighthoursinday = $gameVariables.GetDaynightHoursinDay();   // 24
-    let houradd = 0;
-    let minuteadd = 0;
-    try
-    {
-      let v = $gameVariables._data;
-      houradd = +eval(args.hours) * (args.mode === "subtract" ? -1 : 1) || 0;
-      minuteadd = +eval(args.minutes) * (args.mode === "subtract" ? -1 : 1) || 0;
-    }
-    catch(e)
-    {
-      console.log("Community_Lighting - Invalid plugin command parameters for 'Set Time'");
-      console.log(args.hours);
-      console.log(args.minutes);
-      houradd = 0;
-      minuteadd = 0;
-    }
-    if (args.mode === "add" || args.mode === "subtract")
-    {
-      let daynighttimer = $gameVariables.GetDaynightTimer();     // timer = minutes * speed
-      let daynightcycle = $gameVariables.GetDaynightCycle();     // cycle = hours
-      let daynightminutes = Math.floor(daynighttimer / daynightspeed);
-      daynightminutes = daynightminutes + minuteadd;
-      if (daynightminutes >= 60)
-      {
-        daynightminutes = daynightminutes - 60;
-        daynightcycle++;
-      }
-      else if (daynightminutes <= -60)
-      {
-        daynightminutes = daynightminutes + 60;
-        daynightcycle--;
-        if (daynightcycle < 0) daynightcycle += $gameVariables.GetDaynightHoursinDay()
-      }
-      daynightcycle = daynightcycle + houradd;
-      daynighttimer = daynightminutes * daynightspeed;
-      if (daynightcycle < 0) daynightcycle = 0;
-      if (daynightcycle >= daynighthoursinday) daynightcycle = daynightcycle - daynighthoursinday;
-      $$.saveTime(daynightcycle, daynightminutes);
-      $gameVariables.SetDaynightTimer(daynighttimer);     // timer = minutes * speed
-      $gameVariables.SetDaynightCycle(daynightcycle);     // cycle = hours
-    }
-    else
-    {
-      daynightcycle = houradd;
-      daynightminutes = minuteadd;
-      daynighttimer = daynightminutes * daynightspeed;
-
-      if (daynightcycle < 0) daynightcycle = 0;
-      if (daynightcycle >= daynighthoursinday) daynightcycle = daynighthoursinday - 1;
-      $$.saveTime(daynightcycle, daynightminutes);
-      $gameVariables.SetDaynightTimer(daynighttimer);     // timer = minutes * speed
-      $gameVariables.SetDaynightCycle(daynightcycle);     // cycle = hours
-    }
-  });
-
-  PluginManager.registerCommand($$.name, "setHourColor", args =>
-  {
-    let daynightcolors = $gameVariables.GetDaynightColorArray();
-    let hour = (+args.hour || 0).clamp(0, $gameVariables.GetDaynightHoursinDay() - 1);
-    let hourcolor = $$.validateColor(args.color);
-    daynightcolors[hour].color = hourcolor;
-  });
-
-  PluginManager.registerCommand($$.name, "setHoursInDay", args =>
-  {
-    let daynightcolors = $gameVariables.GetDaynightColorArray();
-    let daynighthoursinday = $gameVariables.GetDaynightHoursinDay();   // 24
-    //let daynightspeed = $gameVariables.GetDaynightSpeed();
-    //let daynighttimer = $gameVariables.GetDaynightTimer();     // timer = minutes * speed
-    //let daynightcycle = $gameVariables.GetDaynightCycle();     // cycle = hours
-    let old_value = daynighthoursinday;
-    daynighthoursinday = +args.hours || 0;
-    if (daynighthoursinday > old_value)
-    {
-      for (let i = old_value; i < daynighthoursinday; i++) daynightcolors.push({ "color": "#ffffff", "isNight": false });
-    }
-    $gameVariables.SetDaynightColorArray(daynightcolors);
-    $gameVariables.SetDaynightHoursinDay(daynighthoursinday);
-  });
-
-  PluginManager.registerCommand($$.name, "showTime", args =>
-  {
-    $gameVariables._clShowTimeWindow = args.enabled === "true";
-    $gameVariables._clShowTimeWindowSeconds = args.showSeconds === "true";
-  });
-  PluginManager.registerCommand($$.name, "setTint", args =>
-  {
-    let color = args.color === "" ? $gameVariables.GetTintByTime() : $$.validateColor(args.color);
-    let speed = +args.fadeSpeed || 0;
-    if ($gameParty.inBattle())
-    {
-      $$._BattleTintFade = $$._BattleTint;
-      $$._BattleTint = color;
-      $$._BattleTintSpeed = speed;
-      $$._BattleTintTimer = 0;
-    }
-    else
-    {
-      $gameVariables.SetTintTarget(color);
-      if (speed > 0) $gameVariables.SetTintSpeed(speed);
-      else $gameVariables.SetTint(color);
-    }
-  });
-
-  PluginManager.registerCommand($$.name, "resetBattleTint", args =>
-  {
-    if ($gameParty.inBattle())
-    {
-      let speed = args.fadeSpeed || 0;
-      $$._BattleTintFade = $$._BattleTint;
-      $$._BattleTint = $$._MapTint;
-      $$._BattleTintSpeed = speed;
-      $$._BattleTintTimer = 0;
-    }
-  });
-
-  PluginManager.registerCommand($$.name, "tileLight", args =>
-  {
-    let tilearray = $gameVariables.GetTileArray();
-    //let tilenumber = Number(eval(args[0])); // eval?  wtf?
-    const tileTypes = ["terrain", "region"];
-    const lightTypes = ["light", "fire", "glow"];
-    let tiletype = lightTypes.indexOf(args.lightType) * 2 + tileTypes.indexOf(args.tileType) + 3;
-    let tilenumber = +args.id || 0;
-    let tile_on = +(args.enabled === "true");
-    let tilecolor = $$.validateColor(args.color, "#ffffff");
-    let tileradius = +args.radius || 0;
-    let tilebrightness = +args.brightness || 0;
-    let tilefound = false;
-    for (let i = 0, len = tilearray.length; i < len; i++)
-    {
-      let tilestr = tilearray[i];
-      let tileargs = tilestr.split(";");
-      if (tileargs[0] == tiletype && tileargs[1] == tilenumber)
-      {
-        tilefound = true;
-        tilearray[i] = tiletype + ";" + tilenumber + ";" + tile_on + ";" + tilecolor + ";" + tileradius + ";" + tilebrightness;
-        break;
-      }
-    }
-    if (!tilefound)
-    {
-      let tiletag = "";
-      tiletag = tiletype + ";" + tilenumber + ";" + tile_on + ";" + tilecolor + ";" + tileradius + ";" + tilebrightness;
-      tilearray.push(tiletag);
-    }
-    $gameVariables.SetTileArray(tilearray);
-    $$.ReloadTagArea();
-  });
-
-  PluginManager.registerCommand($$.name, "tileBlock", args =>
-  {
-    let tilearray = $gameVariables.GetTileArray();
-    //let tilenumber = Number(eval(args[0])); // eval?  wtf?
-    const tileTypes = ["terrain", "region"];
-    let tiletype = tileTypes.indexOf(args.tileType) + 1;
-    let tilenumber = +args.id || 0;
-    let tile_on = +(args.enabled === "true");
-    let tilecolor = $$.validateColor(args.color, "#000000");
-    let shape = +args.shape || 0;
-    let x1 = +args.xOffset || 0;
-    let y1 = +args.yOffset || 0;
-    let x2 = +args.blockWidth || 0;
-    let y2 = +args.blockHeight || 0;
-    let tilefound = false;
-
-    for (let i = 0, len = tilearray.length; i < len; i++)
-    {
-      let tilestr = tilearray[i];
-      let tileargs = tilestr.split(";");
-      if (tileargs[0] == tiletype && tileargs[1] == tilenumber)
-      {
-        tilefound = true;
-        tilearray[i] = tiletype + ";" + tilenumber + ";" + tile_on + ";" + tilecolor + ";" + shape + ";" + x1 + ";" + y1 + ";" + x2 + ";" + y2;
-        break;
-      }
-    }
-    if (!tilefound)
-    {
-      let tiletag = tiletype + ";" + tilenumber + ";" + tile_on + ";" + tilecolor + ";" + shape + ";" + x1 + ";" + y1 + ";" + x2 + ";" + y2;
-      tilearray.push(tiletag);
-    }
-    $gameVariables.SetTileArray(tilearray);
-    $$.ReloadTagArea();
-  });
-
-  /*
-  $$.commandTileType = function(command, args){
-    const cmdArr = ['', 'tileblock', 'regionblock', 'tilelight', 'regionlight', 'tilefire', 'regionfire', 'tileglow', 'regionglow'];
-    tiletype = cmdArr.indexOf(command);
-    if(tiletype > 0) $$.tile(args);
   };
 
-  $$.commandTint = function(command, args){
+  (function () { // don't pollute the namespace.
+    let onoff    = (args) => args.enabled === "true" ? "on" : "off";
+
+    let tileType = (args) => (args.tileType === "terrain" ? "tile" : "region") + (args.lightType ? args.lightType : "block");
+    let tintType = (    ) => $gameParty.inBattle() ? "tintbattle" : "tint";
+
+    let tintMode = (args) => args.color ? "set" : "reset";
+    let mathMode = (args) => args.mode === "set" ? "hour" : args.mode; // set, add, or subtract.
+    let showMode = (args) => args.enabled === "true" ? (args.showSeconds === "true" ? "showseconds" : "show") : "hide";
+    let radMode  = (args) => +args.speed ? "radiusgrow" : "radius";
+
+    let reg = PluginManager.registerCommand.bind(PluginManager, $$.name); // registar bound with first parameter.
+    let f = (cmd, args) => $gameMap._interpreter.communityLighting_Commands(cmd, args.filter(_ => _ !== "")); //command wrapper.
+
+    reg("masterSwitch",       (a)  => f("script",     [onoff(a)]));
+    reg("tileBlock",          (a)  => f(tileType(a),  [a.id,            onoff(a),        a.color,        a.shape,          a.xOffset, a.yOffset, a.blockWidth, a.blockHeight]));
+    reg("tileLight",          (a)  => f(tileType(a),  [a.id,            onoff(a),        a.color,        a.radius,         a.brightness]));
+    reg("setTint",            (a)  => f(tintType(),   [tintMode(a),     a.color,         a.fadeSpeed]));
+    reg("setTimeSpeed",       (a)  => f("dayNight",   ["speed",         a.speed]));
+    reg("setTime",            (a)  => f("dayNight",   [mathMode(a),     a.hours,         a.minutes]));
+    reg("setHoursInDay",      (a)  => f("dayNight",   ["hoursinday",    a.hours]));
+    reg("showTime",           (a)  => f("dayNight",   [showMode(a)]));
+    reg("setHourColor",       (a)  => f("dayNight",   ["color", a.hour, a.color]));
+    reg("flashlight",         (a)  => f("flashLight", [onoff(a),        a.beamLength,    a.beamWidth,    a.color,          a.density]));
+    reg("setFire",            (a)  => f("setFire",    [a.radiusShift,   a.colorShift]));
+    reg("playerLightRadius",  (a)  => f("light",      [radMode(a),      a.radius,        a.color,        "B"+a.brightness, a.fadeSpeed]));
+    reg("activateById",       (a)  => f("light",      [onoff(a),        a.id]));
+    reg("lightColor",         (a)  => f("light",      ["color",         a.id,            a.color]));
+    reg("resetLightSwitches", ( )  => f("light",      ["switch",        "reset"]));
+    reg("resetBattleTint",    (a)  => f("tintbattle", ["reset",         a.fadeSpeed]));
+  })();
+
+  /**
+   *
+   * @param {String} command
+   * @param {String[]} args
+   */
+  Game_Interpreter.prototype.tileType = function (command, args) {
+    const cmdArr = ['', 'tileblock', 'regionblock', 'tilelight', 'regionlight', 'tilefire', 'regionfire', 'tileglow', 'regionglow'];
+    const tiletype = cmdArr.indexOf(command);
+    if (tiletype > 0) {
+      $$.tile(tiletype, args);
+    }
+  };
+
+  /**
+   *
+   * @param {String} command
+   * @param {String[]} args
+   */
+  Game_Interpreter.prototype.tint = function (command, args) {
     $$.tint(args);
   };
 
-  $$.dayNight = function(command, args){
+  /**
+   *
+   * @param {String} command
+   * @param {String[]} args
+   */
+  Game_Interpreter.prototype.dayNight = function (command, args) {
     $$.DayNight(args);
   };
 
+  /**
+     *
+     * @param {String} command
+     * @param {String[]} args
+     */
   Game_Interpreter.prototype.flashLight = function (command, args) {
     $$.flashlight(args);
   };
 
-  Game_Interpreter.prototype.scriptF = function(command, args){
-    if (args[0].toLowerCase() == 'deactivate') {
-      $gameVariables.SetScriptActive(true);
-    } else {
-      $gameVariables.SetScriptActive(false);
-    }
+  /**
+   *
+   * @param {String} command
+   * @param {String[]} args
+   */
+  Game_Interpreter.prototype.setFire = function (command, args) {
+    flickerradiusshift = args[0];
+    flickercolorshift = args[1];
+    $gameVariables.SetFireRadius(flickerradiusshift);
+    $gameVariables.SetFireColorshift(flickercolorshift);
   };
 
+  /**
+   *
+   * @param {String} command
+   * @param {String[]} args
+   */
   Game_Interpreter.prototype.fire = function (command, args) {
-    if (args[0].toLowerCase() == 'deactivate') {
+    if (args.contains("radius") || args.contains("radiusgrow")) $gameVariables.SetFire(true);
+    if (args[0] === "deactivate" || (args[0].toLowerCase() === "off" && args.length == 1)) {
       $gameVariables.SetScriptActive(false);
     } else {
       $gameVariables.SetScriptActive(true);
@@ -1571,16 +1368,29 @@ Imported[Community.Lighting.name] = true;
     $$.fireLight(args);
   };
 
+  /**
+   *
+   * @param {String} command
+   * @param {String[]} args
+   */
   Game_Interpreter.prototype.light = function (command, args) {
-    $gameVariables.SetFire(false);
-    if (args[0].toLowerCase() == 'deactivate') {
+    if (args.contains("radius") || args.contains("radiusgrow")) $gameVariables.SetFire(false);
+    if (args[0].toLowerCase() === "deactivate" || (args[0].toLowerCase() === "off" && args.length == 1)) {
       $gameVariables.SetScriptActive(false);
     } else {
       $gameVariables.SetScriptActive(true);
     }
     $$.fireLight(args);
   };
-*/
+
+  Game_Interpreter.prototype.scriptF = function (command, args) {
+    if (args[0] === "deactivate" || (args[0].toLowerCase() === "off" && args.length == 1)) {
+      $gameVariables.SetScriptActive(false);
+    } else if (args[0] === "activate" || (args[0].toLowerCase() === "on" && args.length == 1)) {
+      $gameVariables.SetScriptActive(true);
+    }
+  };
+
   /**
    *
    * @param {String} command
@@ -1591,6 +1401,40 @@ Imported[Community.Lighting.name] = true;
       $$.ReloadMapEvents();
     }
   };
+
+  Game_Interpreter.prototype.tintbattle = function (command, args) {
+    if ($gameParty.inBattle()) {
+      let cmd = args[0].trim().toLowerCase();
+      if (cmd === "set" || cmd === 'fade') {
+        $gameTemp._BattleTintFade = $gameTemp._BattleTint;
+        $gameTemp._BattleTintTimer = 0;
+        $gameTemp._BattleTint = this.determineBattleTint(args[1]);
+        $gameTemp._BattleTintSpeed = +args[2] || 0;
+      }
+      else if (cmd === 'reset' || cmd === 'daylight') {
+        $gameTemp._BattleTintTimer = 0;
+        $gameTemp._BattleTint = $gameTemp._MapTint;
+        $gameTemp._BattleTintSpeed = +args[1] || 0;
+      }
+    }
+  };
+
+  Game_Interpreter.prototype.determineBattleTint = function (tintColor) {
+    if (!tintColor || tintColor.length < 7) {
+      return '#666666' // Not an hex color string
+    }
+    var redhex = tintColor.substring(1, 3);
+    var greenhex = tintColor.substring(3, 5);
+    var bluehex = tintColor.substring(5);
+    var red = parseInt(redhex, 16);
+    var green = parseInt(greenhex, 16);
+    var blue = parseInt(bluehex, 16);
+    var color = red + green + blue;
+    if (color < 300 && red < 100 && green < 100 && blue < 100) { // Check for NaN values or too dark colors
+      return '#666666' // The player have to see something
+    }
+    return tintColor;
+  }
 
   Spriteset_Map.prototype.createLightmask = function () {
     this._lightmask = new Lightmask();
@@ -3158,6 +3002,436 @@ Imported[Community.Lighting.name] = true;
     }
     $gameVariables.SetLightTags(tile_lights);
     $gameVariables.SetBlockTags(tile_blocks);
+  };
+
+  /**
+   *
+   * @param {String[]} args
+   */
+  $$.flashlight = function (args) {
+    if (args[0] == 'on') {
+
+      let flashlightlength = $gameVariables.GetFlashlightLength();
+      let flashlightwidth = $gameVariables.GetFlashlightWidth();
+      let flashlightdensity = $gameVariables.GetFlashlightDensity();
+      let playercolor = $gameVariables.GetPlayerColor();
+
+      if (args.length >= 1) {
+        flashlightlength = args[1];
+      }
+      if (args.length >= 2) {
+        flashlightwidth = args[2];
+      }
+      if (args.length >= 3) {
+        playercolor = args[3];
+        let isValidPlayerColor = isValidColorRegex.test(playercolor.trim());
+        if (!isValidPlayerColor) {
+          playercolor = '#FFFFFF'
+        }
+      }
+      if (args.length >= 4) {
+        flashlightdensity = args[4]; // density
+      }
+
+      if (flashlightlength == 0 || isNaN(flashlightlength)) {
+        flashlightlength = 8
+      }
+      if (flashlightwidth == 0 || isNaN(flashlightwidth)) {
+        flashlightwidth = 12
+      }
+      if (flashlightdensity == 0 || isNaN(flashlightdensity)) {
+        flashlightdensity = 3
+      }
+
+      $gameVariables.SetFlashlight(true);
+      $gameVariables.SetPlayerColor(playercolor);
+      $gameVariables.SetFlashlightWidth(flashlightwidth);
+      $gameVariables.SetFlashlightLength(flashlightlength);
+      $gameVariables.SetFlashlightDensity(flashlightdensity);
+
+      if ($gameVariables.GetRadius() < 1) {
+        $gameVariables.SetRadius(1);
+        $gameVariables.SetRadiusTarget(1);
+      }
+    }
+    if (args[0] === 'off') {
+      $gameVariables.SetFlashlight(false);
+    }
+  };
+
+  /**
+   *
+   * @param {String[]} args
+   */
+  $$.fireLight = function (args) {
+    //******************* Light radius 100 #FFFFFF ************************
+    if (args[0] == 'radius') {
+      let newradius = Number(args[1]);
+      if (newradius >= 0) {
+        $gameVariables.SetRadius(newradius);
+        $gameVariables.SetRadiusTarget(newradius);
+      }
+      if (args.length > 2) {
+        playercolor = args[2];
+        let isValidPlayerColor = isValidColorRegex.test(playercolor.trim());
+
+        if (!isValidPlayerColor) {
+          playercolor = '#FFFFFF';
+        }
+        $gameVariables.SetPlayerColor(playercolor);
+      }
+      // player brightness
+      if (args.length > 3) {
+        let brightness = 0.0;
+        let b_arg = args[3];
+        if (typeof b_arg != 'undefined') {
+          let key = b_arg.substring(0, 1);
+          if (key == 'b' || key == 'B') {
+            brightness = ((+b_arg.substring(1) || 0) / 100).clamp(0, 1);
+            $gameVariables.SetPlayerBrightness(brightness);
+          }
+        }
+      }
+    }
+
+    //******************* Light radiusgrow 100 #FFFFFF Brightness Frames ************************
+    if (args[0] === 'radiusgrow') {
+      let newradius = Number(args[1]);
+      if (newradius >= 0) {
+
+        let lightgrow_value = $gameVariables.GetRadius();
+        let lightgrow_target = newradius;
+        let lightgrow_speed = 0.0;
+        if (args.length >= 4) {
+		  lightgrow_speed = (Math.abs(newradius - player_radius)) / Math.max(1, Number(args[4]));
+        } else {
+          lightgrow_speed = (Math.abs(newradius - player_radius)) / 500;
+        }
+        $gameVariables.SetRadius(lightgrow_value);
+        $gameVariables.SetRadiusTarget(lightgrow_target);
+        $gameVariables.SetRadiusSpeed(lightgrow_speed);
+      }
+      // player color
+      if (args.length > 2) {
+        playercolor = args[2];
+        let isValidPlayerColor = isValidColorRegex.test(playercolor.trim());
+        if (!isValidPlayerColor) {
+          playercolor = '#FFFFFF'
+        }
+        $gameVariables.SetPlayerColor(playercolor);
+      }
+      // player brightness
+      if (args.length > 3) {
+        let brightness = 0.0;
+        let b_arg = args[3];
+        if (typeof b_arg != 'undefined') {
+          let key = b_arg.substring(0, 1);
+          if (key == 'b' || key == 'B') {
+            brightness = ((+b_arg.substring(1) || 0) / 100).clamp(0, 1);
+            $gameVariables.SetPlayerBrightness(brightness);
+          }
+        }
+      }
+
+    }
+
+    // *********************** TURN SPECIFIC LIGHT ON *********************
+    if (args[0] === 'on') {
+
+      let lightarray_id = $gameVariables.GetLightArrayId();
+      let lightarray_state = $gameVariables.GetLightArrayState();
+      let lightarray_color = $gameVariables.GetLightArrayColor();
+
+      let lightid = Number(args[1]);
+      let idfound = false;
+      for (let i = 0, len = lightarray_id.length; i < len; i++) {
+        if (lightarray_id[i] == lightid) {
+          idfound = true;
+          lightarray_state[i] = true;
+        }
+      }
+      if (idfound === false) {
+        lightarray_id.push(lightid);
+        lightarray_state.push(true);
+        lightarray_color.push('defaultcolor');
+      }
+      $gameVariables.SetLightArrayId(lightarray_id);
+      $gameVariables.SetLightArrayState(lightarray_state);
+      $gameVariables.SetLightArrayColor(lightarray_color);
+    }
+
+    // *********************** TURN SPECIFIC LIGHT OFF *********************
+    if (args[0] === 'off') {
+
+      let lightarray_id = $gameVariables.GetLightArrayId();
+      let lightarray_state = $gameVariables.GetLightArrayState();
+      let lightarray_color = $gameVariables.GetLightArrayColor();
+
+      let lightid = Number(args[1]);
+      let idfound = false;
+      for (let i = 0, len = lightarray_id.length; i < len; i++) {
+        if (lightarray_id[i] == lightid) {
+          idfound = true;
+          lightarray_state[i] = false;
+        }
+      }
+      if (idfound === false) {
+        lightarray_id.push(lightid);
+        lightarray_state.push(false);
+        lightarray_color.push('defaultcolor');
+      }
+      $gameVariables.SetLightArrayId(lightarray_id);
+      $gameVariables.SetLightArrayState(lightarray_state);
+      $gameVariables.SetLightArrayColor(lightarray_color);
+    }
+
+    // *********************** SET COLOR *********************
+
+    if (args[0] === 'color') {
+
+      let newcolor = args[2];
+      if (newcolor && newcolor.toLowerCase() === 'defaultcolor') {
+        newcolor = 'defaultcolor';
+      }
+
+      let lightarray_id = $gameVariables.GetLightArrayId();
+      let lightarray_state = $gameVariables.GetLightArrayState();
+      let lightarray_color = $gameVariables.GetLightArrayColor();
+
+      let lightid = Number(args[1]);
+      idfound = false;
+      for (let i = 0, len = lightarray_id.length; i < len; i++) {
+        if (lightarray_id[i] == lightid) {
+          idfound = true;
+          lightarray_color[i] = newcolor;
+        }
+      }
+      if (idfound === false) {
+        lightarray_id.push(lightid);
+        lightarray_state.push(false);
+        lightarray_color.push(newcolor);
+      }
+      $gameVariables.SetLightArrayId(lightarray_id);
+      $gameVariables.SetLightArrayState(lightarray_state);
+      $gameVariables.SetLightArrayColor(lightarray_color);
+    }
+
+
+    // **************************** RESET ALL SWITCHES ***********************
+    if (args[0] === 'switch' && args[1] === 'reset') {
+      $gameVariables.SetLightArrayId([]);
+      $gameVariables.SetLightArrayState([]);
+      $gameVariables.SetLightArrayColor([]);
+    }
+  };
+
+  /**
+   * @param {String} tileType
+   * @param {String[]} args
+   */
+  $$.tile = function (tiletype, args) {
+    let tilearray = $gameVariables.GetTileArray();
+    let tilenumber = Number(eval(args[0]));
+
+    let tile_on = String(args[1]).toLowerCase() === "on" ? 1 : 0;
+
+    let tilecolor = args[2];
+    let isValidColor1 = isValidColorRegex.test(tilecolor.trim());
+    if (!isValidColor1) {
+      if (tiletype === 1 || tiletype === 2) tilecolor = "#000000";
+      else tilecolor = "#ffffff";
+    }
+
+    let tileradius = 100;
+    let tilebrightness = $$.defaultBrightness || 0;
+    let shape = 0;
+    let x1 = 0;
+    let y1 = 0;
+    let x2 = 0;
+    let y2 = 0;
+    if (tiletype === 1 || tiletype === 2) {
+      if (args.length > 3) {
+        shape = args[3];
+      }
+      if (args.length > 4) {
+        x1 = args[4];
+      }
+      if (args.length > 5) {
+        y1 = args[5];
+      }
+      if (args.length > 6) {
+        x2 = args[6];
+      }
+      if (args.length > 7) {
+        y2 = args[7];
+      }
+    } else {
+      if (args.length > 3) {
+        tileradius = args[3];
+      }
+      if (args.length > 4) {
+        tilebrightness = args[4];
+      }
+    }
+
+    let tilefound = false;
+
+    for (let i = 0, len = tilearray.length; i < len; i++) {
+      let tilestr = tilearray[i];
+      let tileargs = tilestr.split(";");
+      if (tileargs[0] == tiletype && tileargs[1] == tilenumber) {
+        tilefound = true;
+        if (tiletype === 1 || tiletype === 2) {
+          tilearray[i] = tiletype + ";" + tilenumber + ";" + tile_on + ";" + tilecolor + ";" + shape + ";" + x1 + ";" + y1 + ";" + x2 + ";" + y2;
+        } else {
+          tilearray[i] = tiletype + ";" + tilenumber + ";" + tile_on + ";" + tilecolor + ";" + tileradius + ";" + tilebrightness;
+        }
+      }
+    }
+
+    if (tilefound === false) {
+      let tiletag = "";
+      if (tiletype === 1 || tiletype === 2) {
+        tiletag = tiletype + ";" + tilenumber + ";" + tile_on + ";" + tilecolor + ";" + shape + ";" + x1 + ";" + y1 + ";" + x2 + ";" + y2;
+      } else {
+        tiletag = tiletype + ";" + tilenumber + ";" + tile_on + ";" + tilecolor + ";" + tileradius + ";" + tilebrightness;
+      }
+      tilearray.push(tiletag);
+    }
+    $gameVariables.SetTileArray(tilearray);
+    $$.ReloadTagArea();
+  };
+
+  /**
+   *
+   * @param {String[]} args
+   */
+  $$.tint = function (args) {
+    let cmd = args[0].trim().toLowerCase();
+    if (cmd === 'set' || cmd == 'fade') {
+      let currentColor = args[1];
+      let speed = +args[2] || 0;
+      if (speed == 0) $gameVariables.SetTint(args[1]);
+      $gameVariables.SetTintTarget(currentColor);
+      $gameVariables.SetTintSpeed(speed);
+    }
+    else if (cmd === "reset" || cmd === "daylight") {
+      let currentColor = $gameVariables.GetTintByTime();
+      let speed = +args[1] || 0;
+      if (speed == 0) $gameVariables.SetTint(currentColor);
+      $gameVariables.SetTintTarget(currentColor);
+      $gameVariables.SetTintSpeed(speed);
+    }
+  };
+
+  /**
+   *
+   * @param {String[]} args
+   */
+  $$.DayNight = function (args) {
+    let daynightspeed = $gameVariables.GetDaynightSpeed();
+    let daynighttimer = $gameVariables.GetDaynightTimer();     // timer = minutes * speed
+    let daynightcycle = $gameVariables.GetDaynightCycle();     // cycle = hours
+    let daynighthoursinday = $gameVariables.GetDaynightHoursinDay();   // 24
+    let daynightcolors = $gameVariables.GetDaynightColorArray();
+
+    if (args[0] === 'speed') {
+      daynightspeed = +args[1] || 5000;
+      $gameVariables.SetDaynightSpeed(daynightspeed);
+    }
+
+    function addTime(houradd, minuteadd) {
+      let daynightminutes = Math.floor(daynighttimer / daynightspeed);
+      daynightminutes = daynightminutes + minuteadd + 60*(daynightcycle + houradd);
+      daynightcycle = Math.trunc(daynightminutes/60)%daynighthoursinday;
+      daynightminutes = daynightminutes%60;
+      if (daynightminutes < 0) { daynightminutes += 60; daynightcycle--; };
+      if (daynightcycle < 0) { daynightcycle += daynighthoursinday; };
+
+
+      daynighttimer = daynightminutes * daynightspeed;
+
+      $$.saveTime(daynightcycle, daynightminutes);
+
+      $gameVariables.SetDaynightTimer(daynighttimer);     // timer = minutes * speed
+      $gameVariables.SetDaynightCycle(daynightcycle);     // cycle = hours
+    }
+
+    if (args[0] === 'add') {
+      addTime(+args[1], args.length > 2 ? +args[2] : 0);
+    }
+
+    if (args[0] === 'subtract') {
+      addTime(+args[1]*-1, args.length > 2 ? +args[2]*-1 : 0);
+    }
+
+    if (args[0] === 'hour') {
+      daynightcycle = Number(args[1]);
+      if (args.length > 2) {
+        daynightminutes = Number(args[2]);
+      } else {
+        daynightminutes = 0;
+      }
+      daynighttimer = daynightminutes * daynightspeed;
+
+      if (daynightcycle < 0) daynightcycle = 0;
+      if (daynightcycle >= daynighthoursinday) daynightcycle = daynighthoursinday - 1;
+      $$.saveTime(daynightcycle, daynightminutes);
+
+      $gameVariables.SetDaynightTimer(daynighttimer);     // timer = minutes * speed
+      $gameVariables.SetDaynightCycle(daynightcycle);     // cycle = hours
+
+    }
+
+    if (args[0] === 'hoursinday') {
+
+      let old_value = daynighthoursinday;
+      daynighthoursinday = Number(args[1]);
+      if (daynighthoursinday < 0) {
+        daynighthoursinday = 0;
+      }
+      if (daynighthoursinday > old_value) {
+        for (let i = old_value; i < daynighthoursinday; i++) {
+          daynightcolors.push({ "color": "#ffffff", "isNight": false });
+        }
+      }
+      $gameVariables.SetDaynightColorArray(daynightcolors);
+      $gameVariables.SetDaynightHoursinDay(daynighthoursinday);
+    }
+
+    if (args[0] === 'show') {
+      $gameVariables._clShowTimeWindow = true;
+      $gameVariables._clShowTimeWindowSeconds = false;
+    }
+
+    if (args[0] === 'showseconds') {
+      $gameVariables._clShowTimeWindow = true;
+      $gameVariables._clShowTimeWindowSeconds = true;
+    }
+
+    if (args[0] === 'hide') {
+      $gameVariables._clShowTimeWindow = false;
+      $gameVariables._clShowTimeWindowSeconds = false;
+    }
+
+    if (args[0] === 'color') {
+
+      let hour = (+args[1] || 0).clamp(0, daynighthoursinday - 1);
+      let hourcolor = args[2];
+      let isValidColor = isValidColorRegex.test(hourcolor.trim());
+      if (isValidColor) {
+        daynightcolors[hour].color = hourcolor;
+      }
+      $gameVariables.SetDaynightColorArray(daynightcolors);
+    }
+  };
+
+  let _Tilemap_drawShadow = Tilemap.prototype._drawShadow;
+  Tilemap.prototype._drawShadow = function (bitmap, shadowBits, dx, dy) {
+    if (!hideAutoShadow) {
+      _Tilemap_drawShadow.call(this, bitmap, shadowBits, dx, dy);
+    }
+    // Else, show no shadow
   };
 
   let _Tilemap_addShadow = Tilemap.prototype._addShadow; // API change in RMMZ
