@@ -4,6 +4,25 @@
 /*=============================================================================
 Forked from Terrax Lighting
 =============================================================================*/
+
+if (typeof require !== "undefined" && typeof module != "undefined") {
+  var {
+    Game_Player,
+    Game_Interpreter,
+    Game_Event,
+    Game_Variables,
+    Game_Map,
+  } = require("../rmmz_objects");
+  var {
+    PluginManager,
+    BattleManager,
+    ConfigManager,
+  } = require("../rmmz_managers");
+  var { Window_Selectable, Window_Options } = require("../rmmz_windows");
+  var { Spriteset_Map, Spriteset_Battle } = require("../rmmz_sprites");
+  var { Scene_Map } = require("../rmmz_scenes");
+  var { Bitmap, Tilemap} = require("../rmmz_core");
+}
 var Community = Community || {};
 Community.Lighting = Community.Lighting || {};
 Community.Lighting.name = "Community_Lighting_MZ";
@@ -826,27 +845,12 @@ Imported[Community.Lighting.name] = true;
 */
 
 (function ($$) {
-  $$.parseDayNightParams = function(dayNight, nightHours) {
-    let result = [];
-    try {
-      dayNight = JSON.parse(dayNight);
-      nightHours = nightHours.split(",").map(x => x = +x);
-      result = [];
-      for (let i = 0; i < dayNight.length; i++)
-        result[i] = { "color": dayNight[i], "isNight": nightHours.contains(i) };
-    }
-    catch (e) {
-      console.log("CommunitiyLighting: Night Hours and/or DayNight Colors contain invalid JSON data - cannot parse.");
-      result = new Array(24).fill(undefined).map(x => x = { "color": "#000000", "isNight": false });
-    }
-    return result;
-  };
-
   let Community_tint_speed = 60;
   let Community_tint_target = '#000000';
   let colorcycle_count = [1000];
   let colorcycle_timer = [1000];
   let eventObjId = [];
+  let event_note = [];
   let event_id = [];
   let event_x = [];
   let event_y = [];
@@ -902,7 +906,7 @@ Imported[Community.Lighting.name] = true;
   }
 
   let options_lighting_on = true;
-  let maxX = Number(parameters['Screensize X']) || 816;
+  let maxX = (Number(parameters['Screensize X']) || 816) + 2 * lightMaskPadding;
   let maxY = Number(parameters['Screensize Y']) || 624;
   let tint_oldseconds = 0;
   let tint_timer = 0;
@@ -924,7 +928,7 @@ Imported[Community.Lighting.name] = true;
   $$.getFirstComment = function () {
     let result = null;
     let page = this.page();
-    if (page) {
+    if (page && page.list[0] != null) {
       if (page.list[0].code === 108) {
         result = page.list[0].parameters[0] || "";
         let line = 1;
@@ -1576,13 +1580,18 @@ Imported[Community.Lighting.name] = true;
     }
     $$.fireLight(args);
   };
-
+*/
+  /**
+   *
+   * @param {String} command
+   * @param {String[]} args
+   */
   Game_Interpreter.prototype.reload = function (command, args) {
-    if (args[0].toLowerCase() == 'events') {
+    if (args[0] === "events") {
       $$.ReloadMapEvents();
     }
   };
-*/
+
   Spriteset_Map.prototype.createLightmask = function () {
     this._lightmask = new Lightmask();
     this.addChild(this._lightmask);
@@ -1616,6 +1625,13 @@ Imported[Community.Lighting.name] = true;
     let canvas = this._maskBitmap.canvas;             // a bit larger then setting to take care of screenshakes
   };
 
+  let _Game_Map_prototype_setupEvents = Game_Map.prototype.setupEvents;
+
+  Game_Map.prototype.setupEvents = function () {
+    _Game_Map_prototype_setupEvents.call(this);
+    $$.ReloadMapEvents();
+  }
+
   /**
    * @method _updateAllSprites
    * @private
@@ -1635,13 +1651,7 @@ Imported[Community.Lighting.name] = true;
         colorcycle_timer[i] = 0;
       }
 
-      $$.ReloadMapEvents();  // reload map events on map chance
-
-      if (reset_each_map) {
-        $gameVariables.SetLightArrayId([]);
-        $gameVariables.SetLightArrayState([]);
-        $gameVariables.SetLightArrayColor([]);
-      }
+      $$.ReloadMapEvents();  // reload map events on map change
     }
 
     // reload mapevents if event_data has changed (deleted or spawned events/saves)
@@ -2672,7 +2682,7 @@ Imported[Community.Lighting.name] = true;
       if ($gameVariables.GetScriptActive() === true) {                                        // If the script is active...
         if (options_lighting_on && lightInBattle) {                                           // If configuration autorise using lighting effects
           if (eventObjId.length > 0) {                                                        // If there is lightsource on this map...
-            $$._MapTint = $$.daynightset ? $gameVariables.GetTintByTime() : $gameVariables.GetTint();  // ... Use the tint of the map.
+            $gameTemp._MapTint = $gameVariables.GetTint();                                    // ... Use the tint of the map.
           }
         }
         // Add daylight tint?
@@ -2941,19 +2951,103 @@ Imported[Community.Lighting.name] = true;
     }
     // *********************************** DAY NIGHT Setting **************************
     $$.daynightset = false;
-    let mapnote = $$.getCLTag($dataMap.note);
+    let mapNote = $dataMap.note ? $dataMap.note.split("\n") : [];
+    mapNote.forEach((note) => {
+      /**
+       * @type {String}
+       */
+      let mapnote = $$.getCLTag(note.trim());
       if (mapnote) {
-      mapnote = mapnote.toLowerCase();
-      if (mapnote.match(/^daynight/i)) {
+        mapnote = mapnote.toLowerCase().trim();
+        if ((/^daynight/i).test(mapnote)) {
           $$.daynightset = true;
-        let dnspeed = mapnote.match(/\d+/);
+          let dnspeed = note.match(/\d+/);
           if (dnspeed) {
             daynightspeed = +dnspeed[0];
             if (daynightspeed < 1) daynightspeed = 5000;
             $gameVariables.SetDaynightSpeed(daynightspeed);
           }
         }
+        else if ((/^RegionFire/i).test(mapnote)) {
+          let data = mapnote.split(/\s+/);
+          data.splice(0, 1);
+          data.map(x => x.trim());
+          $gameMap._interpreter.tileType("regionfire", data);
         }
+        else if ((/^RegionGlow/i).test(mapnote)) {
+          let data = mapnote.split(/\s+/);
+          data.splice(0, 1);
+          data.map(x => x.trim());
+          $gameMap._interpreter.tileType("regionglow", data);
+        }
+        else if ((/^RegionLight/i).test(mapnote)) {
+          let data = mapnote.split(/\s+/);
+          data.splice(0, 1);
+          data.map(x => x.trim());
+          $gameMap._interpreter.tileType("regionlight", data);
+        }
+        else if ((/^RegionGlow/i).test(mapnote)) {
+          let data = mapnote.split(/\s+/);
+          data.splice(0, 1);
+          data.map(x => x.trim());
+          $gameMap._interpreter.tileType("regionglow", data);
+        }
+        else if ((/^RegionBlock/i).test(mapnote)) {
+          let data = mapnote.split(/\s+/);
+          data.splice(0, 1);
+          data.map(x => x.trim());
+          $gameMap._interpreter.tileType("regionblock", data);
+        }
+        else if ((/^tint/i).test(mapnote)) {
+
+          let data = mapnote.split(/\s+/);
+          data.splice(0, 1);
+          data.map(x => x.trim());
+          if (typeof $$.mapBrightness == "undefined") {
+            $$.tint(data);
+          }
+          else {
+            let color = data[1];
+            let red = hexToRgb(color).r;
+            let green = hexToRgb(color).g;
+            let blue = hexToRgb(color).b;
+            let alpha = hexToRgb(color).a;
+            if (alpha == 255) {
+              alpha = $$.mapBrightness;
+            }
+            data[1] = rgba2hex(red, green, blue, alpha);
+            $$.tint(data);
+          }
+        }
+        else if ((/^defaultBrightness/i).test(mapnote)) {
+          let brightness = note.match(/\d+/);
+          if (brightness) {
+            $$.defaultBrightness = Math.max(0, Math.min(Number(brightness[0], 100))) / 100;
+          }
+        }
+
+        else if ((/^mapBrightness/i).test(mapnote)) {
+          let brightness = note.match(/\d+/);
+
+          if (brightness) {
+            let color = $gameVariables.GetTint();
+            if (color == "#000000" || color == "#00000000") {
+              color = "#FFFFFF";
+            }
+            var red = hexToRgb(color).r;
+            var blue = hexToRgb(color).b;
+            var green = hexToRgb(color).g;
+
+
+            var value = Math.max(0, Math.min(Number(brightness[0], 100)));
+            var alphaNum = Math.floor(value * 2.55);
+            var trueColor = rgba2hex(red, green, blue, alphaNum);
+            $$.tint(["set", trueColor]);
+            $$.mapBrightness = alphaNum;
+          }
+        }
+      }
+    })
   };
 
 
@@ -2970,44 +3064,44 @@ Imported[Community.Lighting.name] = true;
 
       let tilestr = tilearray[i];
       let tileargs = tilestr.split(";");
-      let tile_type = tileargs[0];
-      let tile_number = tileargs[1];
-      let tile_on = tileargs[2];
+      let tile_type = Number(tileargs[0]);
+      let tile_number = Number(tileargs[1]);
+      let tile_on = Number(tileargs[2]);
       let tile_color = tileargs[3];
       let tile_radius = 0;
-      let brightness = 0.0;
+      let brightness = $$.defaultBrightness || 0;
       let shape = 0;
       let xo1 = 0.0;
       let yo1 = 0.0;
       let xo2 = 0.0;
       let yo2 = 0.0;
 
-      if (tile_type == 1 || tile_type == 2) {
+      if (tile_type === 1 || tile_type === 2) {
 
         let b_arg = tileargs[4];
-        if (typeof b_arg != 'undefined') {
-          shape = b_arg;
+        if (typeof b_arg !== 'undefined') {
+          shape = Number(b_arg);
         }
         b_arg = tileargs[5];
-        if (typeof b_arg != 'undefined') {
-          xo1 = b_arg;
+        if (typeof b_arg !== 'undefined') {
+          xo1 = Number(b_arg);
         }
         b_arg = tileargs[6];
-        if (typeof b_arg != 'undefined') {
-          yo1 = b_arg;
+        if (typeof b_arg !== 'undefined') {
+          yo1 = Number(b_arg);
         }
         b_arg = tileargs[7];
-        if (typeof b_arg != 'undefined') {
-          xo2 = b_arg;
+        if (typeof b_arg !== 'undefined') {
+          xo2 = Number(b_arg);
         }
         b_arg = tileargs[8];
-        if (typeof b_arg != 'undefined') {
-          yo2 = b_arg;
+        if (typeof b_arg !== 'undefined') {
+          yo2 = Number(b_arg);
         }
 
 
       } else {
-        tile_radius = tileargs[4];
+        tile_radius = Number(tileargs[4]);
         let b_arg = tileargs[5];
         if (typeof b_arg != 'undefined') {
           let key = b_arg.substring(0, 1);
@@ -3024,13 +3118,14 @@ Imported[Community.Lighting.name] = true;
           for (let y = 0, mapHeight = $dataMap.height; y < mapHeight; y++) {
             for (let x = 0, mapWidth = $dataMap.width; x < mapWidth; x++) {
               let tag = 0;
-              if (tile_type == 3 || tile_type == 5 || tile_type == 7) { // tile light
+              if (tile_type === 3 || tile_type === 5 || tile_type === 7) { // tile light
                 tag = $gameMap.terrainTag(x, y);
               }
-              if (tile_type == 4 || tile_type == 6 || tile_type == 8) { // region light
-                tag = $dataMap.data[(5 * $dataMap.height + y) * $dataMap.width + x];
+              if (tile_type === 4 || tile_type === 6 || tile_type === 8) { // region light
+                //$dataMap.data[(5 * $dataMap.height + y) * $dataMap.width + x]
+                tag = $gameMap.regionId(x, y); //Technically the same
               }
-              if (tag == tile_number) {
+              if (tag === tile_number) {
                 let tilecode = x + ";" + y + ";" + tile_type + ";" + tile_radius + ";" + tile_color + ";" + brightness;
                 tile_lights.push(tilecode);
               }
@@ -3044,13 +3139,14 @@ Imported[Community.Lighting.name] = true;
           for (let y = 0, mapHeight = $dataMap.height; y < mapHeight; y++) {
             for (let x = 0, mapWidth = $dataMap.width; x < mapWidth; x++) {
               let tag = 0;
-              if (tile_type == 1) { // tile block
+              if (tile_type === 1) { // tile block
                 tag = $gameMap.terrainTag(x, y);
               }
-              if (tile_type == 2) { // region block
-                tag = $dataMap.data[(5 * $dataMap.height + y) * $dataMap.width + x];
+              if (tile_type === 2) { // region block
+                //$dataMap.data[(5 * $dataMap.height + y) * $dataMap.width + x]
+                tag = $gameMap.regionId(x, y); //Technically the same
               }
-              if (tag == tile_number) {
+              if (tag === tile_number) {
                 let tilecode = x + ";" + y + ";" + shape + ";" + xo1 + ";" + yo1 + ";" + xo2 + ";" + yo2 + ";" + tile_color;
                 tile_blocks.push(tilecode);
               }
@@ -3316,11 +3412,14 @@ function Window_TimeOfDay() {
 };
 Window_TimeOfDay.prototype = Object.create(Window_Selectable.prototype);
 Window_TimeOfDay.prototype.constructor = Window_TimeOfDay;
-Window_TimeOfDay.prototype.initialize = function (rect)
-{
-    Window_Selectable.prototype.initialize.call(this, rect);
-  this._baseX = rect.x;
-  this._baseY = rect.y;
+Window_TimeOfDay.prototype.initialize = function () {
+  const ww = 150;
+  const wh = SceneManager._scene.calcWindowHeight(1, true);
+  const wx = Graphics.boxWidth - ww - (ConfigManager.touchUI ? 30 : 0);
+  const wy = 0;
+  Window_Selectable.prototype.initialize.call(this, new Rectangle(wx, wy, ww, wh));
+  this._baseX = wx
+  this._baseY = wy;
   this.setBackgroundType(0);
   this.visible = $gameVariables._clShowTimeWindow;
 };
@@ -3334,7 +3433,6 @@ Window_TimeOfDay.prototype.update = function () {
     this.drawTextEx(time, rect.x + rect.width - size.width, rect.y, size.width);
     this.x = this._baseX - (ConfigManager.touchUI ? 30 : 0);
   }
-  Window_Selectable.prototype.update.call(this);
 };
 Community.Lighting.Scene_Map_createAllWindows = Scene_Map.prototype.createAllWindows;
 Scene_Map.prototype.createAllWindows = function () {
@@ -3342,18 +3440,19 @@ Scene_Map.prototype.createAllWindows = function () {
   this.createTimeWindow();
 };
 Scene_Map.prototype.createTimeWindow = function () {
-  this._timeWindow = new Window_TimeOfDay(this.timeWindowRect());
+  this._timeWindow = new Window_TimeOfDay();
   this.addWindow(this._timeWindow);
-};
-Scene_Map.prototype.timeWindowRect = function() {
-    const ww = 150;
-    const wh = this.calcWindowHeight(1, true);
-    const wx = Graphics.boxWidth - ww - (ConfigManager.touchUI ? 30 : 0);
-    const wy = 0;
-    return new Rectangle(wx, wy, ww, wh);
 };
 Community.Lighting.Spriteset_Map_prototype_createLowerLayer = Spriteset_Map.prototype.createLowerLayer;
 Spriteset_Map.prototype.createLowerLayer = function () {
   Community.Lighting.Spriteset_Map_prototype_createLowerLayer.call(this);
   this.createLightmask();
 };
+
+if (typeof require !== "undefined" && typeof module != "undefined") {
+  module.exports = {
+    Community,
+    Game_Player,
+    Game_Variables,
+  };
+}
