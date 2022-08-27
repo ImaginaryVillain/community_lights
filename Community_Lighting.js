@@ -3260,16 +3260,8 @@ Game_Variables.prototype.SetDaynightSpeed = function (value) {
   this._Community_Lighting_DaynightSpeed = value;
 };
 Game_Variables.prototype.GetDaynightSpeed = function () {
-  if (this._Community_Lighting_DaynightSpeed >= 0) {
-    return this._Community_Lighting_DaynightSpeed;
-  }
-  var defaultSpeed = Number(Community.Lighting.parameters['Daynight Initial Speed'])
-  if (Number.isNaN(defaultSpeed)) {
-    return 10;
-  }
-  else {
-    return defaultSpeed;
-  }
+  if (this._Community_Lighting_DaynightSpeed >= 0) return this._Community_Lighting_DaynightSpeed;
+  return Number(Community.Lighting.parameters['Daynight Initial Speed']) || 10;
 };
 Game_Variables.prototype.SetDaynightCycle = function (value) {
   this._Community_Lighting_DaynightCycle = value;
