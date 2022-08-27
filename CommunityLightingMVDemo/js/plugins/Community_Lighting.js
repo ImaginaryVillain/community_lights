@@ -593,10 +593,10 @@ Imported[Community.Lighting.name] = true;
     return [...arguments].includes(Number(this));
   }
 
-  const Bool = {
-    false: false, off: false, deactivate: false,
-    true:   true,   on: true,    activate: true
-  };
+  isOn = (x) => x.toLowerCase() === "on";
+  isOff = (x) => x.toLowerCase() === "off";
+  isActivate = (x) => x.toLowerCase() === "activate";
+  isDeactivate = (x) => x.toLowerCase() === "deactivate";
 
   const TileType = {
     Terrain: 1, terrain: 1, 1: 1,
@@ -625,11 +625,11 @@ Imported[Community.Lighting.name] = true;
   };
 
   class TileLight {
-    constructor(tileType, lightType, id, enabled, color, radius, brightness) {
+    constructor(tileType, lightType, id, onoff, color, radius, brightness) {
       this.tileType   = TileType[tileType];
       this.lightType  = LightType[lightType];
       this.id         = +id || 0;
-      this.enabled    = Bool[enabled] || false;
+      this.enabled    = isOn(onoff);
       this.color      = $$.validateColor(color, "#ffffff");
       this.radius     = +radius || 0;
       this.brightness = (+brightness?.substr(1, brightness.length) / 100).clamp(0, 1) || 0;
@@ -637,10 +637,10 @@ Imported[Community.Lighting.name] = true;
   };
 
   class TileBlock {
-    constructor(tileType, id, enabled, color, shape, xOffset, yOffset, blockWidth, blockHeight) {
+    constructor(tileType, id, onoff, color, shape, xOffset, yOffset, blockWidth, blockHeight) {
       this.tileType    = TileType[tileType];
       this.id          = +id || 0;
-      this.enabled     = Bool[enabled] || false;
+      this.enabled     = isOn(onoff);
       this.color       = $$.validateColor(color, "#ffffff");
       this.shape       = +shape || 0;
       this.xOffset     = +xOffset || 0;
@@ -886,8 +886,8 @@ Imported[Community.Lighting.name] = true;
         else if (x[0] === "#" && this._clBeamColor === undefined) this._clColor = $$.validateColor(x);
         else if (!isNaN(+x) && this._clOnOff === undefined) this._clOnOff = +x;
         else if (!isNaN(+x) && this._clFlashlightDirection === undefined) this._clFlashlightDirection = +x;
-        else if (x === "on" && this._clOnOff === undefined) this._clOnOff = 1;
-        else if (x === "off" && this._clOnOff === undefined) this._clOnOff = 0;
+        else if (isOn(x) && this._clOnOff === undefined) this._clOnOff = 1;
+        else if (isOff(x) && this._clOnOff === undefined) this._clOnOff = 0;
         else if ((x === "night" || x === "day") && this._clSwitch === undefined) this._clSwitch = x;
         else if (x[0] === "d" && this._clFlashlightDirection === undefined) this._clFlashlightDirection = +(x.substr(1, x.length));
         else if (x[0] === "x" && this._clXOffset === undefined) this._clXOffset = +(x.substr(1, x.length));
@@ -1037,8 +1037,8 @@ Imported[Community.Lighting.name] = true;
     let [tileType, lightType] = TileLightType[command] || [undefined, undefined];
     let [id, enabled, color, radius, brightness] = args;
     let tile = new TileLight(tileType, lightType, id, enabled, color, radius, brightness);
-    let index = tilearray.findIndex(e => e.tileType == tile.tileType && e.lightType == tile.lightType && e.id == tile.id);
-    index == -1 ? tilearray.push(tile) : tilearray[index] = tile;
+    let index = tilearray.findIndex(e => e.tileType === tile.tileType && e.lightType === tile.lightType && e.id === tile.id);
+    index === -1 ? tilearray.push(tile) : tilearray[index] = tile;
     $gameVariables.SetTileLightArray(tilearray);
     $$.ReloadTagArea();
   };
@@ -1053,8 +1053,8 @@ Imported[Community.Lighting.name] = true;
     let tileType = TileBlockType[command];
     let [id, enabled, color, shape, xOffset, yOffset, blockWidth, blockHeight] = args;
     let tile = new TileBlock(tileType, id, enabled, color, shape, xOffset, yOffset, blockWidth, blockHeight);
-    let index = tilearray.findIndex(e => e.tileType == tile.tileType && e.id == tile.id);
-    index == -1 ? tilearray.push(tile) : tilearray[index] = tile;
+    let index = tilearray.findIndex(e => e.tileType === tile.tileType && e.id === tile.id);
+    index === -1 ? tilearray.push(tile) : tilearray[index] = tile;
     $gameVariables.SetTileBlockArray(tilearray);
     $$.ReloadTagArea();
   };
@@ -1105,7 +1105,7 @@ Imported[Community.Lighting.name] = true;
    */
   Game_Interpreter.prototype.fire = function (command, args) {
     if (args.contains("radius") || args.contains("radiusgrow")) $gameVariables.SetFire(true);
-    if (args[0] === "deactivate" || (args[0].toLowerCase() === "off" && args.length == 1)) {
+    if (isDeactivate(args[0]) || (isOff(args[0]) && args.length == 1)) {
       $gameVariables.SetScriptActive(false);
     } else {
       $gameVariables.SetScriptActive(true);
@@ -1120,7 +1120,7 @@ Imported[Community.Lighting.name] = true;
    */
   Game_Interpreter.prototype.light = function (command, args) {
     if (args.contains("radius") || args.contains("radiusgrow")) $gameVariables.SetFire(false);
-    if (args[0].toLowerCase() === "deactivate" || (args[0].toLowerCase() === "off" && args.length == 1)) {
+    if (isDeactivate(args[0]) || (isOff(args[0]) && args.length == 1)) {
       $gameVariables.SetScriptActive(false);
     } else {
       $gameVariables.SetScriptActive(true);
@@ -1129,9 +1129,9 @@ Imported[Community.Lighting.name] = true;
   };
 
   Game_Interpreter.prototype.scriptF = function (command, args) {
-    if (args[0] === "deactivate" || (args[0].toLowerCase() === "off" && args.length == 1)) {
+    if (isDeactivate(args[0]) || (isOff(args[0]) && args.length == 1)) {
       $gameVariables.SetScriptActive(false);
-    } else if (args[0] === "activate" || (args[0].toLowerCase() === "on" && args.length == 1)) {
+    } else if (isActivate(args[0]) || (isOn(args[0]) && args.length == 1)) {
       $gameVariables.SetScriptActive(true);
     }
   };
@@ -2620,7 +2620,7 @@ Imported[Community.Lighting.name] = true;
    * @param {String[]} args
    */
   $$.flashlight = function (args) {
-    if (args[0] == 'on') {
+    if (isOn(args[0])) {
 
       let flashlightlength = $gameVariables.GetFlashlightLength();
       let flashlightwidth = $gameVariables.GetFlashlightWidth();
@@ -2665,7 +2665,7 @@ Imported[Community.Lighting.name] = true;
         $gameVariables.SetRadiusTarget(1);
       }
     }
-    if (args[0] === 'off') {
+    if (isOff(args[0])) {
       $gameVariables.SetFlashlight(false);
     }
   };
@@ -2747,7 +2747,7 @@ Imported[Community.Lighting.name] = true;
     }
 
     // *********************** TURN SPECIFIC LIGHT ON *********************
-    if (args[0] === 'on') {
+    if (isOn(args[0])) {
 
       let lightarray_id = $gameVariables.GetLightArrayId();
       let lightarray_state = $gameVariables.GetLightArrayState();
@@ -2772,7 +2772,7 @@ Imported[Community.Lighting.name] = true;
     }
 
     // *********************** TURN SPECIFIC LIGHT OFF *********************
-    if (args[0] === 'off') {
+    if (isOff(args[0])) {
 
       let lightarray_id = $gameVariables.GetLightArrayId();
       let lightarray_state = $gameVariables.GetLightArrayState();
