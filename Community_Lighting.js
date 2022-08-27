@@ -451,14 +451,14 @@ Imported[Community.Lighting.name] = true;
 *
 * Light radiusgrow r c b t
 * - Same as above, but apply changes over time.
-*		The duration is either (t) frames or 500 frames if (t) isn't specified.
+*   The duration is either (t) frames or 500 frames if (t) isn't specified.
 *
 * Setfire r s
 * - Alters fire settings with radius shift (r) and red/yellow color shift (s)
 *
 * Flashlight on bl bw c bd
 * - turn on flashlight for player with beam length (bl), beam width (hw), color (c),
-*      and beam density (bd)
+*   and beam density (bd)
 *
 * Flashlight off
 * - Turn off the flashlight.  yup.
@@ -523,13 +523,13 @@ Imported[Community.Lighting.name] = true;
 * - Turns off light blocking for tile with region id (id)
 *
 * RegionBlock id ON color shape xoffset yoffset width height
-* - id			id of region
-* - color		color of block (usually #000000)
-* - shape		1=square, 2=oval
-* - xoffset	x offset
-* - yoffset	y offset
-* - width		width of shape
-* - height		height of shape
+* - id      id of region
+* - color   color of block (usually #000000)
+* - shape   1=square, 2=oval
+* - xoffset x offset
+* - yoffset y offset
+* - width   width of shape
+* - height  height of shape
 *
 * --------------------------------------------------------------------------
 * Kill Switch and conditional lighting
@@ -2767,7 +2767,7 @@ Imported[Community.Lighting.name] = true;
         let lightgrow_target = newradius;
         let lightgrow_speed = 0.0;
         if (args.length >= 4) {
-		  lightgrow_speed = (Math.abs(newradius - player_radius)) / Math.max(1, Number(args[4]));
+        lightgrow_speed = (Math.abs(newradius - player_radius)) / Math.max(1, Number(args[4]));
         } else {
           lightgrow_speed = (Math.abs(newradius - player_radius)) / 500;
         }

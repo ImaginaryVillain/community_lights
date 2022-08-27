@@ -3103,7 +3103,7 @@ Imported[Community.Lighting.name] = true;
         let lightgrow_target = newradius;
         let lightgrow_speed = 0.0;
         if (args.length >= 4) {
-		  lightgrow_speed = (Math.abs(newradius - player_radius)) / Math.max(1, Number(args[4]));
+        lightgrow_speed = (Math.abs(newradius - player_radius)) / Math.max(1, Number(args[4]));
         } else {
           lightgrow_speed = (Math.abs(newradius - player_radius)) / 500;
         }
