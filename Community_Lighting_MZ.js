@@ -892,6 +892,67 @@ Imported[Community.Lighting.name] = true;
 */
 
 (function ($$) {
+  Number.prototype.is = function() {
+    return [...arguments].includes(Number(this));
+  }
+
+  const Bool = {
+    false: false, off: false, deactivate: false,
+    true:   true,   on: true,    activate: true
+  };
+
+  const TileType = {
+    Terrain: 1, terrain: 1, 1: 1,
+    Region: 2,  region:  2, 2: 2
+  };
+
+  const LightType = {
+    Light     : 1, light     : 1, 1: 1,
+    Fire      : 2, fire      : 2, 2: 2,
+    Flashlight: 3, flashlight: 3, 3: 3,
+    Glow      : 4, glow      : 4, 4: 4
+  };
+
+  const TileLightType = {
+    tilelight:   [TileType.Terrain,   LightType.Light],
+    tilefire:    [TileType.Terrain,   LightType.Fire],
+    tileglow:    [TileType.Terrain,   LightType.Glow],
+    regionlight: [TileType.Region, LightType.Light],
+    regionfire:  [TileType.Region, LightType.Fire],
+    regionglow:  [TileType.Region, LightType.Glow],
+  };
+
+  const TileBlockType = {
+    tileblock:   TileType.Terrain,
+    regionblock: TileType.Region
+  };
+
+  class TileLight {
+    constructor(tileType, lightType, id, enabled, color, radius, brightness) {
+      this.tileType   = TileType[tileType];
+      this.lightType  = LightType[lightType];
+      this.id         = +id || 0;
+      this.enabled    = Bool[enabled] || false;
+      this.color      = $$.validateColor(color, "#ffffff");
+      this.radius     = +radius || 0;
+      this.brightness = (+brightness?.substr(1, brightness.length) / 100).clamp(0, 1) || 0;
+    }
+  };
+
+  class TileBlock {
+    constructor(tileType, id, enabled, color, shape, xOffset, yOffset, blockWidth, blockHeight) {
+      this.tileType    = TileType[tileType];
+      this.id          = +id || 0;
+      this.enabled     = Bool[enabled] || false;
+      this.color       = $$.validateColor(color, "#ffffff");
+      this.shape       = +shape || 0;
+      this.xOffset     = +xOffset || 0;
+      this.yOffset     = +yOffset || 0;
+      this.blockWidth  = +blockWidth || 0;
+      this.blockHeight = +blockHeight || 0;
+    }
+  };
+
   let Community_tint_speed = 60;
   let Community_tint_target = '#000000';
   let colorcycle_count = [1000];
@@ -905,8 +966,8 @@ Imported[Community.Lighting.name] = true;
   let event_moving = [];
   let event_stacknumber = [];
   let event_eventcount = 0;
-  let tile_lights = [];
-  let tile_blocks = [];
+  let light_tiles = [];
+  let block_tiles = [];
 
   let parameters = $$.parameters;
   let lightMaskPadding = Number(parameters["Lightmask Padding"]) || 0;
@@ -1080,8 +1141,8 @@ Imported[Community.Lighting.name] = true;
     this._lastLightPage = this._pageIndex;
     let tagData = this.getCLTag().toLowerCase().split(/\s+/);
     let needsCycleDuration = false;
-    this._clType = tagData.shift();
-    if (this._clType === "light" || this._clType === "fire") {
+    this._clType = LightType[tagData.shift()];
+    if (this._clType?.is(LightType.Light, LightType.Fire)) {
       this._clRadius = undefined;
       for (let x of tagData) {
         if (!isNaN(+x) && this._clRadius === undefined) this._clRadius = +x;
@@ -1105,7 +1166,7 @@ Imported[Community.Lighting.name] = true;
         else if (x.length > 0 && this._clId === undefined) this._clId = x;
       }
     }
-    else if (this._clType === "flashlight") {
+    else if (this._clType?.is(LightType.Flashlight)) {
       this._clBeamLength = undefined;
       this._clBeamWidth = undefined;
       this._clOnOff = undefined;
@@ -1259,8 +1320,8 @@ Imported[Community.Lighting.name] = true;
     command = command.toLowerCase();
 
     const allCommands = {
-      tileblock: 'tileType', regionblock: 'tileType', tilelight: 'tileType', regionlight: 'tileType', tilefire: 'tileType', regionfire: 'tileType',
-      tileglow: 'tileType', regionglow: 'tileType', tint: 'tint', daynight: 'dayNight', flashlight: 'flashLight', setfire: 'setFire', fire: 'fire', light: 'light',
+      tileblock: 'addTileBlock', regionblock: 'addTileBlock', tilelight: 'addTileLight', regionlight: 'addTileLight', tilefire: 'addTileLight', regionfire: 'addTileLight',
+      tileglow: 'addTileLight', regionglow: 'addTileLight', tint: 'tint', daynight: 'dayNight', flashlight: 'flashLight', setfire: 'setFire', fire: 'fire', light: 'light',
       script: 'scriptF', reload: 'reload', tintbattle: 'tintbattle'
     };
     const result = allCommands[command];
@@ -1306,12 +1367,31 @@ Imported[Community.Lighting.name] = true;
    * @param {String} command
    * @param {String[]} args
    */
-  Game_Interpreter.prototype.tileType = function (command, args) {
-    const cmdArr = ['', 'tileblock', 'regionblock', 'tilelight', 'regionlight', 'tilefire', 'regionfire', 'tileglow', 'regionglow'];
-    const tiletype = cmdArr.indexOf(command);
-    if (tiletype > 0) {
-      $$.tile(tiletype, args);
-    }
+  Game_Interpreter.prototype.addTileLight = function (command, args) {
+    let tilearray = $gameVariables.GetTileLightArray();
+    let [tileType, lightType] = TileLightType[command] || [undefined, undefined];
+    let [id, enabled, color, radius, brightness] = args;
+    let tile = new TileLight(tileType, lightType, id, enabled, color, radius, brightness);
+    let index = tilearray.findIndex(e => e.tileType == tile.tileType && e.lightType == tile.lightType && e.id == tile.id);
+    index == -1 ? tilearray.push(tile) : tilearray[index] = tile;
+    $gameVariables.SetTileLightArray(tilearray);
+    $$.ReloadTagArea();
+  };
+
+  /**
+   *
+   * @param {String} command
+   * @param {String[]} args
+   */
+  Game_Interpreter.prototype.addTileBlock = function (command, args) {
+    let tilearray = $gameVariables.GetTileBlockArray();
+    let tileType = TileBlockType[command];
+    let [id, enabled, color, shape, xOffset, yOffset, blockWidth, blockHeight] = args;
+    let tile = new TileBlock(tileType, id, enabled, color, shape, xOffset, yOffset, blockWidth, blockHeight);
+    let index = tilearray.findIndex(e => e.tileType == tile.tileType && e.id == tile.id);
+    index == -1 ? tilearray.push(tile) : tilearray[index] = tile;
+    $gameVariables.SetTileBlockArray(tilearray);
+    $$.ReloadTagArea();
   };
 
   /**
@@ -1683,8 +1763,8 @@ Imported[Community.Lighting.name] = true;
       }
 
       let lightType = cur.getLightType();
-      if (lightType === "light" || lightType === "fire" || lightType === "flashlight") {
-        let objectflicker = lightType === "fire";
+      if (lightType) {
+        let objectflicker = lightType.is(LightType.Fire);
         let light_radius = cur.getLightRadius();
         let flashlength = cur.getLightFlashlightLength();
         let flashwidth = cur.getLightFlashlightWidth();
@@ -1748,7 +1828,7 @@ Imported[Community.Lighting.name] = true;
             lx1 += +xoffset;
             ly1 += +yoffset;
 
-            if (lightType === "flashlight") { // flashlight
+            if (lightType.is(LightType.Flashlight)) {
               let ldir = 0;
               if (event_moving[i] > 0) {
                 ldir = $gameMap.events()[event_stacknumber[i]]._direction;
@@ -1776,7 +1856,7 @@ Imported[Community.Lighting.name] = true;
                 }
               }
               this._maskBitmap.radialgradientFillRect2(lx1, ly1, 0, light_radius, colorvalue, '#000000', ldir, flashlength, flashwidth);
-            } else { // regular light
+            } else if(lightType.is(LightType.Light, LightType.Fire)) {
               this._maskBitmap.radialgradientFillRect(lx1, ly1, 0, light_radius, colorvalue, '#000000', objectflicker, brightness, direction);
             }
           }
@@ -1802,99 +1882,44 @@ Imported[Community.Lighting.name] = true;
       }
     }
 
-    tile_lights = $gameVariables.GetLightTags();
-    tile_blocks = $gameVariables.GetBlockTags();
+    light_tiles = $gameVariables.GetLightTiles();
+    block_tiles = $gameVariables.GetBlockTiles();
 
-    // Tile lights
-    for (let i = 0, len = tile_lights.length; i < len; i++) {
-      let tilestr = tile_lights[i];
-
-      let tileargs = tilestr.split(";");
-      let x = tileargs[0];
-      let y = tileargs[1];
-      let tile_type = tileargs[2];
-      let tile_radius = tileargs[3];
-      let tile_color = tileargs[4];
-      let brightness = tileargs[5];
-
+    light_tiles.forEach(tuple => {
+      let [tile, x, y] = tuple;
       let x1 = (pw / 2) + (x - dx) * pw;
       let y1 = (ph / 2) + (y - dy) * ph;
 
-      if ($dataMap.scrollType === 2 || $dataMap.scrollType === 3) {
-        if (dx - 5 > x) {
-          let lxjump = $gameMap.width() - (dx - x);
-          x1 = (pw / 2) + (lxjump * pw);
-        }
-      }
-      if ($dataMap.scrollType === 1 || $dataMap.scrollType === 3) {
-        if (dy - 5 > y) {
-          let lyjump = $gameMap.height() - (dy - y);
-          y1 = (ph / 2) + (lyjump * ph);
-        }
-      }
-
-      if (tile_type == 3 || tile_type == 4) {
-        this._maskBitmap.radialgradientFillRect(x1, y1, 0, tile_radius, tile_color, radialColor2, false, brightness); // Light
-      } else if (tile_type == 5 || tile_type == 6) {
-        this._maskBitmap.radialgradientFillRect(x1, y1, 0, tile_radius, tile_color, radialColor2, true, brightness);  // Fire
-
-      } else {
-
-        let r = hexToRgb(tile_color).r;
-        let g = hexToRgb(tile_color).g;
-        let b = hexToRgb(tile_color).b;
-        let a = hexToRgb(tile_color).a;
+      let objectflicker = tile.lightType.is(LightType.Fire);
+      let tile_color = tile.color;
+      if (tile.lightType.is(LightType.Glow)) {
+        let r = hexToRgb(tile.color).r;
+        let g = hexToRgb(tile.color).g;
+        let b = hexToRgb(tile.color).b;
+        let a = hexToRgb(tile.color).a;
 
         r = Math.floor(r + (60 - tileglow));
         g = Math.floor(g + (60 - tileglow));
         b = Math.floor(b + (60 - tileglow));
         a = Math.floor(a + (60 - tileglow));
 
-        if (r < 0) {
-          r = 0;
-        }
-        if (g < 0) {
-          g = 0;
-        }
-        if (b < 0) {
-          b = 0;
-        }
-        if (a < 0) {
-          a = 0;
-        }
-        if (r > 255) {
-          r = 255;
-        }
-        if (g > 255) {
-          g = 255;
-        }
-        if (b > 255) {
-          b = 255;
-        }
-        if (a > 255) {
-          a = 255;
-        }
-        let newtile_color = rgba2hex(r, g, b, a)
-        this._maskBitmap.radialgradientFillRect(x1, y1, 0, tile_radius, newtile_color, radialColor2, false, brightness);
+        if (r < 0) r = 0;
+        if (g < 0) g = 0;
+        if (b < 0) b = 0;
+        if (a < 0) a = 0;
+        if (r > 255) r = 255;
+        if (g > 255) g = 255;
+        if (b > 255) b = 255;
+        if (a > 255) a = 255;
+        tile_color = rgba2hex(r, g, b, a);
       }
-    }
+      this._maskBitmap.radialgradientFillRect(x1, y1, 0, tile.radius, tile_color, '#000000', objectflicker, tile.brightness);
+    });
 
     // Tile blocks
     ctx.globalCompositeOperation = "multiply";
-    for (let i = 0, len = tile_blocks.length; i < len; i++) {
-      let tilestr = tile_blocks[i];
-      let tileargs = tilestr.split(";");
-
-      let x = tileargs[0];
-      let y = tileargs[1];
-      let shape = tileargs[2];
-      let xo1 = tileargs[3];
-      let yo1 = tileargs[4];
-      let xo2 = tileargs[5];
-      let yo2 = tileargs[6];
-      let tile_color = tileargs[7];
-
-
+    block_tiles.forEach(tuple => {
+      let [tile, x, y] = tuple;
       let x1 = (x - dx) * pw;
       let y1 = (y - dy) * ph;
 
@@ -1910,20 +1935,20 @@ Imported[Community.Lighting.name] = true;
           y1 = (lyjump * ph);
         }
       }
-      if (shape == 0) {
-        this._maskBitmap.FillRect(x1, y1, pw, ph, tile_color);
+      if (tile.shape == 0) {
+        this._maskBitmap.FillRect(x1, y1, pw, ph, tile.color);
       }
-      if (shape == 1) {
-        x1 = x1 + Number(xo1);
-        y1 = y1 + Number(yo1);
-        this._maskBitmap.FillRect(x1, y1, Number(xo2), Number(yo2), tile_color);
+      else if (tile.shape == 1) {
+        x1 = x1 + tile.xOffset;
+        y1 = y1 + tile.yOffset;
+        this._maskBitmap.FillRect(x1, y1, tile.blockWidth, tile.blockHeight, tile.color);
       }
-      if (shape == 2) {
-        x1 = x1 + Number(xo1);
-        y1 = y1 + Number(yo1);
-        this._maskBitmap.FillCircle(x1, y1, Number(xo2), Number(yo2), tile_color);
+      else if (tile.shape == 2) {
+        x1 = x1 + tile.xOffset;
+        y1 = y1 + tile.yOffset;
+        this._maskBitmap.FillCircle(x1, y1, tile.blockWidth, tile.blockHeight, tile.color);
       }
-    }
+    });
     ctx.globalCompositeOperation = 'lighter';
 
 
@@ -2776,10 +2801,8 @@ Imported[Community.Lighting.name] = true;
           let note = $gameMap.events()[i].getCLTag();
 
           let note_args = note.split(" ");
-          let note_command = note_args.shift().toLowerCase();
-
-          if (note_command == "light" || note_command == "fire" || note_command == "flashlight") {
-
+          let note_command = LightType[note_args.shift().toLowerCase()];
+          if (note_command) {
             eventObjId.push(i);
             event_id.push($gameMap.events()[i]._eventId);
             event_x.push($gameMap.events()[i]._realX);
@@ -2816,31 +2839,31 @@ Imported[Community.Lighting.name] = true;
           let data = mapnote.split(/\s+/);
           data.splice(0, 1);
           data.map(x => x.trim());
-          $gameMap._interpreter.tileType("regionfire", data);
+          $gameMap._interpreter.addTileLight("regionfire", data);
         }
         else if ((/^RegionGlow/i).test(mapnote)) {
           let data = mapnote.split(/\s+/);
           data.splice(0, 1);
           data.map(x => x.trim());
-          $gameMap._interpreter.tileType("regionglow", data);
+          $gameMap._interpreter.addTileLight("regionglow", data);
         }
         else if ((/^RegionLight/i).test(mapnote)) {
           let data = mapnote.split(/\s+/);
           data.splice(0, 1);
           data.map(x => x.trim());
-          $gameMap._interpreter.tileType("regionlight", data);
+          $gameMap._interpreter.addTileLight("regionlight", data);
         }
         else if ((/^RegionGlow/i).test(mapnote)) {
           let data = mapnote.split(/\s+/);
           data.splice(0, 1);
           data.map(x => x.trim());
-          $gameMap._interpreter.tileType("regionglow", data);
+          $gameMap._interpreter.addTileLight("regionglow", data);
         }
         else if ((/^RegionBlock/i).test(mapnote)) {
           let data = mapnote.split(/\s+/);
           data.splice(0, 1);
           data.map(x => x.trim());
-          $gameMap._interpreter.tileType("regionblock", data);
+          $gameMap._interpreter.addTileBlock("regionblock", data);
         }
         else if ((/^tint/i).test(mapnote)) {
 
@@ -2896,112 +2919,36 @@ Imported[Community.Lighting.name] = true;
 
 
   $$.ReloadTagArea = function () {
-    // *************************** TILE TAG LIGHTSOURCES *********
+    // *************************** TILE TAG LIGHTSOURCES & BLOCKS *********
 
     // clear arrays
-    tile_lights = [];
-    tile_blocks = [];
+    light_tiles = [];
+    block_tiles = [];
 
-    // refill arrays
-    let tilearray = $gameVariables.GetTileArray();
-    for (let i = 0, len = tilearray.length; i < len; i++) {
-
-      let tilestr = tilearray[i];
-      let tileargs = tilestr.split(";");
-      let tile_type = Number(tileargs[0]);
-      let tile_number = Number(tileargs[1]);
-      let tile_on = Number(tileargs[2]);
-      let tile_color = tileargs[3];
-      let tile_radius = 0;
-      let brightness = $$.defaultBrightness || 0;
-      let shape = 0;
-      let xo1 = 0.0;
-      let yo1 = 0.0;
-      let xo2 = 0.0;
-      let yo2 = 0.0;
-
-      if (tile_type === 1 || tile_type === 2) {
-
-        let b_arg = tileargs[4];
-        if (typeof b_arg !== 'undefined') {
-          shape = Number(b_arg);
-        }
-        b_arg = tileargs[5];
-        if (typeof b_arg !== 'undefined') {
-          xo1 = Number(b_arg);
-        }
-        b_arg = tileargs[6];
-        if (typeof b_arg !== 'undefined') {
-          yo1 = Number(b_arg);
-        }
-        b_arg = tileargs[7];
-        if (typeof b_arg !== 'undefined') {
-          xo2 = Number(b_arg);
-        }
-        b_arg = tileargs[8];
-        if (typeof b_arg !== 'undefined') {
-          yo2 = Number(b_arg);
-        }
-
-
-      } else {
-        tile_radius = Number(tileargs[4]);
-        let b_arg = tileargs[5];
-        if (typeof b_arg != 'undefined') {
-          let key = b_arg.substring(0, 1);
-          if (key === 'b' || key === 'B') {
-            brightness = Number(b_arg.substring(1)) / 100;
-          }
-        }
-      }
-
-      if (tile_on === 1) {
-
-        if (tile_type >= 3) {
-          // *************************** TILE TAG LIGHTSOURCES *********
-          for (let y = 0, mapHeight = $dataMap.height; y < mapHeight; y++) {
-            for (let x = 0, mapWidth = $dataMap.width; x < mapWidth; x++) {
-              let tag = 0;
-              if (tile_type === 3 || tile_type === 5 || tile_type === 7) { // tile light
-                tag = $gameMap.terrainTag(x, y);
-              }
-              if (tile_type === 4 || tile_type === 6 || tile_type === 8) { // region light
-                //$dataMap.data[(5 * $dataMap.height + y) * $dataMap.width + x]
-                tag = $gameMap.regionId(x, y); //Technically the same
-              }
-              if (tag === tile_number) {
-                let tilecode = x + ";" + y + ";" + tile_type + ";" + tile_radius + ";" + tile_color + ";" + brightness;
-                tile_lights.push(tilecode);
-              }
+    function UpdateTiles(tileArray, onArray) {
+      tileArray.filter(tile => tile.enabled).forEach(tile => {
+        for (let y = 0, mapHeight = $dataMap.height; y < mapHeight; y++) {
+          for (let x = 0, mapWidth = $dataMap.width; x < mapWidth; x++) {
+            let tag = 0;
+            if (tile.tileType == TileType.Terrain) {
+              tag = $gameMap.terrainTag(x, y);
+            }
+            else if (tile.tileType == TileType.Region) {
+              tag = $gameMap.regionId(x, y);
+            }
+            if (tag == tile.id) {
+              onArray.push([tile, x, y]);
             }
           }
         }
-
-
-        // *************************** REDRAW MAPTILES FOR ROOFS ETC *********
-        if (tile_type == 1 || tile_type == 2) {
-          for (let y = 0, mapHeight = $dataMap.height; y < mapHeight; y++) {
-            for (let x = 0, mapWidth = $dataMap.width; x < mapWidth; x++) {
-              let tag = 0;
-              if (tile_type === 1) { // tile block
-                tag = $gameMap.terrainTag(x, y);
-              }
-              if (tile_type === 2) { // region block
-                //$dataMap.data[(5 * $dataMap.height + y) * $dataMap.width + x]
-                tag = $gameMap.regionId(x, y); //Technically the same
-              }
-              if (tag === tile_number) {
-                let tilecode = x + ";" + y + ";" + shape + ";" + xo1 + ";" + yo1 + ";" + xo2 + ";" + yo2 + ";" + tile_color;
-                tile_blocks.push(tilecode);
-              }
-            }
-          }
-        }
-      }
-
+      });
     }
-    $gameVariables.SetLightTags(tile_lights);
-    $gameVariables.SetBlockTags(tile_blocks);
+
+    UpdateTiles($gameVariables.GetTileLightArray(), light_tiles);
+    $gameVariables.SetLightTiles(light_tiles);
+
+    UpdateTiles($gameVariables.GetTileBlockArray(), block_tiles);
+    $gameVariables.SetBlockTiles(block_tiles);
   };
 
   /**
@@ -3223,83 +3170,6 @@ Imported[Community.Lighting.name] = true;
       $gameVariables.SetLightArrayState([]);
       $gameVariables.SetLightArrayColor([]);
     }
-  };
-
-  /**
-   * @param {String} tileType
-   * @param {String[]} args
-   */
-  $$.tile = function (tiletype, args) {
-    let tilearray = $gameVariables.GetTileArray();
-    let tilenumber = Number(eval(args[0]));
-
-    let tile_on = String(args[1]).toLowerCase() === "on" ? 1 : 0;
-
-    let tilecolor = args[2];
-    let isValidColor1 = isValidColorRegex.test(tilecolor.trim());
-    if (!isValidColor1) {
-      if (tiletype === 1 || tiletype === 2) tilecolor = "#000000";
-      else tilecolor = "#ffffff";
-    }
-
-    let tileradius = 100;
-    let tilebrightness = $$.defaultBrightness || 0;
-    let shape = 0;
-    let x1 = 0;
-    let y1 = 0;
-    let x2 = 0;
-    let y2 = 0;
-    if (tiletype === 1 || tiletype === 2) {
-      if (args.length > 3) {
-        shape = args[3];
-      }
-      if (args.length > 4) {
-        x1 = args[4];
-      }
-      if (args.length > 5) {
-        y1 = args[5];
-      }
-      if (args.length > 6) {
-        x2 = args[6];
-      }
-      if (args.length > 7) {
-        y2 = args[7];
-      }
-    } else {
-      if (args.length > 3) {
-        tileradius = args[3];
-      }
-      if (args.length > 4) {
-        tilebrightness = args[4];
-      }
-    }
-
-    let tilefound = false;
-
-    for (let i = 0, len = tilearray.length; i < len; i++) {
-      let tilestr = tilearray[i];
-      let tileargs = tilestr.split(";");
-      if (tileargs[0] == tiletype && tileargs[1] == tilenumber) {
-        tilefound = true;
-        if (tiletype === 1 || tiletype === 2) {
-          tilearray[i] = tiletype + ";" + tilenumber + ";" + tile_on + ";" + tilecolor + ";" + shape + ";" + x1 + ";" + y1 + ";" + x2 + ";" + y2;
-        } else {
-          tilearray[i] = tiletype + ";" + tilenumber + ";" + tile_on + ";" + tilecolor + ";" + tileradius + ";" + tilebrightness;
-        }
-      }
-    }
-
-    if (tilefound === false) {
-      let tiletag = "";
-      if (tiletype === 1 || tiletype === 2) {
-        tiletag = tiletype + ";" + tilenumber + ";" + tile_on + ";" + tilecolor + ";" + shape + ";" + x1 + ";" + y1 + ";" + x2 + ";" + y2;
-      } else {
-        tiletag = tiletype + ";" + tilenumber + ";" + tile_on + ";" + tilecolor + ";" + tileradius + ";" + tilebrightness;
-      }
-      tilearray.push(tiletag);
-    }
-    $gameVariables.SetTileArray(tilearray);
-    $$.ReloadTagArea();
   };
 
   /**
@@ -3659,27 +3529,33 @@ Game_Variables.prototype.GetLightArrayColor = function () {
   let default_LAS = [];
   return this._Community_Lighting_LightArrayColor || default_LAS;
 };
-
-Game_Variables.prototype.SetTileArray = function (value) {
-  this._Community_Lighting_TileArray = value;
+Game_Variables.prototype.SetTileLightArray = function (value) {
+  this._Community_Lighting_TileLightArray = value;
 };
-Game_Variables.prototype.GetTileArray = function () {
+Game_Variables.prototype.GetTileLightArray = function () {
   let default_TA = [];
-  return this._Community_Lighting_TileArray || default_TA;
+  return this._Community_Lighting_TileLightArray || default_TA;
 };
-Game_Variables.prototype.SetLightTags = function (value) {
-  this._Community_Lighting_LightTags = value;
+Game_Variables.prototype.SetTileBlockArray = function (value) {
+  this._Community_Lighting_TileBlockArray = value;
 };
-Game_Variables.prototype.GetLightTags = function () {
+Game_Variables.prototype.GetTileBlockArray = function () {
   let default_TA = [];
-  return this._Community_Lighting_LightTags || default_TA;
+  return this._Community_Lighting_TileBlockArray || default_TA;
 };
-Game_Variables.prototype.SetBlockTags = function (value) {
-  this._Community_Lighting_BlockTags = value;
+Game_Variables.prototype.SetLightTiles = function (value) {
+  this._Community_Lighting_LightTiles = value;
 };
-Game_Variables.prototype.GetBlockTags = function () {
+Game_Variables.prototype.GetLightTiles = function () {
   let default_TA = [];
-  return this._Community_Lighting_BlockTags || default_TA;
+  return this._Community_Lighting_LightTiles || default_TA;
+};
+Game_Variables.prototype.SetBlockTiles = function (value) {
+  this._Community_Lighting_BlockTiles = value;
+};
+Game_Variables.prototype.GetBlockTiles = function () {
+  let default_TA = [];
+  return this._Community_Lighting_BlockTiles || default_TA;
 };
 function Window_TimeOfDay() {
   this.initialize(...arguments);
