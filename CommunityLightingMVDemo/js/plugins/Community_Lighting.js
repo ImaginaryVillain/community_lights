@@ -268,7 +268,7 @@ Imported[Community.Lighting.name] = true;
 * change a bunch of event and map notes.
 
 *
-* 2. New with version 4.2+ is the option to place the lighting note tag 
+* 2. New with version 4.2+ is the option to place the lighting note tag
 * anywhere in an event page's comment field instead of the note box, as
 * long as the comment field is the first thing on the page.  This allows
 * for more advanced lighting tricks to be done on a per-page basis.  Page
@@ -335,7 +335,7 @@ Imported[Community.Lighting.name] = true;
 * - cycle     Allows any number of color + duration pairs to follow that will be
 *             cycled through before repeating from the beginning:
 *             <cl: Flashlight l8 w12 cycle #f00 15 #ff0 15 #0f0 15 on someId d3>
-*             There's no limit to how many colors can cycled. [optional]
+*             There's no limit to how many colors can be cycled. [optional]
 * - onoff:    Initial state:  0, 1, off, on
 * - sdir:     Forced direction (optional): 0:auto, 1:up, 2:right, 3:down, 4:left
 *             Can be preceded by "D", so D4.  If omitted, defaults to 0
@@ -380,16 +380,16 @@ Imported[Community.Lighting.name] = true;
 * -------------------------------------------------------------------------------
 * Using the smooth lights options make it look extremely close.
 * The default light radius that Khas appears to be around 122. Smooth lights
-* need to be turned on to get similar effects. 
-* 
+* need to be turned on to get similar effects.
+*
 * All [light_size] tags should be combined with the initial light radius tag.
 *
-* Eg. 
-* Original: 
+* Eg.
+* Original:
 * [light cyan]
 * [light size 75]
 *
-* Replacement: 
+* Replacement:
 * <cl: light 75 #00FFFF>
 *
 * All [region_light] tags need to be replaced with <cl: region light> tags.
@@ -404,14 +404,10 @@ Imported[Community.Lighting.name] = true;
 * -------------------------------------------------------------------------------
 * DayNight [speed]
 * Activates day/night cycle.  Put in map note or event note
-* - speed     Optional parameter to alter the speed at which time passes.  10 is
-*         the default speed, higher numbers are slower, lower numbers are
-*         faster, and 0 stops the flow of time entirely.  If speed is not
-*         specified, then the current speed is used.
-* RegionLight id ON c r
-* - Turns on lights for tile tag or region tag (id) using color (c) and radius (r)
-* - Replace ON with OFF to turn them off
-* - Put in map note
+* - speed     Optional parameter to alter the speed at which time passes.
+*             10 is the default speed, higher numbers are slower, lower
+*             numbers are faster, and 0 stops the flow of time entirely.
+*             If speed is not specified, then the current speed is used.
 *
 * RegionFire, RegionGlow
 * - Same as above, but different lighting effects
@@ -477,7 +473,10 @@ Imported[Community.Lighting.name] = true;
 * - Sets the hour (h) to use color (c)
 *
 * Daynight add h m
-* - Adds the specified hours (h) and minutes (m) to the ingame clock
+* - Adds the specified hours (h) and minutes (m) to the in game clock
+*
+* Daynight subtract h m
+* - Subtracts the specified hours (h) and minutes (m) from the in game clock
 *
 * Daynight show
 * - Shows the current time of day in the upper right corner of the map screen (h:mm)
@@ -491,14 +490,17 @@ Imported[Community.Lighting.name] = true;
 * Daynight hoursinday h
 * - Sets the number of hours in a day to [h] (set hour colors  if doing this)
 *
-* Tint set c
-* - Sets the current screen tint to the color (c)
+* Tint set c [s]
+* Tint fade c [s]
+* - Sets or fades the current screen tint to the color (c)
+* - The optional argument speed (s) sets the fade speed (1 = fast, 20 = very slow)
+* - Both commands operate identically.
 *
-* Tint fade c s
-* - Same as above, but fades (1 = fast, 20 = very slow)
-*
-* Tint daylight
-* - Sets the tint based on the current hour.
+* Tint reset [s]
+* Tint daylight [s]
+* - Resets or fades the tint based on the current hour.
+* - The optional argument speed (s) sets the fade speed (1 = fast, 20 = very slow)
+* - Both commands operate identically.
 *
 * TileLight   id ON c r
 * RegionLight id ON c r
@@ -559,17 +561,18 @@ Imported[Community.Lighting.name] = true;
 * Plugin Commands - Battle
 * -------------------------------------------------------------------------------
 *
-* TintBattle set [color]
-* - Tint the battle screen to the color used as argument.
+* TintBattle set [c] [s]
+* TintBattle fade [c] [s]
+* - Sets or fades the battle screen to the color (c)
+* - The optional argument speed (s) sets the fade speed (1 = fast, 20 = very slow)
 * - Automatically set too dark color to '#666666' (dark gray).
+* - Both commands operate identically.
 *
-* TintBattle reset
-* - Reset the battle screen to its original color.
-*
-* TintBattle fade [color] [speed]
-* - Fade the battle screen to the color used as first argument.
-* - The second argument is speed of the fade (1 very fast, 20 more slow)
-* - Still automatically set too dark color to '#666666' (dark gray).
+* TintBattle reset [s]
+* TintBattle daylight [s]
+* - Resets or fades the battle screen to its original color.
+* - The optional argument speed (s) sets the fade speed (1 = fast, 20 = very slow)
+* - Both commands operate identically.
 *
 * --------------------------------------------------------------------------
 * Lights Active Radius
@@ -577,7 +580,7 @@ Imported[Community.Lighting.name] = true;
 * This allows you to decide how far away from the player lights are active,
 * anything beyond this range will not light up until the player gets
 * closer to it.
-* 
+*
 * It can be changed in the plugin parameters, or using the script call...
 *
 * $gameVariables.SetActiveRadius(#)
@@ -683,8 +686,8 @@ Imported[Community.Lighting.name] = true;
   };
 
   /**
-   * 
-   * @param {String} note 
+   *
+   * @param {String} note
    * @returns {String}
    */
   $$.getCLTag = function (note) {
@@ -1031,9 +1034,9 @@ Imported[Community.Lighting.name] = true;
   };
 
   /**
-   * 
-   * @param {String} command 
-   * @param {String[]} args 
+   *
+   * @param {String} command
+   * @param {String[]} args
    */
   Game_Interpreter.prototype.light = function (command, args) {
     if (args.contains("radius") || args.contains("radiusgrow")) $gameVariables.SetFire(false);
@@ -1047,16 +1050,16 @@ Imported[Community.Lighting.name] = true;
 
   Game_Interpreter.prototype.scriptF = function (command, args) {
     if (args[0] === "deactivate" || (args[0].toLowerCase() === "off" && args.length == 1)) {
-      $gameVariables.SetScriptActive(true);
-    } else if (args[0] === "activate") {
       $gameVariables.SetScriptActive(false);
+    } else if (args[0] === "activate" || (args[0].toLowerCase() === "on" && args.length == 1)) {
+      $gameVariables.SetScriptActive(true);
     }
   };
 
   /**
-   * 
-   * @param {String} command 
-   * @param {String[]} args 
+   *
+   * @param {String} command
+   * @param {String[]} args
    */
   Game_Interpreter.prototype.reload = function (command, args) {
     if (args[0] === "events") {
@@ -1066,20 +1069,17 @@ Imported[Community.Lighting.name] = true;
 
   Game_Interpreter.prototype.tintbattle = function (command, args) {
     if ($gameParty.inBattle()) {
-
-      if (args[0].toLowerCase() === 'reset') {
-        $gameTemp._BattleTint = $gameTemp._MapTint;
-        $gameTemp._BattleTintSpeed = 0;
-      } else if (args[0] === "set") {
-        $gameTemp._BattleTint = this.determineBattleTint(args[1]);
-        $gameTemp._BattleTintSpeed = 0;
-
-      } else if (args[0].toLowerCase() === 'fade') {
-
+      let cmd = args[0].trim().toLowerCase();
+      if (cmd === "set" || cmd === 'fade') {
         $gameTemp._BattleTintFade = $gameTemp._BattleTint;
         $gameTemp._BattleTintTimer = 0;
         $gameTemp._BattleTint = this.determineBattleTint(args[1]);
-        $gameTemp._BattleTintSpeed = args[2];
+        $gameTemp._BattleTintSpeed = +args[2] || 0;
+      }
+      else if (cmd === 'reset' || cmd === 'daylight') {
+        $gameTemp._BattleTintTimer = 0;
+        $gameTemp._BattleTint = $gameTemp._MapTint;
+        $gameTemp._BattleTintSpeed = +args[1] || 0;
       }
     }
   };
@@ -1160,22 +1160,22 @@ Imported[Community.Lighting.name] = true;
         colorcycle_timer[i] = 0;
       }
 
-      $$.ReloadMapEvents();  // reload map events on map chance
+      $$.ReloadMapEvents();  // reload map events on map change
     }
 
-    // reload mapevents if event_data has chanced (deleted or spawned events/saves)
+    // reload mapevents if event_data has changed (deleted or spawned events/saves)
     if (event_eventcount != $gameMap.events().length) {
       $$.ReloadMapEvents();
     }
 
     // remove old sprites
-    for (let i = 0, len = this._sprites.length; i < len; i++) {	  // remove all old sprites
+    for (let i = 0, len = this._sprites.length; i < len; i++) { // remove all old sprites
       this._removeSprite();
     }
 
-    if (map_id <= 0) return;								// No lighting on map 0
-    if (options_lighting_on !== true) return;				// Plugin deactivated in the option
-    if ($gameVariables.GetScriptActive() !== true) return;	// Plugin deactivated by plugin command
+    if (map_id <= 0) return;                               // No lighting on map 0
+    if (options_lighting_on !== true) return;              // Plugin deactivated in the option
+    if ($gameVariables.GetScriptActive() !== true) return; // Plugin deactivated by plugin command
 
 
     // reload map events every 200 cycles just in case or when a refresh is requested
@@ -1726,7 +1726,7 @@ Imported[Community.Lighting.name] = true;
         }
 
 
-        // Less than   
+        // Less than
 
         if (stepR <= 0 && r3 <= r2) {
           bluedone = true;
@@ -1789,12 +1789,12 @@ Imported[Community.Lighting.name] = true;
   // *******************  NORMAL BOX SHAPE ***********************************
 
   /**
-   * 
-   * @param {Number} x1 
-   * @param {Number} y1 
-   * @param {Number} x2 
-   * @param {Number} y2 
-   * @param {String} color1 
+   *
+   * @param {Number} x1
+   * @param {Number} y1
+   * @param {Number} x2
+   * @param {Number} y2
+   * @param {String} color1
    */
   Bitmap.prototype.FillRect = function (x1, y1, x2, y2, color1) {
     x1 = x1 + lightMaskPadding;
@@ -1810,11 +1810,11 @@ Imported[Community.Lighting.name] = true;
   // *******************  CIRCLE/OVAL SHAPE ***********************************
   // from http://scienceprimer.com/draw-oval-html5-canvas
   /**
-   * @param {Number} centerX 
-   * @param {Number} centerY 
-   * @param {Number} xradius 
-   * @param {Number} yradius 
-   * @param {String} color1 
+   * @param {Number} centerX
+   * @param {Number} centerY
+   * @param {Number} xradius
+   * @param {Number} yradius
+   * @param {String} color1
    */
   Bitmap.prototype.FillCircle = function (centerX, centerY, xradius, yradius, color1) {
     centerX = centerX + lightMaskPadding;
@@ -1859,8 +1859,8 @@ Imported[Community.Lighting.name] = true;
   /**
    * Function to convert the
    * RGB code to Hex color code
-   * @param {Number} R 
-   * @param {Number} G 
+   * @param {Number} R
+   * @param {Number} G
    * @param {Number} B
    * @param {Number} A
    * @returns {String}
@@ -1946,16 +1946,16 @@ Imported[Community.Lighting.name] = true;
   // Fill gradient circle
 
   /**
-   * 
-   * @param {Number} x1 
-   * @param {Number} y1 
+   *
+   * @param {Number} x1
+   * @param {Number} y1
    * @param {Number}  r1
    * @param {Number} r2
-   * @param {String} color1 
-   * @param {String} color2 
-   * @param {Boolean} flicker 
-   * @param {Number} brightness 
-   * @param {Number} direction 
+   * @param {String} color1
+   * @param {String} color2
+   * @param {Boolean} flicker
+   * @param {Number} brightness
+   * @param {Number} direction
    */
   Bitmap.prototype.radialgradientFillRect = function (x1, y1, r1, r2, color1, color2, flicker, brightness, direction) {
 
@@ -2088,16 +2088,16 @@ Imported[Community.Lighting.name] = true;
   // Fill gradient Cone
 
   /**
-   * 
-   * @param {Number} x1 
+   *
+   * @param {Number} x1
    * @param {Number} y1
    * @param {Number} r1
    * @param {Number} r2
-   * @param {String} color1 
-   * @param {String} color2 
-   * @param {Number} direction 
-   * @param {Number} flashlength 
-   * @param {Number} flashwidth 
+   * @param {String} color1
+   * @param {String} color2
+   * @param {Number} direction
+   * @param {Number} flashlength
+   * @param {Number} flashwidth
    */
   Bitmap.prototype.radialgradientFillRect2 = function (x1, y1, r1, r2, color1, color2, direction, flashlength, flashwidth) {
     x1 = x1 + lightMaskPadding;
@@ -2166,8 +2166,8 @@ Imported[Community.Lighting.name] = true;
 
 
   /**
-   * 
-   * @param {String} hex 
+   *
+   * @param {String} hex
    * @returns {{r:number,g:number,b:number,a:number}}
    */
   function hexToRgb(hex) {
@@ -2186,12 +2186,12 @@ Imported[Community.Lighting.name] = true;
 
   let Community_Lighting_BattleManager_setup = BattleManager.setup;
   BattleManager.setup = function (troopId, canEscape, canLose) {
-    $gameTemp._MapTint = '#FFFFFF';																// By default, no darkness during battle
-    if (!DataManager.isBattleTest() && !DataManager.isEventTest() && $gameMap.mapId() >= 0) {	// If we went there from a map...
-      if ($gameVariables.GetScriptActive() === true) {										// If the script is active...
-        if (options_lighting_on && lightInBattle) {											// If configuration autorise using lighting effects
-          if (eventObjId.length > 0) {													// If there is lightsource on this map...
-            $gameTemp._MapTint = $gameVariables.GetTint();								// ... Use the tint of the map.
+    $$._MapTint = '#FFFFFF';                                          // By default, no darkness during battle
+    if (!DataManager.isBattleTest() && !DataManager.isEventTest() && $gameMap.mapId() >= 0) { // If we went there from a map...
+      if ($gameVariables.GetScriptActive() === true) {                                        // If the script is active...
+        if (options_lighting_on && lightInBattle) {                                           // If configuration autorise using lighting effects
+          if (eventObjId.length > 0) {                                                        // If there is lightsource on this map...
+            $gameTemp._MapTint = $gameVariables.GetTint();                                    // ... Use the tint of the map.
           }
         }
         // Add daylight tint?
@@ -2219,9 +2219,9 @@ Imported[Community.Lighting.name] = true;
   };
 
   Spriteset_Battle.prototype.createBattleLightmask = function () {
-    if ($gameVariables.GetScriptActive()) {					// If the script is active
-      if (lightInBattle) {								// If is active during battles.
-        this._battleLightmask = new BattleLightmask();	// ... Create the light mask.
+    if ($gameVariables.GetScriptActive()) {             // If the script is active
+      if (lightInBattle) {                              // If is active during battles.
+        this._battleLightmask = new BattleLightmask();  // ... Create the light mask.
         if (battleMaskPosition === 'Above') {
           this.addChild(this._battleLightmask);
         } else if (battleMaskPosition === 'Between') {
@@ -2271,31 +2271,31 @@ Imported[Community.Lighting.name] = true;
   };
 
   BattleLightmask.prototype.update = function () {
-    var color1 = $gameTemp._BattleTint;
+    let color1 = $gameTemp._BattleTint;
     if ($gameTemp._BattleTintSpeed > 0) {
 
       $gameTemp._BattleTintTimer += 1;
 
-      var r = hexToRgb($gameTemp._BattleTintFade).r;
-      var g = hexToRgb($gameTemp._BattleTintFade).g;
-      var b = hexToRgb($gameTemp._BattleTintFade).b;
-      var a = hexToRgb($gameTemp._BattleTintFade).a;
+      let r = hexToRgb($gameTemp._BattleTintFade).r;
+      let g = hexToRgb($gameTemp._BattleTintFade).g;
+      let b = hexToRgb($gameTemp._BattleTintFade).b;
+      let a = hexToRgb($gameTemp._BattleTintFade).a;
 
       var r2 = hexToRgb($gameTemp._BattleTint).r;
       var g2 = hexToRgb($gameTemp._BattleTint).g;
-      var b2 = hexToRgb($gameTemp._BattleTint).b;
-      var a2 = hexToRgb($gameTemp._BattleTint).a;
+      let b2 = hexToRgb($gameTemp._BattleTint).b;
+      let a2 = hexToRgb($gameTemp._BattleTint).a;
 
 
-      var stepR = (r2 - r) / (60 * $gameTemp._BattleTintSpeed);
-      var stepG = (g2 - g) / (60 * $gameTemp._BattleTintSpeed);
-      var stepB = (b2 - b) / (60 * $gameTemp._BattleTintSpeed);
-      var stepA = (a2 - a) / (60 * $gameTemp._BattleTintSpeed);
+      let stepR = (r2 - r) / (60 * $gameTemp._BattleTintSpeed);
+      let stepG = (g2 - g) / (60 * $gameTemp._BattleTintSpeed);
+      let stepB = (b2 - b) / (60 * $gameTemp._BattleTintSpeed);
+      let stepA = (a2 - a) / (60 * $gameTemp._BattleTintSpeed);
 
-      var r3 = Math.floor(r + (stepR * $gameTemp._BattleTintTimer));
-      var g3 = Math.floor(g + (stepG * $gameTemp._BattleTintTimer));
-      var b3 = Math.floor(b + (stepB * $gameTemp._BattleTintTimer));
-      var a3 = Math.floor(a + (stepA * $gameTemp._BattleTintTimer));
+      let r3 = Math.floor(r + (stepR * $gameTemp._BattleTintTimer));
+      let g3 = Math.floor(g + (stepG * $gameTemp._BattleTintTimer));
+      let b3 = Math.floor(b + (stepB * $gameTemp._BattleTintTimer));
+      let a3 = Math.floor(a + (stepA * $gameTemp._BattleTintTimer));
       if (r3 < 0) { r3 = 0 }
       if (g3 < 0) { g3 = 0 }
       if (b3 < 0) { b3 = 0 }
@@ -2304,10 +2304,10 @@ Imported[Community.Lighting.name] = true;
       if (g3 > 255) { g3 = 255 }
       if (b3 > 255) { b3 = 255 }
       if (a3 > 255) { a3 = 255 }
-      var reddone = false;
-      var greendone = false;
-      var bluedone = false;
-      var alphadone = false;
+      let reddone = false;
+      let greendone = false;
+      let bluedone = false;
+      let alphadone = false;
       if (stepR >= 0 && r3 >= r2) {
         reddone = true;
       }
@@ -2337,7 +2337,7 @@ Imported[Community.Lighting.name] = true;
         $gameTemp._BattleTintSpeed = 0;
         $gameTemp._BattleTintTimer = 0;
       }
-      color1 = rgba2hex(r, g, b, a);
+      color1 = rgba2hex(r3, g3, b3, a3);
       $gameTemp._BattleTintFade = color1;
     }
     this._maskBitmap.FillRect(-lightMaskPadding, 0, maxX + lightMaskPadding, maxY, color1);
@@ -2669,8 +2669,8 @@ Imported[Community.Lighting.name] = true;
   };
 
   /**
-   * 
-   * @param {String[]} args 
+   *
+   * @param {String[]} args
    */
   $$.flashlight = function (args) {
     if (args[0] == 'on') {
@@ -2713,6 +2713,10 @@ Imported[Community.Lighting.name] = true;
       $gameVariables.SetFlashlightLength(flashlightlength);
       $gameVariables.SetFlashlightDensity(flashlightdensity);
 
+      if ($gameVariables.GetRadius() < 1) {
+        $gameVariables.SetRadius(1);
+        $gameVariables.SetRadiusTarget(1);
+      }
     }
     if (args[0] === 'off') {
       $gameVariables.SetFlashlight(false);
@@ -2720,8 +2724,8 @@ Imported[Community.Lighting.name] = true;
   };
 
   /**
-   * 
-   * @param {String[]} args 
+   *
+   * @param {String[]} args
    */
   $$.fireLight = function (args) {
     //******************* Light radius 100 #FFFFFF ************************
@@ -2887,7 +2891,7 @@ Imported[Community.Lighting.name] = true;
 
   /**
    * @param {String} tileType
-   * @param {String[]} args 
+   * @param {String[]} args
    */
   $$.tile = function (tiletype, args) {
     let tilearray = $gameVariables.GetTileArray();
@@ -2963,70 +2967,67 @@ Imported[Community.Lighting.name] = true;
   };
 
   /**
-   * 
-   * @param {String[]} args 
+   *
+   * @param {String[]} args
    */
   $$.tint = function (args) {
-    if (args[0].trim().toLowerCase() === 'set') {
-
-      $gameVariables.SetTint(args[1]);
-      $gameVariables.SetTintTarget(args[1]);
-    }
-    if (args[0].trim().toLowerCase() === 'fade') {
-      $gameVariables.SetTintTarget(args[1]);
-      $gameVariables.SetTintSpeed(args[2]);
-    }
-    else if (args[0].trim().toLowerCase() === "daylight") {
-      let currentColor = $gameVariables.GetTintByTime();
-      $gameVariables.SetTint(currentColor);
+    let cmd = args[0].trim().toLowerCase();
+    if (cmd === 'set' || cmd == 'fade') {
+      let currentColor = args[1];
+      let speed = +args[2] || 0;
+      if (speed == 0) $gameVariables.SetTint(args[1]);
       $gameVariables.SetTintTarget(currentColor);
+      $gameVariables.SetTintSpeed(speed);
+    }
+    else if (cmd === "reset" || cmd === "daylight") {
+      let currentColor = $gameVariables.GetTintByTime();
+      let speed = +args[1] || 0;
+      if (speed == 0) $gameVariables.SetTint(currentColor);
+      $gameVariables.SetTintTarget(currentColor);
+      $gameVariables.SetTintSpeed(speed);
     }
   };
 
   /**
-   * 
-   * @param {String[]} args 
+   *
+   * @param {String[]} args
    */
   $$.DayNight = function (args) {
     let daynightspeed = $gameVariables.GetDaynightSpeed();
     let daynighttimer = $gameVariables.GetDaynightTimer();     // timer = minutes * speed
     let daynightcycle = $gameVariables.GetDaynightCycle();     // cycle = hours
     let daynighthoursinday = $gameVariables.GetDaynightHoursinDay();   // 24
-    //let daynightcolors = $gameVariables.GetDaynightColorArray();
+    let daynightcolors = $gameVariables.GetDaynightColorArray();
 
     if (args[0] === 'speed') {
-      daynightspeed = Number(args[1]);
-      if (daynightspeed < 0) {
-        daynightspeed = 5000;
-      }
+      daynightspeed = +args[1] || 5000;
       $gameVariables.SetDaynightSpeed(daynightspeed);
     }
 
-    if (args[0] === 'add') {
-      let houradd = Number(args[1]);
-      let minuteadd = 0;
-      if (args.length > 2) {
-        minuteadd = Number(args[2]);
-      }
-
+    function addTime(houradd, minuteadd) {
       let daynightminutes = Math.floor(daynighttimer / daynightspeed);
-      daynightminutes = daynightminutes + minuteadd;
-      if (daynightminutes > 60) {
-        daynightminutes = daynightminutes - 60;
-        daynightcycle = daynightcycle + 1;
-      }
-      daynightcycle = daynightcycle + houradd;
+      daynightminutes = daynightminutes + minuteadd + 60*(daynightcycle + houradd);
+      daynightcycle = Math.trunc(daynightminutes/60)%daynighthoursinday;
+      daynightminutes = daynightminutes%60;
+      if (daynightminutes < 0) { daynightminutes += 60; daynightcycle--; };
+      if (daynightcycle < 0) { daynightcycle += daynighthoursinday; };
+
+
       daynighttimer = daynightminutes * daynightspeed;
 
-      if (daynightcycle < 0) daynightcycle = 0;
-      if (daynightcycle >= daynighthoursinday) daynightcycle = daynightcycle - daynighthoursinday;
       $$.saveTime(daynightcycle, daynightminutes);
 
       $gameVariables.SetDaynightTimer(daynighttimer);     // timer = minutes * speed
       $gameVariables.SetDaynightCycle(daynightcycle);     // cycle = hours
-
     }
 
+    if (args[0] === 'add') {
+      addTime(+args[1], args.length > 2 ? +args[2] : 0);
+    }
+
+    if (args[0] === 'subtract') {
+      addTime(+args[1]*-1, args.length > 2 ? +args[2]*-1 : 0);
+    }
 
     if (args[0] === 'hour') {
       daynightcycle = Number(args[1]);
@@ -3058,12 +3059,13 @@ Imported[Community.Lighting.name] = true;
           daynightcolors.push({ "color": "#ffffff", "isNight": false });
         }
       }
-      $gameVariables.setDayNightColorArray(daynightcolors);
-      $gameVariables.setDayNightHoursInDay(daynighthoursinday);
+      $gameVariables.SetDaynightColorArray(daynightcolors);
+      $gameVariables.SetDaynightHoursinDay(daynighthoursinday);
     }
 
     if (args[0] === 'show') {
       $gameVariables._clShowTimeWindow = true;
+      $gameVariables._clShowTimeWindowSeconds = false;
     }
 
     if (args[0] === 'showseconds') {
@@ -3078,13 +3080,7 @@ Imported[Community.Lighting.name] = true;
 
     if (args[0] === 'color') {
 
-      let hour = Number(args[1]);
-      if (hour < 0) {
-        hour = 0;
-      }
-      if (hour >= daynighthoursinday) {
-        hour = (daynighthoursinday - 1);
-      }
+      let hour = (+args[1] || 0).clamp(0, daynighthoursinday - 1);
       let hourcolor = args[2];
       let isValidColor = isValidColorRegex.test(hourcolor.trim());
       if (isValidColor) {
@@ -3201,8 +3197,8 @@ Game_Variables.prototype.GetFlashlightWidth = function () {
 };
 
 /**
- * 
- * @param {String} value 
+ *
+ * @param {String} value
  */
 Game_Variables.prototype.SetPlayerColor = function (value) {
   this._Community_Lighting_PlayerColor = value;
@@ -3264,16 +3260,8 @@ Game_Variables.prototype.SetDaynightSpeed = function (value) {
   this._Community_Lighting_DaynightSpeed = value;
 };
 Game_Variables.prototype.GetDaynightSpeed = function () {
-  if (this._Community_Lighting_DaynightSpeed >= 0) {
-    return this._Community_Lighting_DaynightSpeed;
-  }
-  var defaultSpeed = Number(Community.Lighting.parameters['Daynight Initial Speed'])
-  if (Number.isNaN(defaultSpeed)) {
-    return 10;
-  }
-  else {
-    return defaultSpeed;
-  }
+  if (this._Community_Lighting_DaynightSpeed >= 0) return this._Community_Lighting_DaynightSpeed;
+  return Number(Community.Lighting.parameters['Daynight Initial Speed']) || 10;
 };
 Game_Variables.prototype.SetDaynightCycle = function (value) {
   this._Community_Lighting_DaynightCycle = value;
@@ -3362,25 +3350,19 @@ function Window_TimeOfDay() {
 };
 Window_TimeOfDay.prototype = Object.create(Window_Base.prototype);
 Window_TimeOfDay.prototype.constructor = Window_TimeOfDay;
-
-/**
- * 
- * @param {Number} x 
- * @param {Number} y 
- * @param {Number} width
- * @param {Number} height
- */
-Window_TimeOfDay.prototype.initialize = function (x, y, width, height) {
-  width = 150;
-  height = 65;
-  Window_Base.prototype.initialize.call(this, Graphics.boxWidth - width, 0, width, height);
+Window_TimeOfDay.prototype.initialize = function () {
+  const ww = 150;
+  const wh = 65;
+  const wx = Graphics.boxWidth - ww;
+  const wy = 0;
+  Window_Base.prototype.initialize.call(this, wx, wy, ww, wh);
   this.setBackgroundType(0);
   this.visible = $gameVariables._clShowTimeWindow;
 };
 Window_TimeOfDay.prototype.update = function () {
   this.visible = $gameVariables._clShowTimeWindow;
   if (this.visible) {
-    let time = Community.Lighting.time($gameVariables._clShowTimeWindowSeconds);
+    let time = Community.Lighting.time(!!$gameVariables._clShowTimeWindowSeconds);
     let textWidth = this.textWidth(time);
     this.contents.clear();
     this.resetTextColor();
