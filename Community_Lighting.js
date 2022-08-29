@@ -592,6 +592,9 @@ Imported[Community.Lighting.name] = true;
   Number.prototype.is = function() {
     return [...arguments].includes(Number(this));
   }
+  String.prototype.equalsIC = function() {
+    return [...arguments].map(s => s.toLowerCase()).includes(this.toLowerCase());
+  }
 
   isOn = (x) => x.toLowerCase() === "on";
   isOff = (x) => x.toLowerCase() === "off";
@@ -706,7 +709,7 @@ Imported[Community.Lighting.name] = true;
   let optionText = parameters["Options Menu Entry"] || "";
   let lightInBattle = eval(String(parameters['Battle Tinting'])) || false;
   let battleMaskPosition = parameters['Light Mask Position'] || 'Above';
-  if (battleMaskPosition !== 'Above' && battleMaskPosition !== 'Between') {
+  if (!battleMaskPosition.equalsIC('Above', 'Between')) {
     battleMaskPosition = 'Above'; //Get rid of any invalid value
   }
 
@@ -843,8 +846,8 @@ Imported[Community.Lighting.name] = true;
       this._clRadius = undefined;
       for (let x of tagData) {
         if (!isNaN(+x) && this._clRadius === undefined) this._clRadius = +x;
-        else if (x === "cycle" && this._clColor === undefined) this._clCycle = [];
-        else if (this._clCycle && !needsCycleDuration && x[0] === "#") {
+        else if (x.equalsIC("cycle") && this._clColor === undefined) this._clCycle = [];
+        else if (this._clCycle && !needsCycleDuration && x[0].equalsIC("#")) {
           this._clCycle.push({ "color": $$.validateColor(x), "duration": 1 });
           needsCycleDuration = true;
         }
@@ -852,14 +855,14 @@ Imported[Community.Lighting.name] = true;
           this._clCycle[this._clCycle.length - 1].duration = +x || 1;
           needsCycleDuration = false;
         }
-        else if (x[0] === "#" && this._clColor === undefined) this._clColor = $$.validateColor(x);
-        else if (x[0] === "b" && this._clBrightness === undefined) {
+        else if (x[0].equalsIC("#") && this._clColor === undefined) this._clColor = $$.validateColor(x);
+        else if (x[0].equalsIC("b") && this._clBrightness === undefined) {
           this._clBrightness = Number(+(x.substr(1, x.length)) / 100).clamp(0, 1);
         }
-        else if ((x === "night" || x === "day") && this._clSwitch === undefined) this._clSwitch = x;
-        else if (x[0] === "d" && this._clDirection === undefined) this._clDirection = +(x.substr(1, x.length));
-        else if (x[0] === "x" && this._clXOffset === undefined) this._clXOffset = +(x.substr(1, x.length));
-        else if (x[0] === "y" && this._clYOffset === undefined) this._clYOffset = +(x.substr(1, x.length));
+        else if (x.equalsIC("night", "day") && this._clSwitch === undefined) this._clSwitch = x;
+        else if (x[0].equalsIC("d") && this._clDirection === undefined) this._clDirection = +(x.substr(1, x.length));
+        else if (x[0].equalsIC("x") && this._clXOffset === undefined) this._clXOffset = +(x.substr(1, x.length));
+        else if (x[0].equalsIC("y") && this._clYOffset === undefined) this._clYOffset = +(x.substr(1, x.length));
         else if (x.length > 0 && this._clId === undefined) this._clId = x;
       }
     }
@@ -872,10 +875,10 @@ Imported[Community.Lighting.name] = true;
       for (let x of tagData) {
         if (!isNaN(+x) && this._clBeamLength === undefined) this._clBeamLength = +x;
         else if (!isNaN(+x) && this._clBeamWidth === undefined) this._clBeamWidth = +x;
-        else if (x[0] === "l" && this._clBeamLength === undefined) this._clBeamLength = this._clBeamLength = +(x.substr(1, x.length));
-        else if (x[0] === "w" && this._clBeamWidth === undefined) this._clBeamWidth = this._clBeamWidth = +(x.substr(1, x.length));
-        else if (x === "cycle" && this._clColor === undefined) this._clCycle = [];
-        else if (this._clCycle && !needsCycleDuration && x[0] === "#") {
+        else if (x[0].equalsIC("l") && this._clBeamLength === undefined) this._clBeamLength = this._clBeamLength = +(x.substr(1, x.length));
+        else if (x[0].equalsIC("w") && this._clBeamWidth === undefined) this._clBeamWidth = this._clBeamWidth = +(x.substr(1, x.length));
+        else if (x.equalsIC("cycle") && this._clColor === undefined) this._clCycle = [];
+        else if (this._clCycle && !needsCycleDuration && x[0].equalsIC("#")) {
           this._clCycle.push({ "color": $$.validateColor(x), "duration": 1 });
           needsCycleDuration = true;
         }
@@ -883,15 +886,15 @@ Imported[Community.Lighting.name] = true;
           this._clCycle[this._clCycle.length - 1].duration = +x || 1;
           needsCycleDuration = false;
         }
-        else if (x[0] === "#" && this._clBeamColor === undefined) this._clColor = $$.validateColor(x);
+        else if (x[0].equalsIC("#") && this._clBeamColor === undefined) this._clColor = $$.validateColor(x);
         else if (!isNaN(+x) && this._clOnOff === undefined) this._clOnOff = +x;
         else if (!isNaN(+x) && this._clFlashlightDirection === undefined) this._clFlashlightDirection = +x;
         else if (isOn(x) && this._clOnOff === undefined) this._clOnOff = 1;
         else if (isOff(x) && this._clOnOff === undefined) this._clOnOff = 0;
-        else if ((x === "night" || x === "day") && this._clSwitch === undefined) this._clSwitch = x;
-        else if (x[0] === "d" && this._clFlashlightDirection === undefined) this._clFlashlightDirection = +(x.substr(1, x.length));
-        else if (x[0] === "x" && this._clXOffset === undefined) this._clXOffset = +(x.substr(1, x.length));
-        else if (x[0] === "y" && this._clYOffset === undefined) this._clYOffset = +(x.substr(1, x.length));
+        else if (x.equalsIC("night", "day") && this._clSwitch === undefined) this._clSwitch = x;
+        else if (x[0].equalsIC("d") && this._clFlashlightDirection === undefined) this._clFlashlightDirection = +(x.substr(1, x.length));
+        else if (x[0].equalsIC("x") && this._clXOffset === undefined) this._clXOffset = +(x.substr(1, x.length));
+        else if (x[0].equalsIC("y") && this._clYOffset === undefined) this._clYOffset = +(x.substr(1, x.length));
         else if (x.length > 0 && this._clId === undefined) this._clId = x;
       }
     }
@@ -958,11 +961,11 @@ Imported[Community.Lighting.name] = true;
     let type = this.getLightType();
     let result = false;
     if (this._clSwitch === undefined) {
-      if (type === "flashlight" && this._clOnOff === 1) result = true;
+      if (type.is(LightType.Flashlight) && this._clOnOff === 1) result = true;
       else result = true;
     }
-    else (result = this._clSwitch === "night" && $$.isNight())
-      || (result = this._clSwitch === "day" && !$$.isNight())
+    else (result = this._clSwitch.equalsIC("night") && $$.isNight())
+      || (result = this._clSwitch.equalsIC("day") && !$$.isNight())
     return result;
   };
   Game_Event.prototype.getLightCycle = function () {
@@ -990,7 +993,7 @@ Imported[Community.Lighting.name] = true;
    */
   Game_Interpreter.prototype.pluginCommand = function (command, args) {
     _Game_Interpreter_pluginCommand.call(this, command, args);
-    if (typeof command != 'undefined') {
+    if (typeof command !== 'undefined') {
       this.communityLighting_Commands(command, args);
     }
   };
@@ -1142,7 +1145,7 @@ Imported[Community.Lighting.name] = true;
    * @param {String[]} args
    */
   Game_Interpreter.prototype.reload = function (command, args) {
-    if (args[0] === "events") {
+    if (args[0].equalsIC("events")) {
       $$.ReloadMapEvents();
     }
   };
@@ -1150,13 +1153,13 @@ Imported[Community.Lighting.name] = true;
   Game_Interpreter.prototype.tintbattle = function (command, args) {
     if ($gameParty.inBattle()) {
       let cmd = args[0].trim().toLowerCase();
-      if (cmd === "set" || cmd === 'fade') {
+      if (cmd.equalsIC("set", 'fade')) {
         $gameTemp._BattleTintFade = $gameTemp._BattleTint;
         $gameTemp._BattleTintTimer = 0;
         $gameTemp._BattleTint = this.determineBattleTint(args[1]);
         $gameTemp._BattleTintSpeed = +args[2] || 0;
       }
-      else if (cmd === 'reset' || cmd === 'daylight') {
+      else if (cmd.equalsIC('reset', 'daylight')) {
         $gameTemp._BattleTintTimer = 0;
         $gameTemp._BattleTint = $gameTemp._MapTint;
         $gameTemp._BattleTintSpeed = +args[1] || 0;
@@ -2230,7 +2233,7 @@ Imported[Community.Lighting.name] = true;
   let Community_Lighting_Spriteset_Battle_createLowerLayer = Spriteset_Battle.prototype.createLowerLayer;
   Spriteset_Battle.prototype.createLowerLayer = function () {
     Community_Lighting_Spriteset_Battle_createLowerLayer.call(this);
-    if (battleMaskPosition === 'Above') {
+    if (battleMaskPosition.equalsIC('Above')) {
       this.createBattleLightmask();
     }
   };
@@ -2238,7 +2241,7 @@ Imported[Community.Lighting.name] = true;
   let Community_Lighting_Spriteset_Battle_createBattleback = Spriteset_Battle.prototype.createBattleback;
   Spriteset_Battle.prototype.createBattleback = function () {
     Community_Lighting_Spriteset_Battle_createBattleback.call(this);
-    if (battleMaskPosition === 'Between') {
+    if (battleMaskPosition.equalsIC('Between')) {
       this.createBattleLightmask();
     }
   };
@@ -2247,9 +2250,9 @@ Imported[Community.Lighting.name] = true;
     if ($gameVariables.GetScriptActive()) {             // If the script is active
       if (lightInBattle) {                              // If is active during battles.
         this._battleLightmask = new BattleLightmask();  // ... Create the light mask.
-        if (battleMaskPosition === 'Above') {
+        if (battleMaskPosition.equalsIC('Above')) {
           this.addChild(this._battleLightmask);
-        } else if (battleMaskPosition === 'Between') {
+        } else if (battleMaskPosition.equalsIC('Between')) {
           this._battleField.addChild(this._battleLightmask);
         }
       }
@@ -2534,7 +2537,7 @@ Imported[Community.Lighting.name] = true;
           let data = mapnote.split(/\s+/);
           data.splice(0, 1);
           data.map(x => x.trim());
-          if (typeof $$.mapBrightness == "undefined") {
+          if (typeof $$.mapBrightness === "undefined") {
             $$.tint(data);
           }
           else {
@@ -2676,7 +2679,7 @@ Imported[Community.Lighting.name] = true;
    */
   $$.fireLight = function (args) {
     //******************* Light radius 100 #FFFFFF ************************
-    if (args[0] == 'radius') {
+    if (args[0].equalsIC('radius')) {
       let newradius = Number(args[1]);
       if (newradius >= 0) {
         $gameVariables.SetRadius(newradius);
@@ -2695,9 +2698,9 @@ Imported[Community.Lighting.name] = true;
       if (args.length > 3) {
         let brightness = 0.0;
         let b_arg = args[3];
-        if (typeof b_arg != 'undefined') {
+        if (typeof b_arg !== 'undefined') {
           let key = b_arg.substring(0, 1);
-          if (key == 'b' || key == 'B') {
+          if (key.equalsIC('b')) {
             brightness = ((+b_arg.substring(1) || 0) / 100).clamp(0, 1);
             $gameVariables.SetPlayerBrightness(brightness);
           }
@@ -2706,7 +2709,7 @@ Imported[Community.Lighting.name] = true;
     }
 
     //******************* Light radiusgrow 100 #FFFFFF Brightness Frames ************************
-    if (args[0] === 'radiusgrow') {
+    if (args[0].equalsIC('radiusgrow')) {
       let newradius = Number(args[1]);
       if (newradius >= 0) {
 
@@ -2735,9 +2738,9 @@ Imported[Community.Lighting.name] = true;
       if (args.length > 3) {
         let brightness = 0.0;
         let b_arg = args[3];
-        if (typeof b_arg != 'undefined') {
+        if (typeof b_arg !== 'undefined') {
           let key = b_arg.substring(0, 1);
-          if (key == 'b' || key == 'B') {
+          if (key.equalsIC('b')) {
             brightness = ((+b_arg.substring(1) || 0) / 100).clamp(0, 1);
             $gameVariables.SetPlayerBrightness(brightness);
           }
@@ -2798,10 +2801,10 @@ Imported[Community.Lighting.name] = true;
 
     // *********************** SET COLOR *********************
 
-    if (args[0] === 'color') {
+    if (args[0].equalsIC('color')) {
 
       let newcolor = args[2];
-      if (newcolor && newcolor.toLowerCase() === 'defaultcolor') {
+      if (newcolor && newcolor.equalsIC('defaultcolor')) {
         newcolor = 'defaultcolor';
       }
 
@@ -2829,7 +2832,7 @@ Imported[Community.Lighting.name] = true;
 
 
     // **************************** RESET ALL SWITCHES ***********************
-    if (args[0] === 'switch' && args[1] === 'reset') {
+    if (args[0].equalsIC('switch') && args[1].equalsIC('reset')) {
       $gameVariables.SetLightArrayId([]);
       $gameVariables.SetLightArrayState([]);
       $gameVariables.SetLightArrayColor([]);
@@ -2842,14 +2845,14 @@ Imported[Community.Lighting.name] = true;
    */
   $$.tint = function (args) {
     let cmd = args[0].trim().toLowerCase();
-    if (cmd === 'set' || cmd == 'fade') {
+    if (cmd.equalsIC('set', 'fade')) {
       let currentColor = args[1];
       let speed = +args[2] || 0;
       if (speed == 0) $gameVariables.SetTint(args[1]);
       $gameVariables.SetTintTarget(currentColor);
       $gameVariables.SetTintSpeed(speed);
     }
-    else if (cmd === "reset" || cmd === "daylight") {
+    else if (cmd.equalsIC("reset", "daylight")) {
       let currentColor = $gameVariables.GetTintByTime();
       let speed = +args[1] || 0;
       if (speed == 0) $gameVariables.SetTint(currentColor);
@@ -2869,7 +2872,7 @@ Imported[Community.Lighting.name] = true;
     let daynighthoursinday = $gameVariables.GetDaynightHoursinDay();   // 24
     let daynightcolors = $gameVariables.GetDaynightColorArray();
 
-    if (args[0] === 'speed') {
+    if (args[0].equalsIC('speed')) {
       daynightspeed = +args[1] || 5000;
       $gameVariables.SetDaynightSpeed(daynightspeed);
     }
@@ -2891,15 +2894,15 @@ Imported[Community.Lighting.name] = true;
       $gameVariables.SetDaynightCycle(daynightcycle);     // cycle = hours
     }
 
-    if (args[0] === 'add') {
+    if (args[0].equalsIC('add')) {
       addTime(+args[1], args.length > 2 ? +args[2] : 0);
     }
 
-    if (args[0] === 'subtract') {
+    if (args[0].equalsIC('subtract')) {
       addTime(+args[1]*-1, args.length > 2 ? +args[2]*-1 : 0);
     }
 
-    if (args[0] === 'hour') {
+    if (args[0].equalsIC('hour')) {
       daynightcycle = Number(args[1]);
       if (args.length > 2) {
         daynightminutes = Number(args[2]);
@@ -2917,7 +2920,7 @@ Imported[Community.Lighting.name] = true;
 
     }
 
-    if (args[0] === 'hoursinday') {
+    if (args[0].equalsIC('hoursinday')) {
 
       let old_value = daynighthoursinday;
       daynighthoursinday = Number(args[1]);
@@ -2933,22 +2936,22 @@ Imported[Community.Lighting.name] = true;
       $gameVariables.SetDaynightHoursinDay(daynighthoursinday);
     }
 
-    if (args[0] === 'show') {
+    if (args[0].equalsIC('show')) {
       $gameVariables._clShowTimeWindow = true;
       $gameVariables._clShowTimeWindowSeconds = false;
     }
 
-    if (args[0] === 'showseconds') {
+    if (args[0].equalsIC('showseconds')) {
       $gameVariables._clShowTimeWindow = true;
       $gameVariables._clShowTimeWindowSeconds = true;
     }
 
-    if (args[0] === 'hide') {
+    if (args[0].equalsIC('hide')) {
       $gameVariables._clShowTimeWindow = false;
       $gameVariables._clShowTimeWindowSeconds = false;
     }
 
-    if (args[0] === 'color') {
+    if (args[0].equalsIC('color')) {
 
       let hour = (+args[1] || 0).clamp(0, daynighthoursinday - 1);
       let hourcolor = args[2];
@@ -2990,7 +2993,7 @@ Game_Variables.prototype.GetActiveRadius = function () {
 };
 
 Game_Variables.prototype.GetFirstRun = function () {
-  if (typeof this._Community_Lighting_FirstRun == 'undefined') {
+  if (typeof this._Community_Lighting_FirstRun === 'undefined') {
     this._Community_Lighting_FirstRun = true;
   }
   return this._Community_Lighting_FirstRun;
@@ -2999,7 +3002,7 @@ Game_Variables.prototype.SetFirstRun = function (value) {
   this._Community_Lighting_FirstRun = value;
 };
 Game_Variables.prototype.GetScriptActive = function () {
-  if (typeof this._Community_Lighting_ScriptActive == 'undefined') {
+  if (typeof this._Community_Lighting_ScriptActive === 'undefined') {
     this._Community_Lighting_ScriptActive = true;
   }
   return this._Community_Lighting_ScriptActive;
@@ -3009,7 +3012,7 @@ Game_Variables.prototype.SetScriptActive = function (value) {
 };
 
 Game_Variables.prototype.GetOldMapId = function () {
-  if (typeof this._Community_Lighting_OldMapId == 'undefined') {
+  if (typeof this._Community_Lighting_OldMapId === 'undefined') {
     this._Community_Lighting_OldMapId = 0;
   }
   return this._Community_Lighting_OldMapId;
