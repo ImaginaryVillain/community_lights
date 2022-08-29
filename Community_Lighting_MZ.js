@@ -1296,7 +1296,7 @@ Imported[Community.Lighting.name] = true;
    */
   Game_Interpreter.prototype.pluginCommand = function (command, args) {
     _Game_Interpreter_pluginCommand.call(this, command, args);
-    if (typeof command != 'undefined') {
+    if (typeof command !== 'undefined') {
       this.communityLighting_Commands(command, args);
     }
   };
@@ -2873,7 +2873,7 @@ Imported[Community.Lighting.name] = true;
           let data = mapnote.split(/\s+/);
           data.splice(0, 1);
           data.map(x => x.trim());
-          if (typeof $$.mapBrightness == "undefined") {
+          if (typeof $$.mapBrightness === "undefined") {
             $$.tint(data);
           }
           else {
@@ -3034,7 +3034,7 @@ Imported[Community.Lighting.name] = true;
       if (args.length > 3) {
         let brightness = 0.0;
         let b_arg = args[3];
-        if (typeof b_arg != 'undefined') {
+        if (typeof b_arg !== 'undefined') {
           let key = b_arg.substring(0, 1);
           if (key.equalsIC('b')) {
             brightness = ((+b_arg.substring(1) || 0) / 100).clamp(0, 1);
@@ -3074,7 +3074,7 @@ Imported[Community.Lighting.name] = true;
       if (args.length > 3) {
         let brightness = 0.0;
         let b_arg = args[3];
-        if (typeof b_arg != 'undefined') {
+        if (typeof b_arg !== 'undefined') {
           let key = b_arg.substring(0, 1);
           if (key.equalsIC('b')) {
             brightness = ((+b_arg.substring(1) || 0) / 100).clamp(0, 1);
@@ -3329,7 +3329,7 @@ Game_Variables.prototype.GetActiveRadius = function () {
 };
 
 Game_Variables.prototype.GetFirstRun = function () {
-  if (typeof this._Community_Lighting_FirstRun == 'undefined') {
+  if (typeof this._Community_Lighting_FirstRun === 'undefined') {
     this._Community_Lighting_FirstRun = true;
   }
   return this._Community_Lighting_FirstRun;
@@ -3338,7 +3338,7 @@ Game_Variables.prototype.SetFirstRun = function (value) {
   this._Community_Lighting_FirstRun = value;
 };
 Game_Variables.prototype.GetScriptActive = function () {
-  if (typeof this._Community_Lighting_ScriptActive == 'undefined') {
+  if (typeof this._Community_Lighting_ScriptActive === 'undefined') {
     this._Community_Lighting_ScriptActive = true;
   }
   return this._Community_Lighting_ScriptActive;
@@ -3348,7 +3348,7 @@ Game_Variables.prototype.SetScriptActive = function (value) {
 };
 
 Game_Variables.prototype.GetOldMapId = function () {
-  if (typeof this._Community_Lighting_OldMapId == 'undefined') {
+  if (typeof this._Community_Lighting_OldMapId === 'undefined') {
     this._Community_Lighting_OldMapId = 0;
   }
   return this._Community_Lighting_OldMapId;
