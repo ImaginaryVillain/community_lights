@@ -87,7 +87,7 @@ You can post your questions on the related thread on rpgmakerweb: https://forums
 	* change a bunch of event and map notes.
 
 	*
-	* 2. New with version 4.2+ is the option to place the lighting note tag 
+	* 2. New with version 4.2+ is the option to place the lighting note tag
 	* anywhere in an event page's comment field instead of the note box, as
 	* long as the comment field is the first thing on the page.  This allows
 	* for more advanced lighting tricks to be done on a per-page basis.  Page
@@ -154,7 +154,7 @@ You can post your questions on the related thread on rpgmakerweb: https://forums
 	* - cycle     Allows any number of color + duration pairs to follow that will be
 	*             cycled through before repeating from the beginning:
 	*             <cl: Flashlight l8 w12 cycle #f00 15 #ff0 15 #0f0 15 on someId d3>
-	*             There's no limit to how many colors can cycled. [optional]
+	*             There's no limit to how many colors can be cycled. [optional]
 	* - onoff:    Initial state:  0, 1, off, on
 	* - sdir:     Forced direction (optional): 0:auto, 1:up, 2:right, 3:down, 4:left
 	*             Can be preceded by "D", so D4.  If omitted, defaults to 0
@@ -184,12 +184,13 @@ You can post your questions on the related thread on rpgmakerweb: https://forums
 	* --------------------------------------------------------------------------
 	* Easy hex color references
 	* --------------------------------------------------------------------------
+	* white - #FFFFFF
 	* blue - #0000FF
 	* red - #FF0000
+	* orange - #FFA500
 	* green - #008000
 	* cyan - #00FFFF
 	* yellow - #FFFF00
-	* white - #FFFFFF
 	* purple - #800080
 	* pink - #FFC0CB
 	* black - #000000
@@ -197,31 +198,26 @@ You can post your questions on the related thread on rpgmakerweb: https://forums
 	* Migrating from Khas Ultra Lights
 	* -------------------------------------------------------------------------------
 	* Using the smooth lights options make it look extremely close.
-	* The default light radius that Khas appears to be around 122. 
+	* The default light radius that Khas appears to be around 122.
 	* -------------------------------------------------------------------------------
 	* Maps
 	* -------------------------------------------------------------------------------
 	* DayNight [speed]
 	* Activates day/night cycle.  Put in map note or event note
-	* - speed     Optional parameter to alter the speed at which time passes.  10 is
-	*         the default speed, higher numbers are slower, lower numbers are
-	*         faster, and 0 stops the flow of time entirely.  If speed is not
-	*         specified, then the current speed is used.
-	*         
-	* RegionLight id ON c r
-	* - Turns on lights for tile tag or region tag (id) using color (c) and radius (r) 
-	* - Replace ON with OFF to turn them off
-	* - Put in map note
+	* - speed     Optional parameter to alter the speed at which time passes.
+	*             10 is the default speed, higher numbers are slower, lower
+	*             numbers are faster, and 0 stops the flow of time entirely.
+	*             If speed is not specified, then the current speed is used.
 	*
 	* RegionFire, RegionGlow
 	* - Same as above, but different lighting effects
 	*
 	* defaultbrightness
 	* - Sets the default brightness of all the lights in the map
-	* 
+	*
 	* Tint set c
 	* - Sets the current screen tint to the color (c)
-	* 
+	*
 	* Tint daylight
 	* - Sets the tint based on the current hour.
 	* -------------------------------------------------------------------------------
@@ -249,21 +245,22 @@ You can post your questions on the related thread on rpgmakerweb: https://forums
 	* Light radius r c b
 	* - Change player light radius (r), color (c), and brightness (b)
 	*
-	* Light radiusgrow r c b
-	* - Same as above, but apply changes over time
+	* Light radiusgrow r c b t
+	* - Same as above, but apply changes over time.
+	*   The duration is either (t) frames or 500 frames if (t) isn't specified.
 	*
 	* Setfire r s
 	* - Alters fire settings with radius shift (r) and red/yellow color shift (s)
 	*
 	* Flashlight on bl bw c bd
 	* - turn on flashlight for player with beam length (bl), beam width (hw), color (c),
-	*      and beam density (bd)
+	*   and beam density (bd)
 	*
 	* Flashlight off
 	* - Turn off the flashlight.  yup.
 	*
 	* Daynight speed n
-	* - Changes the speec by which hours pass ingame in relation to real life seconds
+	* - Changes the speed by which hours pass ingame in relation to real life seconds
 	*
 	* Daynight hour h m
 	* - Sets the ingame time to hh:mm
@@ -272,7 +269,10 @@ You can post your questions on the related thread on rpgmakerweb: https://forums
 	* - Sets the hour (h) to use color (c)
 	*
 	* Daynight add h m
-	* - Adds the specified hours (h) and minutes (m) to the ingame clock
+	* - Adds the specified hours (h) and minutes (m) to the in game clock
+	*
+	* Daynight subtract h m
+	* - Subtracts the specified hours (h) and minutes (m) from the in game clock
 	*
 	* Daynight show
 	* - Shows the current time of day in the upper right corner of the map screen (h:mm)
@@ -286,14 +286,17 @@ You can post your questions on the related thread on rpgmakerweb: https://forums
 	* Daynight hoursinday h
 	* - Sets the number of hours in a day to [h] (set hour colors  if doing this)
 	*
-	* Tint set c
-	* - Sets the current screen tint to the color (c)
+	* Tint set c [s]
+	* Tint fade c [s]
+	* - Sets or fades the current screen tint to the color (c)
+	* - The optional argument speed (s) sets the fade speed (1 = fast, 20 = very slow)
+	* - Both commands operate identically.
 	*
-	* Tint fade c s
-	* - Same as above, but fades (1 = fast, 20 = very slow)
-	*
-	* Tint daylight
-	* - Sets the tint based on the current hour.
+	* Tint reset [s]
+	* Tint daylight [s]
+	* - Resets or fades the tint based on the current hour.
+	* - The optional argument speed (s) sets the fade speed (1 = fast, 20 = very slow)
+	* - Both commands operate identically.
 	*
 	* TileLight   id ON c r
 	* RegionLight id ON c r
@@ -316,13 +319,13 @@ You can post your questions on the related thread on rpgmakerweb: https://forums
 	* - Turns off light blocking for tile with region id (id)
 	*
 	* RegionBlock id ON color shape xoffset yoffset width height
-	* - id			id of region
-	* - color		color of block (usually #000000)
-	* - shape		1=square, 2=oval
-	* - xoffset	x offset
-	* - yoffset	y offset
-	* - width		width of shape
-	* - height		height of shape
+	* - id      id of region
+	* - color   color of block (usually #000000)
+	* - shape   1=square, 2=oval
+	* - xoffset x offset
+	* - yoffset y offset
+	* - width   width of shape
+	* - height  height of shape
 	*
 	* --------------------------------------------------------------------------
 	* Kill Switch and conditional lighting
@@ -354,17 +357,18 @@ You can post your questions on the related thread on rpgmakerweb: https://forums
 	* Plugin Commands - Battle
 	* -------------------------------------------------------------------------------
 	*
-	* TintBattle set [color]
-	* - Tint the battle screen to the color used as argument.
+	* TintBattle set [c] [s]
+	* TintBattle fade [c] [s]
+	* - Sets or fades the battle screen to the color (c)
+	* - The optional argument speed (s) sets the fade speed (1 = fast, 20 = very slow)
 	* - Automatically set too dark color to '#666666' (dark gray).
+	* - Both commands operate identically.
 	*
-	* TintBattle reset
-	* - Reset the battle screen to its original color.
-	*
-	* TintBattle fade [color] [speed]
-	* - Fade the battle screen to the color used as first argument.
-	* - The second argument is speed of the fade (1 very fast, 20 more slow)
-	* - Still automatically set too dark color to '#666666' (dark gray).
+	* TintBattle reset [s]
+	* TintBattle daylight [s]
+	* - Resets or fades the battle screen to its original color.
+	* - The optional argument speed (s) sets the fade speed (1 = fast, 20 = very slow)
+	* - Both commands operate identically.
 	*
 	* --------------------------------------------------------------------------
 	* Lights Active Radius
@@ -372,7 +376,7 @@ You can post your questions on the related thread on rpgmakerweb: https://forums
 	* This allows you to decide how far away from the player lights are active,
 	* anything beyond this range will not light up until the player gets
 	* closer to it.
-	* 
+	*
 	* It can be changed in the plugin parameters, or using the script call...
 	*
 	* $gameVariables.SetActiveRadius(#)
@@ -387,11 +391,10 @@ Automatically Pretty JSON data files for pre-commit
 Used below Tutorial and modified script to suit this project.
 https://forums.rpgmakerweb.com/index.php?threads/automatically-pretty-json-files-for-clean-git-commit-diffs-using-git-hooks.108122/
 
-This is a client side hook so all developers need to update their `.git/hooks/pre-commit` with what I have provided. 
+This is a client side hook so all developers need to update their `.git/hooks/pre-commit` with what I have provided.
 hooks/pre-commit-1.0.js
 
 Developers can just rename to `pre-commit` (no extension) then copy and paste in .git/hooks/
 
-When updates are needed the shared hook should be updated and the local .git hook can be found here and also be updated.  
+When updates are needed the shared hook should be updated and the local .git hook can be found here and also be updated.
 .git/hooks/pre-commit
-
