@@ -1261,7 +1261,7 @@ Imported[Community.Lighting.name] = true;
     let type = this.getLightType();
     let result = false;
     if (this._clSwitch === undefined) {
-      if (type === "flashlight" && this._clOnOff === 1) result = true;
+      if (type.is(LightType.Flashlight) && this._clOnOff === 1) result = true;
       else result = true;
     }
     else (result = this._clSwitch === "night" && $$.isNight())
