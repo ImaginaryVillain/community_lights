@@ -635,7 +635,7 @@ Imported[Community.Lighting.name] = true;
       this.enabled    = isOn(onoff);
       this.color      = $$.validateColor(color, "#ffffff");
       this.radius     = +radius || 0;
-      this.brightness = (+brightness?.substr(1, brightness.length) / 100).clamp(0, 1) || 0;
+      this.brightness = brightness && (brightness.substr(1, brightness.length) / 100).clamp(0, 1) || 0;
     }
   };
 
@@ -842,7 +842,7 @@ Imported[Community.Lighting.name] = true;
     let tagData = this.getCLTag().toLowerCase().split(/\s+/);
     let needsCycleDuration = false;
     this._clType = LightType[tagData.shift()];
-    if (this._clType?.is(LightType.Light, LightType.Fire)) {
+    if (this._clType && this._clType.is(LightType.Light, LightType.Fire)) {
       this._clRadius = undefined;
       for (let x of tagData) {
         if (!isNaN(+x) && this._clRadius === undefined) this._clRadius = +x;
@@ -866,7 +866,7 @@ Imported[Community.Lighting.name] = true;
         else if (x.length > 0 && this._clId === undefined) this._clId = x;
       }
     }
-    else if (this._clType?.is(LightType.Flashlight)) {
+    else if (this._clType && this._clType.is(LightType.Flashlight)) {
       this._clBeamLength = undefined;
       this._clBeamWidth = undefined;
       this._clOnOff = undefined;
