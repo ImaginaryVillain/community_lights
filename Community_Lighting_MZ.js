@@ -1680,10 +1680,10 @@ Imported[Community.Lighting.name] = true;
 
     let iplayer_radius = Math.floor(player_radius);
 
+    if (playerflashlight == true) {
+      this._maskBitmap.radialgradientFlashlight(x1, y1, playercolor, radialColor2, pd, flashlightlength, flashlightwidth);
+    }
     if (iplayer_radius > 0) {
-      if (playerflashlight == true) {
-        this._maskBitmap.radialgradientFillRect2(x1, y1, lightMaskPadding, iplayer_radius, playercolor, radialColor2, pd, flashlightlength, flashlightwidth);
-      }
       x1 = x1 - flashlightXoffset;
       y1 = y1 - flashlightYoffset;
       if (iplayer_radius < 100) {
@@ -1858,7 +1858,7 @@ Imported[Community.Lighting.name] = true;
                     break;
                 }
               }
-              this._maskBitmap.radialgradientFillRect2(lx1, ly1, 0, light_radius, colorvalue, '#000000', ldir, flashlength, flashwidth);
+              this._maskBitmap.radialgradientFlashlight(lx1, ly1, colorvalue, '#000000', ldir, flashlength, flashwidth);
             } else if(lightType.is(LightType.Light, LightType.Fire)) {
               this._maskBitmap.radialgradientFillRect(lx1, ly1, 0, light_radius, colorvalue, '#000000', objectflicker, brightness, direction);
             }
@@ -2462,7 +2462,7 @@ Imported[Community.Lighting.name] = true;
    * @param {Number} flashlength
    * @param {Number} flashwidth
    */
-  Bitmap.prototype.radialgradientFillRect2 = function (x1, y1, r1, r2, color1, color2, direction, flashlength, flashwidth) {
+  Bitmap.prototype.radialgradientFlashlight = function (x1, y1, color1, color2, direction, flashlength, flashwidth) {
     x1 = x1 + lightMaskPadding;
 
     let isValidColor = isValidColorRegex.test(color1.trim());
@@ -2482,8 +2482,8 @@ Imported[Community.Lighting.name] = true;
     x1 = x1 - flashlightXoffset;
     y1 = y1 - flashlightYoffset;
 
-    r1 = 1;
-    r2 = 40;
+    let r1 = 1;
+    let r2 = 40;
     grad = context.createRadialGradient(x1, y1, r1, x1, y1, r2);
 
     grad.addColorStop(0, '#999999');
@@ -2998,11 +2998,6 @@ Imported[Community.Lighting.name] = true;
       $gameVariables.SetFlashlightWidth(flashlightwidth);
       $gameVariables.SetFlashlightLength(flashlightlength);
       $gameVariables.SetFlashlightDensity(flashlightdensity);
-
-      if ($gameVariables.GetRadius() < 1) {
-        $gameVariables.SetRadius(1);
-        $gameVariables.SetRadiusTarget(1);
-      }
     }
     if (isOff(args[0])) {
       $gameVariables.SetFlashlight(false);
