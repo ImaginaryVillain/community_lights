@@ -740,7 +740,7 @@ Imported[Community.Lighting.name] = true;
 * Fire ...params
 * - Same as Light params above, but adds a subtle flicker
 *
-* Flashlight [bl] [bw] [c] [onoff] [sdir] [x] [y] [id]
+* Flashlight [bl] [bw] [c] [onoff] [sdir|angle] [x] [y] [id]
 * - Sets the light as a flashlight with beam length (bl) beam width (bw) color (c),
 *      0|1 (onoff), and 1=up, 2=right, 3=down, 4=left for static direction (sdir)
 * - bl:       Beam length:  Any number, optionally preceded by "L", so 8, L8
@@ -752,12 +752,14 @@ Imported[Community.Lighting.name] = true;
 * - onoff:    Initial state:  0, 1, off, on
 * - sdir:     Forced direction (optional): 0:auto, 1:up, 2:right, 3:down, 4:left
 *             Can be preceded by "D", so D4.  If omitted, defaults to 0
+* - angle:    Forced direction in degrees (optional): must be preceded by "A". If
+*             omitted, sdir is used.
 * - x         x[offset] Work the same as regular light [optional]
 * - y         y[offset] [optional]
 * - day       Sets the event's light to only show during the day [optional]
 * - night     Sets the event's light to only show during night time [optional]
 * - id        1, 2, potato, etc. An id (alphanumeric) for plugin commands [optional]
-*             Those should not begin with 'd', 'x' or 'y' otherwise
+*             Those should not begin with 'a', 'd', 'x' or 'y' otherwise
 *             they will be mistaken for one of the previous optional parameters.
 *
 * Example note tags:
@@ -904,6 +906,27 @@ Imported[Community.Lighting.name] = true;
   isActivate = (x) => x.toLowerCase() === "activate";
   isDeactivate = (x) => x.toLowerCase() === "deactivate";
 
+  // Map community light directions to polar angles (360 degrees)
+  const CLDirectionMap = {
+    0: undefined,       // auto
+    1: 3 * Math.PI / 2, // up
+    2: 2 * Math.PI,     // right
+    3: Math.PI / 2,     // down
+    4: Math.PI          // left
+  };
+
+  // Map RM directions to polar angles (360 degrees)
+  const RMDirectionMap = {
+    1: 3 * Math.PI / 4, // down-left
+    2: Math.PI / 2,     // down
+    3: Math.PI / 4,     // down-right
+    4: Math.PI,         // left
+    6: 2 * Math.PI,     // right
+    7: 5 * Math.PI / 4, // up-left
+    8: 3 * Math.PI / 2, // up
+    9: 7 * Math.PI / 4  // up-right
+  };
+
   const TileType = {
     Terrain: 1, terrain: 1, 1: 1,
     Region: 2,  region:  2, 2: 2
@@ -961,12 +984,7 @@ Imported[Community.Lighting.name] = true;
   let colorcycle_count = [1000];
   let colorcycle_timer = [1000];
   let eventObjId = [];
-  let event_note = [];
   let event_id = [];
-  let event_x = [];
-  let event_y = [];
-  let event_dir = [];
-  let event_moving = [];
   let event_stacknumber = [];
   let event_eventcount = 0;
   let light_tiles = [];
@@ -1195,7 +1213,8 @@ Imported[Community.Lighting.name] = true;
         else if (isOn(x) && this._clOnOff === undefined) this._clOnOff = 1;
         else if (isOff(x) && this._clOnOff === undefined) this._clOnOff = 0;
         else if (x.equalsIC("night", "day") && this._clSwitch === undefined) this._clSwitch = x;
-        else if (x[0].equalsIC("d") && this._clFlashlightDirection === undefined) this._clFlashlightDirection = +(x.substr(1, x.length));
+        else if (x[0].equalsIC("d") && this._clFlashlightDirection === undefined) this._clFlashlightDirection = CLDirectionMap[+(x.substr(1, x.length))];
+        else if (x[0].equalsIC("a") && this._clFlashlightDirection === undefined) this._clFlashlightDirection = Math.PI/180*+(x.substr(1, x.length));
         else if (x[0].equalsIC("x") && this._clXOffset === undefined) this._clXOffset = +(x.substr(1, x.length));
         else if (x[0].equalsIC("y") && this._clYOffset === undefined) this._clYOffset = +(x.substr(1, x.length));
         else if (x.length > 0 && this._clId === undefined) this._clId = x;
@@ -1209,7 +1228,7 @@ Imported[Community.Lighting.name] = true;
     this._clBeamWidth = this._clBeamWidth || 0;
     this._clBeamLength = this._clBeamLength || 0;
     this._clOnOff = this._clOnOff || 0;
-    this._clFlashlightDirection = this._clFlashlightDirection || 0;
+    this._clFlashlightDirection = this._clFlashlightDirection || undefined; // Must be undefined.
     this._clXOffset = this._clXOffset || 0;
     this._clYOffset = this._clYOffset || 0;
     this._clCycle = this._clCycle || null;
@@ -1656,7 +1675,7 @@ Imported[Community.Lighting.name] = true;
     let dy = $gameMap.displayY();
     let px = $gamePlayer._realX;
     let py = $gamePlayer._realY;
-    let pd = $gamePlayer._direction;
+    let pd = RMDirectionMap[$gamePlayer._direction];
     let x1 = (pw / 2) + ((px - dx) * pw);
     let y1 = (ph / 2) + ((py - dy) * ph);
     let paralax = false;
@@ -1832,32 +1851,10 @@ Imported[Community.Lighting.name] = true;
             ly1 += +yoffset;
 
             if (lightType.is(LightType.Flashlight)) {
-              let ldir = 0;
-              if (event_moving[i] > 0) {
-                ldir = $gameMap.events()[event_stacknumber[i]]._direction;
-              } else {
-                ldir = event_dir[i];
-              }
+              let ldir = RMDirectionMap[$gameMap.events()[event_stacknumber[i]]._direction] || 0;
 
               let tldir = cur.getLightFlashlightDirection();
-              if (!isNaN(tldir)) {
-                switch (tldir) {
-                  case 1:
-                    ldir = 8;
-                    break;
-                  case 2:
-                    ldir = 6;
-                    break;
-                  case 3:
-                    ldir = 2;
-                    break;
-                  case 4:
-                    ldir = 4;
-                    break;
-                  default:
-                    break;
-                }
-              }
+              if (!isNaN(tldir)) ldir = tldir;
               this._maskBitmap.radialgradientFlashlight(lx1, ly1, colorvalue, '#000000', ldir, flashlength, flashwidth);
             } else if(lightType.is(LightType.Light, LightType.Fire)) {
               this._maskBitmap.radialgradientFillRect(lx1, ly1, 0, light_radius, colorvalue, '#000000', objectflicker, brightness, direction);
@@ -2462,8 +2459,10 @@ Imported[Community.Lighting.name] = true;
    * @param {Number} flashlength
    * @param {Number} flashwidth
    */
-  Bitmap.prototype.radialgradientFlashlight = function (x1, y1, color1, color2, direction, flashlength, flashwidth) {
+  Bitmap.prototype.radialgradientFlashlight = function (x1, y1, color1, color2, dirAngle, flashlength, flashwidth) {
     x1 = x1 + lightMaskPadding;
+    x1 = x1 - flashlightXoffset;
+    y1 = y1 - flashlightYoffset;
 
     let isValidColor = isValidColorRegex.test(color1.trim());
     if (!isValidColor) {
@@ -2475,46 +2474,27 @@ Imported[Community.Lighting.name] = true;
     }
 
     let context = this._context;
-    let grad;
-
-    // smal dim glove around player
     context.save();
-    x1 = x1 - flashlightXoffset;
-    y1 = y1 - flashlightYoffset;
 
-    let r1 = 1;
-    let r2 = 40;
-    grad = context.createRadialGradient(x1, y1, r1, x1, y1, r2);
-
+    // small dim glove around player
+    let r1 = 1; let r2 = 40;
+    let grad = context.createRadialGradient(x1, y1, r1, x1, y1, r2);
     grad.addColorStop(0, '#999999');
     grad.addColorStop(1, color2);
-
     context.fillStyle = grad;
     context.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
 
     // flashlight
+    let flashlightdensity = $gameVariables.GetFlashlightDensity();
+    let xScalar = Math.cos(dirAngle);
+    let yScalar = Math.sin(dirAngle);
 
+    // Draw spots
     for (let cone = 0; cone < flashlength; cone++) {
-      let flashlightdensity = $gameVariables.GetFlashlightDensity();
       r1 = cone * flashlightdensity;
       r2 = cone * flashwidth;
-
-      switch (direction) {
-        case 6:
-          x1 = x1 + cone * 6;
-          break;
-        case 4:
-          x1 = x1 - cone * 6;
-          break;
-        case 2:
-          y1 = y1 + cone * 6;
-          break;
-        case 8:
-          y1 = y1 - cone * 6;
-          break;
-      }
-
-
+      x1 = x1 + cone * 6 * xScalar; // apply scalars.
+      y1 = y1 + cone * 6 * yScalar;
       grad = context.createRadialGradient(x1, y1, r1, x1, y1, r2);
       grad.addTransparentColorStops(0, color1, color2);
       context.fillStyle = grad;
