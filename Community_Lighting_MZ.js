@@ -55,6 +55,12 @@ Imported[Community.Lighting.name] = true;
 * @type boolean
 * @default false
 *
+* @param Triangular flashlight
+* @parent ---General Settings---
+* @desc Alternative triangular flashlight beam with progressive dimming.
+* @type boolean
+* @default false
+*
 * @param Shift lights with events
 * @parent ---General Settings---
 * @desc Should a light be shifted 6 pixel up if its associated event does?
@@ -2771,10 +2777,6 @@ Imported[Community.Lighting.name] = true;
     //**********************fill up new map-array *************************
     eventObjId = [];
     event_id = [];
-    event_x = [];
-    event_y = [];
-    event_dir = [];
-    event_moving = [];
     event_stacknumber = [];
     event_eventcount = $gameMap.events().length;
 
@@ -2788,10 +2790,6 @@ Imported[Community.Lighting.name] = true;
           if (note_command) {
             eventObjId.push(i);
             event_id.push($gameMap.events()[i]._eventId);
-            event_x.push($gameMap.events()[i]._realX);
-            event_y.push($gameMap.events()[i]._realY);
-            event_dir.push($gameMap.events()[i]._direction);
-            event_moving.push($gameMap.events()[i]._moveType || $gameMap.events()[i]._moveRouteForcing);
             event_stacknumber.push(i);
 
           }
