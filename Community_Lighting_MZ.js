@@ -1714,10 +1714,10 @@ Imported[Community.Lighting.name] = true;
       y1 = y1 - flashlightYoffset;
       if (iplayer_radius < 100) {
         // dim the light a bit at lower lightradius for a less focused effect.
-        let red = hexToRgba(playercolor).r;
-        let green = hexToRgba(playercolor).g;
-        let blue = hexToRgba(playercolor).b;
-        let alpha = hexToRgba(playercolor).a;
+        let red = hex2rgba(playercolor).r;
+        let green = hex2rgba(playercolor).g;
+        let blue = hex2rgba(playercolor).b;
+        let alpha = hex2rgba(playercolor).a;
         green = green - 50;
         red = red - 50;
         blue = blue - 50;
@@ -1900,10 +1900,10 @@ Imported[Community.Lighting.name] = true;
       let objectflicker = tile.lightType.is(LightType.Fire);
       let tile_color = tile.color;
       if (tile.lightType.is(LightType.Glow)) {
-        let r = hexToRgba(tile.color).r;
-        let g = hexToRgba(tile.color).g;
-        let b = hexToRgba(tile.color).b;
-        let a = hexToRgba(tile.color).a;
+        let r = hex2rgba(tile.color).r;
+        let g = hex2rgba(tile.color).g;
+        let b = hex2rgba(tile.color).b;
+        let a = hex2rgba(tile.color).a;
 
         r = Math.floor(r + (60 - tileglow));
         g = Math.floor(g + (60 - tileglow));
@@ -1975,13 +1975,13 @@ Imported[Community.Lighting.name] = true;
           nextcolor = 0;
         }
         let color2 = daynightcolors[nextcolor].color;
-        let rgb = hexToRgba(color1);
+        let rgb = hex2rgba(color1);
         r = rgb.r;
         g = rgb.g;
         b = rgb.b;
         a = rgb.a;
 
-        rgb = hexToRgba(color2);
+        rgb = hex2rgba(color2);
         let r2 = rgb.r;
         let g2 = rgb.g;
         let b2 = rgb.b;
@@ -2028,15 +2028,15 @@ Imported[Community.Lighting.name] = true;
           tint_timer++;
         }
 
-        let r = hexToRgba(tint_value).r;
-        let g = hexToRgba(tint_value).g;
-        let b = hexToRgba(tint_value).b;
-        let a = hexToRgba(tint_value).a;
+        let r = hex2rgba(tint_value).r;
+        let g = hex2rgba(tint_value).g;
+        let b = hex2rgba(tint_value).b;
+        let a = hex2rgba(tint_value).a;
 
-        let r2 = hexToRgba(tint_target).r;
-        let g2 = hexToRgba(tint_target).g;
-        let b2 = hexToRgba(tint_target).b;
-        let a2 = hexToRgba(tint_target).a;
+        let r2 = hex2rgba(tint_target).r;
+        let g2 = hex2rgba(tint_target).g;
+        let b2 = hex2rgba(tint_target).b;
+        let a2 = hex2rgba(tint_target).a;
 
         let stepR = (r2 - r) / (60 * tint_speed);
         let stepG = (g2 - g) / (60 * tint_speed);
@@ -2293,7 +2293,7 @@ Imported[Community.Lighting.name] = true;
 
     if (useSmootherLights) {
       for (let distanceFromCenter = 0; distanceFromCenter < 1; distanceFromCenter += 0.1) {
-        let data = hexToRgba(color1);
+        let data = hex2rgba(color1);
         var newRed = data.r - (distanceFromCenter * 100 * 2.55);
         var newGreen = data.g - (distanceFromCenter * 100 * 2.55);
         let newBlue = data.b - (distanceFromCenter * 100 * 2.55);
@@ -2374,10 +2374,10 @@ Imported[Community.Lighting.name] = true;
         let gradrnd = Math.floor((Math.random() * flickerradiusshift) + 1);
         let colorrnd = Math.floor((Math.random() * flickercolorshift) - (flickercolorshift / 2));
 
-        let r = hexToRgba(color1).r;
-        let g = hexToRgba(color1).g;
-        let b = hexToRgba(color1).b;
-        let a = hexToRgba(color1).a;
+        let r = hex2rgba(color1).r;
+        let g = hex2rgba(color1).g;
+        let b = hex2rgba(color1).b;
+        let a = hex2rgba(color1).a;
 
         g = g + colorrnd;
         if (g < 0) {
@@ -2524,7 +2524,7 @@ Imported[Community.Lighting.name] = true;
       context.fillStyle = undefined;
 
       // grab flashlight color
-      let c = hexToRgba(color1);
+      let c = hex2rgba(color1);
 
       // Draw outer beam as a shadow
       context.beginPath();
@@ -2586,7 +2586,7 @@ Imported[Community.Lighting.name] = true;
    * @param {String} hex
    * @returns {{r:number,g:number,b:number,a:number}}
    */
-  function hexToRgba(hex) {
+  function hex2rgba(hex) {
     var regex = new RegExp(/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})?$/i);
     let result = regex.exec(hex);
     result = result ? {
@@ -2692,15 +2692,15 @@ Imported[Community.Lighting.name] = true;
 
       $gameTemp._BattleTintTimer += 1;
 
-      let r = hexToRgba($gameTemp._BattleTintFade).r;
-      let g = hexToRgba($gameTemp._BattleTintFade).g;
-      let b = hexToRgba($gameTemp._BattleTintFade).b;
-      let a = hexToRgba($gameTemp._BattleTintFade).a;
+      let r = hex2rgba($gameTemp._BattleTintFade).r;
+      let g = hex2rgba($gameTemp._BattleTintFade).g;
+      let b = hex2rgba($gameTemp._BattleTintFade).b;
+      let a = hex2rgba($gameTemp._BattleTintFade).a;
 
-      var r2 = hexToRgba($gameTemp._BattleTint).r;
-      var g2 = hexToRgba($gameTemp._BattleTint).g;
-      let b2 = hexToRgba($gameTemp._BattleTint).b;
-      let a2 = hexToRgba($gameTemp._BattleTint).a;
+      var r2 = hex2rgba($gameTemp._BattleTint).r;
+      var g2 = hex2rgba($gameTemp._BattleTint).g;
+      let b2 = hex2rgba($gameTemp._BattleTint).b;
+      let a2 = hex2rgba($gameTemp._BattleTint).a;
 
 
       let stepR = (r2 - r) / (60 * $gameTemp._BattleTintSpeed);
@@ -2923,10 +2923,10 @@ Imported[Community.Lighting.name] = true;
           }
           else {
             let color = data[1];
-            let red = hexToRgba(color).r;
-            let green = hexToRgba(color).g;
-            let blue = hexToRgba(color).b;
-            let alpha = hexToRgba(color).a;
+            let red = hex2rgba(color).r;
+            let green = hex2rgba(color).g;
+            let blue = hex2rgba(color).b;
+            let alpha = hex2rgba(color).a;
             if (alpha == 255) {
               alpha = $$.mapBrightness;
             }
@@ -2949,9 +2949,9 @@ Imported[Community.Lighting.name] = true;
             if (color == "#000000" || color == "#00000000") {
               color = "#FFFFFF";
             }
-            var red = hexToRgba(color).r;
-            var blue = hexToRgba(color).b;
-            var green = hexToRgba(color).g;
+            var red = hex2rgba(color).r;
+            var blue = hex2rgba(color).b;
+            var green = hex2rgba(color).g;
 
 
             var value = Math.max(0, Math.min(Number(brightness[0], 100)));
