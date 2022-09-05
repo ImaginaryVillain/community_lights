@@ -2153,10 +2153,10 @@ function orNaN() {
     x1 = x1 + lightMaskPadding;
     //x2=x2+lightMaskPadding;
     let context = this._context;
-    context.save();
+    //context.save(); // unnecessary significant performance hit
     context.fillStyle = color1;
     context.fillRect(x1, y1, x2, y2);
-    context.restore();
+    //context.restore();
     //this._setDirty(); // doesn't exist in RMMZ
   };
 
@@ -2173,7 +2173,7 @@ function orNaN() {
     centerX = centerX + lightMaskPadding;
 
     let context = this._context;
-    context.save();
+    //context.save(); // unnecessary significant performance hit
     context.fillStyle = color1;
     context.beginPath();
     let rotation = 0;
@@ -2191,7 +2191,7 @@ function orNaN() {
     }
     context.fill();
     context.closePath();
-    context.restore();
+    //context.restore();
     //this._setDirty(); // doesn't exist in RMMZ
   };
 
@@ -2376,7 +2376,7 @@ function orNaN() {
       grad = context.createRadialGradient(x1, y1, r1, x1, y1, r2);
       grad.addTransparentColorStops(brightness, color1, color2);
 
-      context.save();
+      //context.save(); // unnecessary significant performance hit
       context.fillStyle = grad;
       direction = Number(direction);
       let pw = $gameMap.tileWidth() / 2;
@@ -2427,7 +2427,7 @@ function orNaN() {
           context.fillRect(x1 + pw, y1 - r2 + hackishFix, r2 * 1 - pw, r2 * 1 - ph);
           break;
       }
-      context.restore();
+      //context.restore();
       //this._setDirty(); // doesn't exist in RMMZ
     }
   };
@@ -2464,7 +2464,7 @@ function orNaN() {
     let grad;
 
     // smal dim glove around player
-    context.save();
+    //context.save(); // unnecessary significant performance hit
     x1 = x1 - flashlightXoffset;
     y1 = y1 - flashlightYoffset;
 
@@ -2509,7 +2509,7 @@ function orNaN() {
     context.fillStyle = grad;
     context.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
 
-    context.restore();
+    //context.restore();
     //this._setDirty(); // doesn't exist in RMMZ
   };
 
