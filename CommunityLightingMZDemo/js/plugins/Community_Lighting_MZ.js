@@ -2161,7 +2161,6 @@ function orNaN() {
   };
 
   // *******************  CIRCLE/OVAL SHAPE ***********************************
-  // from http://scienceprimer.com/draw-oval-html5-canvas
   /**
    * @param {Number} centerX
    * @param {Number} centerY
@@ -2176,21 +2175,8 @@ function orNaN() {
     //context.save(); // unnecessary significant performance hit
     context.fillStyle = color1;
     context.beginPath();
-    let rotation = 0;
-    let start_angle = 0;
-    let end_angle = 2 * Math.PI;
-    for (let i = start_angle * Math.PI; i < end_angle * Math.PI; i += 0.01) {
-      xPos = centerX - (yradius * Math.sin(i)) * Math.sin(rotation * Math.PI) + (xradius * Math.cos(i)) * Math.cos(rotation * Math.PI);
-      yPos = centerY + (xradius * Math.cos(i)) * Math.sin(rotation * Math.PI) + (yradius * Math.sin(i)) * Math.cos(rotation * Math.PI);
-
-      if (i == 0) {
-        context.moveTo(xPos, yPos);
-      } else {
-        context.lineTo(xPos, yPos);
-      }
-    }
+    context.ellipse(centerX, centerY, xradius, yradius, 0, 0, 2 * Math.PI);
     context.fill();
-    context.closePath();
     //context.restore();
     //this._setDirty(); // doesn't exist in RMMZ
   };
