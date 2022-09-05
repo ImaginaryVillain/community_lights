@@ -57,7 +57,7 @@ Imported[Community.Lighting.name] = true;
 *
 * @param Triangular flashlight
 * @parent ---General Settings---
-* @desc Alternative triangular flashlight beam with progressive dimming.
+* @desc Alternative triangular flashlight beam
 * @type boolean
 * @default false
 *
@@ -1000,6 +1000,7 @@ Imported[Community.Lighting.name] = true;
   let lightMaskPadding = Number(parameters["Lightmask Padding"]) || 0;
   let useSmootherLights = eval(String(parameters['Use smoother lights'])) || false;
   let light_event_required = eval(parameters["Light event required"]) || false;
+  let triangular_flashlight = eval(parameters["Triangular flashlight"]) || false;
   let shift_lights_with_events = eval(String(parameters['Shift lights with events'])) || false;
   let player_radius = Number(parameters['Player radius']) || 0;
   let reset_each_map = eval(String(parameters['Reset Lights'])) || false;
@@ -1713,10 +1714,10 @@ Imported[Community.Lighting.name] = true;
       y1 = y1 - flashlightYoffset;
       if (iplayer_radius < 100) {
         // dim the light a bit at lower lightradius for a less focused effect.
-        let red = hexToRgb(playercolor).r;
-        let green = hexToRgb(playercolor).g;
-        let blue = hexToRgb(playercolor).b;
-        let alpha = hexToRgb(playercolor).a;
+        let red = hexToRgba(playercolor).r;
+        let green = hexToRgba(playercolor).g;
+        let blue = hexToRgba(playercolor).b;
+        let alpha = hexToRgba(playercolor).a;
         green = green - 50;
         red = red - 50;
         blue = blue - 50;
@@ -1899,10 +1900,10 @@ Imported[Community.Lighting.name] = true;
       let objectflicker = tile.lightType.is(LightType.Fire);
       let tile_color = tile.color;
       if (tile.lightType.is(LightType.Glow)) {
-        let r = hexToRgb(tile.color).r;
-        let g = hexToRgb(tile.color).g;
-        let b = hexToRgb(tile.color).b;
-        let a = hexToRgb(tile.color).a;
+        let r = hexToRgba(tile.color).r;
+        let g = hexToRgba(tile.color).g;
+        let b = hexToRgba(tile.color).b;
+        let a = hexToRgba(tile.color).a;
 
         r = Math.floor(r + (60 - tileglow));
         g = Math.floor(g + (60 - tileglow));
@@ -1974,13 +1975,13 @@ Imported[Community.Lighting.name] = true;
           nextcolor = 0;
         }
         let color2 = daynightcolors[nextcolor].color;
-        let rgb = hexToRgb(color1);
+        let rgb = hexToRgba(color1);
         r = rgb.r;
         g = rgb.g;
         b = rgb.b;
         a = rgb.a;
 
-        rgb = hexToRgb(color2);
+        rgb = hexToRgba(color2);
         let r2 = rgb.r;
         let g2 = rgb.g;
         let b2 = rgb.b;
@@ -2027,15 +2028,15 @@ Imported[Community.Lighting.name] = true;
           tint_timer++;
         }
 
-        let r = hexToRgb(tint_value).r;
-        let g = hexToRgb(tint_value).g;
-        let b = hexToRgb(tint_value).b;
-        let a = hexToRgb(tint_value).a;
+        let r = hexToRgba(tint_value).r;
+        let g = hexToRgba(tint_value).g;
+        let b = hexToRgba(tint_value).b;
+        let a = hexToRgba(tint_value).a;
 
-        let r2 = hexToRgb(tint_target).r;
-        let g2 = hexToRgb(tint_target).g;
-        let b2 = hexToRgb(tint_target).b;
-        let a2 = hexToRgb(tint_target).a;
+        let r2 = hexToRgba(tint_target).r;
+        let g2 = hexToRgba(tint_target).g;
+        let b2 = hexToRgba(tint_target).b;
+        let a2 = hexToRgba(tint_target).a;
 
         let stepR = (r2 - r) / (60 * tint_speed);
         let stepG = (g2 - g) / (60 * tint_speed);
@@ -2292,7 +2293,7 @@ Imported[Community.Lighting.name] = true;
 
     if (useSmootherLights) {
       for (let distanceFromCenter = 0; distanceFromCenter < 1; distanceFromCenter += 0.1) {
-        let data = hexToRgb(color1);
+        let data = hexToRgba(color1);
         var newRed = data.r - (distanceFromCenter * 100 * 2.55);
         var newGreen = data.g - (distanceFromCenter * 100 * 2.55);
         let newBlue = data.b - (distanceFromCenter * 100 * 2.55);
@@ -2373,10 +2374,10 @@ Imported[Community.Lighting.name] = true;
         let gradrnd = Math.floor((Math.random() * flickerradiusshift) + 1);
         let colorrnd = Math.floor((Math.random() * flickercolorshift) - (flickercolorshift / 2));
 
-        let r = hexToRgb(color1).r;
-        let g = hexToRgb(color1).g;
-        let b = hexToRgb(color1).b;
-        let a = hexToRgb(color1).a;
+        let r = hexToRgba(color1).r;
+        let g = hexToRgba(color1).g;
+        let b = hexToRgba(color1).b;
+        let a = hexToRgba(color1).a;
 
         g = g + colorrnd;
         if (g < 0) {
@@ -2492,22 +2493,88 @@ Imported[Community.Lighting.name] = true;
 
     // flashlight
     let flashlightdensity = $gameVariables.GetFlashlightDensity();
-    let xScalar = Math.cos(dirAngle);
-    let yScalar = Math.sin(dirAngle);
+    if (flashlightdensity >= flashwidth) flashlightdensity = flashwidth - 1;
 
-    // Draw spots
-    for (let cone = 0; cone < flashlength; cone++) {
-      r1 = cone * flashlightdensity;
-      r2 = cone * flashwidth;
-      x1 = x1 + cone * 6 * xScalar; // apply scalars.
-      y1 = y1 + cone * 6 * yScalar;
+    if (triangular_flashlight) { // Triangular flashlight
+      // Compute distance to spot and flashlight density
+      let distance = 3 * (flashlength * (flashlength - 1));
+
+      // Compute spotlight radiuses
+      r1 = (flashlength - 1) * flashlightdensity;
+      r2 = (flashlength - 1) * flashwidth;
+
+      // Offset so the beam begins in front of the player
+      let adjustForPlayer = (6 * flashlength);
+
+      // Compute beam start coordinates (for drawing beam)
+      let xBeamStart = x1 - adjustForPlayer * Math.cos(dirAngle);
+      let yBeamStart = y1 - adjustForPlayer * Math.sin(dirAngle);
+
+      // Compute beam distance (for drawing beam)
+      let beamDistance = distance + adjustForPlayer;
+
+      // Compute beam width based off of angle (for drawing beam)
+      let beamWidth = Math.atan(0.70 * r2 / beamDistance); // 70% of spot outer radius.
+
+      // Compute beam angles
+      let beamAngleStart = dirAngle - beamWidth;
+      let beamAngleEnd   = dirAngle + beamWidth;
+
+      // Clear fillstyle for drawing beam
+      context.fillStyle = undefined;
+
+      // grab flashlight color
+      let c = hexToRgba(color1);
+
+      // Draw outer beam as a shadow
+      context.beginPath();
+      context.arc(xBeamStart, yBeamStart, beamDistance, beamAngleStart, beamAngleEnd, false);
+      context.arc(xBeamStart, yBeamStart, adjustForPlayer, beamAngleEnd, beamAngleStart, true);
+      context.shadowColor = rgba2hex(c.r, c.g, c.b, Math.round(0.7 * c.a));
+      context.shadowBlur = 30;
+      context.fill();
+
+      // Draw inner beam as a shadow
+      context.beginPath();
+      context.arc(xBeamStart, yBeamStart, beamDistance, beamAngleStart, beamAngleEnd, false);
+      context.arc(xBeamStart, yBeamStart, adjustForPlayer, beamAngleEnd, beamAngleStart, true);
+      context.shadowColor = rgba2hex(c.r, c.g, c.b,  Math.round(0.1 * c.a));
+      context.shadowBlur = 2;
+      context.fill();
+
+      // Clear shadow style
+      context.shadowColor = "";
+      context.shadowBlur = 0;
+
+      // Compute spot location
+      x1 += distance * Math.cos(dirAngle);
+      y1 += distance * Math.sin(dirAngle);
+
+      // Draw spot
       grad = context.createRadialGradient(x1, y1, r1, x1, y1, r2);
       grad.addTransparentColorStops(0, color1, color2);
       context.fillStyle = grad;
       context.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
+      context.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
+    } else { // Circular flashlight
+      // Compute diagonal length scalars.
+      let xScalar = Math.cos(dirAngle);
+      let yScalar = Math.sin(dirAngle);
+
+      // Draw spots
+      for (let cone = 0; cone < flashlength; cone++) {
+        r1 = cone * flashlightdensity;
+        r2 = cone * flashwidth;
+        x1 = x1 + cone * 6 * xScalar; // apply scalars.
+        y1 = y1 + cone * 6 * yScalar;
+        grad = context.createRadialGradient(x1, y1, r1, x1, y1, r2);
+        grad.addTransparentColorStops(0, color1, color2);
+        context.fillStyle = grad;
+        context.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
+      }
+      context.fillStyle = grad;
+      context.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
     }
-    context.fillStyle = grad;
-    context.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
 
     context.restore();
     //this._setDirty(); // doesn't exist in RMMZ
@@ -2519,7 +2586,7 @@ Imported[Community.Lighting.name] = true;
    * @param {String} hex
    * @returns {{r:number,g:number,b:number,a:number}}
    */
-  function hexToRgb(hex) {
+  function hexToRgba(hex) {
     var regex = new RegExp(/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})?$/i);
     let result = regex.exec(hex);
     result = result ? {
@@ -2625,15 +2692,15 @@ Imported[Community.Lighting.name] = true;
 
       $gameTemp._BattleTintTimer += 1;
 
-      let r = hexToRgb($gameTemp._BattleTintFade).r;
-      let g = hexToRgb($gameTemp._BattleTintFade).g;
-      let b = hexToRgb($gameTemp._BattleTintFade).b;
-      let a = hexToRgb($gameTemp._BattleTintFade).a;
+      let r = hexToRgba($gameTemp._BattleTintFade).r;
+      let g = hexToRgba($gameTemp._BattleTintFade).g;
+      let b = hexToRgba($gameTemp._BattleTintFade).b;
+      let a = hexToRgba($gameTemp._BattleTintFade).a;
 
-      var r2 = hexToRgb($gameTemp._BattleTint).r;
-      var g2 = hexToRgb($gameTemp._BattleTint).g;
-      let b2 = hexToRgb($gameTemp._BattleTint).b;
-      let a2 = hexToRgb($gameTemp._BattleTint).a;
+      var r2 = hexToRgba($gameTemp._BattleTint).r;
+      var g2 = hexToRgba($gameTemp._BattleTint).g;
+      let b2 = hexToRgba($gameTemp._BattleTint).b;
+      let a2 = hexToRgba($gameTemp._BattleTint).a;
 
 
       let stepR = (r2 - r) / (60 * $gameTemp._BattleTintSpeed);
@@ -2856,10 +2923,10 @@ Imported[Community.Lighting.name] = true;
           }
           else {
             let color = data[1];
-            let red = hexToRgb(color).r;
-            let green = hexToRgb(color).g;
-            let blue = hexToRgb(color).b;
-            let alpha = hexToRgb(color).a;
+            let red = hexToRgba(color).r;
+            let green = hexToRgba(color).g;
+            let blue = hexToRgba(color).b;
+            let alpha = hexToRgba(color).a;
             if (alpha == 255) {
               alpha = $$.mapBrightness;
             }
@@ -2882,9 +2949,9 @@ Imported[Community.Lighting.name] = true;
             if (color == "#000000" || color == "#00000000") {
               color = "#FFFFFF";
             }
-            var red = hexToRgb(color).r;
-            var blue = hexToRgb(color).b;
-            var green = hexToRgb(color).g;
+            var red = hexToRgba(color).r;
+            var blue = hexToRgba(color).b;
+            var green = hexToRgba(color).g;
 
 
             var value = Math.max(0, Math.min(Number(brightness[0], 100)));
