@@ -891,18 +891,33 @@ Imported[Community.Lighting.name] = true;
 * ....where # is the max distance you want in tiles.
 */
 
-(function ($$) {
-  Number.prototype.is = function() {
-    return [...arguments].includes(Number(this));
-  }
-  String.prototype.equalsIC = function() {
-    return [...arguments].map(s => s.toLowerCase()).includes(this.toLowerCase());
-  }
+Number.prototype.is = function() {
+  return [...arguments].includes(Number(this));
+}
 
-  isOn = (x) => x.toLowerCase() === "on";
-  isOff = (x) => x.toLowerCase() === "off";
-  isActivate = (x) => x.toLowerCase() === "activate";
-  isDeactivate = (x) => x.toLowerCase() === "deactivate";
+String.prototype.equalsIC = function() {
+  return [...arguments].map(s => s.toLowerCase()).includes(this.toLowerCase());
+}
+
+function orNullish() {
+  for (let i = 0; i < arguments.length; i++) {
+    if(arguments[i] != null)
+      return arguments[i];
+  }
+}
+
+function orNaN() {
+  for (let i = 0; i < arguments.length; i++) {
+    if(!isNaN(arguments[i]))
+      return arguments[i];
+  }
+}
+
+(function ($$) {
+  let isOn = (x) => x.toLowerCase() === "on";
+  let isOff = (x) => x.toLowerCase() === "off";
+  let isActivate = (x) => x.toLowerCase() === "activate";
+  let isDeactivate = (x) => x.toLowerCase() === "deactivate";
 
   const TileType = {
     Terrain: 1, terrain: 1, 1: 1,
@@ -3273,7 +3288,7 @@ Community.Lighting.distance = function (x1, y1, x2, y2) {
 };
 
 Game_Variables.prototype.SetActiveRadius = function (value) {
-  this._Player_Light_Radius = +value;
+  this._Player_Light_Radius = orNaN(+value);
 };
 Game_Variables.prototype.GetActiveRadius = function () {
   if (this._Player_Light_Radius >= 0) return this._Player_Light_Radius;
@@ -3313,7 +3328,7 @@ Game_Variables.prototype.SetTint = function (value) {
   this._Community_Tint_Value = value;
 };
 Game_Variables.prototype.GetTint = function () {
-  return this._Community_Tint_Value || '#000000';
+  return orNullish(this._Community_Tint_Value, '#000000');
 };
 Game_Variables.prototype.GetTintByTime = function () {
   let result = this.GetDaynightColorArray()[this.GetDaynightCycle()];
@@ -3323,38 +3338,38 @@ Game_Variables.prototype.SetTintTarget = function (value) {
   this._Community_TintTarget_Value = value;
 };
 Game_Variables.prototype.GetTintTarget = function () {
-  return this._Community_TintTarget_Value || '#000000';
+  return orNullish(this._Community_TintTarget_Value, '#000000');
 };
 Game_Variables.prototype.SetTintSpeed = function (value) {
-  this._Community_TintSpeed_Value = +value;
+  this._Community_TintSpeed_Value = orNaN(+value);
 };
 Game_Variables.prototype.GetTintSpeed = function () {
-  return this._Community_TintSpeed_Value || 60;
+  return orNullish(this._Community_TintSpeed_Value, 60);
 };
 
 Game_Variables.prototype.SetFlashlight = function (value) {
   this._Community_Lighting_Flashlight = value;
 };
 Game_Variables.prototype.GetFlashlight = function () {
-  return this._Community_Lighting_Flashlight || false;
+  return orNullish(this._Community_Lighting_Flashlight, false);
 };
 Game_Variables.prototype.SetFlashlightDensity = function (value) {
-  this._Community_Lighting_FlashlightDensity = +value;
+  this._Community_Lighting_FlashlightDensity = orNaN(+value);
 };
 Game_Variables.prototype.GetFlashlightDensity = function () {
-  return this._Community_Lighting_FlashlightDensity || 3;
+  return orNullish(this._Community_Lighting_FlashlightDensity, 3);
 };
 Game_Variables.prototype.SetFlashlightLength = function (value) {
-  this._Community_Lighting_FlashlightLength = +value;
+  this._Community_Lighting_FlashlightLength = orNaN(+value);
 };
 Game_Variables.prototype.GetFlashlightLength = function () {
-  return this._Community_Lighting_FlashlightLength || 8;
+  return orNullish(this._Community_Lighting_FlashlightLength, 8);
 };
 Game_Variables.prototype.SetFlashlightWidth = function (value) {
-  this._Community_Lighting_FlashlightWidth = +value;
+  this._Community_Lighting_FlashlightWidth = orNaN(+value);
 };
 Game_Variables.prototype.GetFlashlightWidth = function () {
-  return this._Community_Lighting_FlashlightWidth || 12;
+  return orNullish(this._Community_Lighting_FlashlightWidth, 12);
 };
 
 /**
@@ -3365,39 +3380,39 @@ Game_Variables.prototype.SetPlayerColor = function (value) {
   this._Community_Lighting_PlayerColor = value;
 };
 Game_Variables.prototype.GetPlayerColor = function () {
-  return this._Community_Lighting_PlayerColor || '#FFFFFF';
+  return orNullish(this._Community_Lighting_PlayerColor, '#FFFFFF');
 };
 Game_Variables.prototype.SetPlayerBrightness = function (value) {
-  this._Community_Lighting_PlayerBrightness = +value;
+  this._Community_Lighting_PlayerBrightness = orNaN(+value);
 };
 Game_Variables.prototype.GetPlayerBrightness = function () {
-  return this._Community_Lighting_PlayerBrightness || 0;
+  return orNullish(this._Community_Lighting_PlayerBrightness, 0);
 };
 Game_Variables.prototype.SetRadius = function (value) {
-  this._Community_Lighting_Radius = +value;
+  this._Community_Lighting_Radius = orNaN(+value);
 };
 Game_Variables.prototype.GetRadius = function () {
-  if (this._Community_Lighting_Radius === undefined) {
+  if (this._Community_Lighting_Radius == null) {
     return 150;
   } else {
     return this._Community_Lighting_Radius;
   }
 };
 Game_Variables.prototype.SetRadiusTarget = function (value) {
-  this._Community_Lighting_RadiusTarget = +value;
+  this._Community_Lighting_RadiusTarget = orNaN(+value);
 };
 Game_Variables.prototype.GetRadiusTarget = function () {
-  if (this._Community_Lighting_RadiusTarget === undefined) {
+  if (this._Community_Lighting_RadiusTarget == null) {
     return 150;
   } else {
     return this._Community_Lighting_RadiusTarget;
   }
 };
 Game_Variables.prototype.SetRadiusSpeed = function (value) {
-  this._Community_Lighting_RadiusSpeed = +value;
+  this._Community_Lighting_RadiusSpeed = orNaN(+value);
 };
 Game_Variables.prototype.GetRadiusSpeed = function () {
-  return this._Community_Lighting_RadiusSpeed || 0;
+  return orNullish(this._Community_Lighting_RadiusSpeed, 0);
 };
 
 Game_Variables.prototype.SetDaynightColorArray = function (value) {
@@ -3418,49 +3433,49 @@ Game_Variables.prototype.GetDaynightColorArray = function () {
   return result;
 };
 Game_Variables.prototype.SetDaynightSpeed = function (value) {
-  this._Community_Lighting_DaynightSpeed = +value;
+  this._Community_Lighting_DaynightSpeed = orNaN(+value);
 };
 Game_Variables.prototype.GetDaynightSpeed = function () {
   if (this._Community_Lighting_DaynightSpeed >= 0) return this._Community_Lighting_DaynightSpeed;
-  return Number(Community.Lighting.parameters['Daynight Initial Speed']) || 10;
+  return orNullish(Number(Community.Lighting.parameters['Daynight Initial Speed']), 10);
 };
 Game_Variables.prototype.SetDaynightCycle = function (value) {
-  this._Community_Lighting_DaynightCycle = +value;
+  this._Community_Lighting_DaynightCycle = orNaN(+value);
 };
 Game_Variables.prototype.GetDaynightCycle = function () {
-  if (this._Community_Lighting_DaynightCycle !== undefined) return this._Community_Lighting_DaynightCycle;
-  return Number(Community.Lighting.parameters['Daynight Initial Hour']) || 0;
+  return orNullish(this._Community_Lighting_DaynightCycle, Number(Community.Lighting.parameters['Daynight Initial Hour']), 0);
+
 };
 Game_Variables.prototype.SetDaynightTimer = function (value) {
-  this._Community_Lighting_DaynightTimer = +value;
+  this._Community_Lighting_DaynightTimer = orNaN(+value);
 };
 Game_Variables.prototype.GetDaynightTimer = function () {
-  return this._Community_Lighting_DaynightTimer || 0;
+  return orNullish(this._Community_Lighting_DaynightTimer, 0);
 };
 Game_Variables.prototype.SetDaynightHoursinDay = function (value) {
-  this._Community_Lighting_DaynightHoursinDay = +value;
+  this._Community_Lighting_DaynightHoursinDay = orNaN(+value);
 };
 Game_Variables.prototype.GetDaynightHoursinDay = function () {
-  return this._Community_Lighting_DaynightHoursinDay || 24;
+  return orNullish(this._Community_Lighting_DaynightHoursinDay, 24);
 };
 
 Game_Variables.prototype.SetFireRadius = function (value) {
-  this._Community_Lighting_FireRadius = +value;
+  this._Community_Lighting_FireRadius = orNaN(+value);
 };
 Game_Variables.prototype.GetFireRadius = function () {
-  return this._Community_Lighting_FireRadius || 7;
+  return orNullish(this._Community_Lighting_FireRadius, 7);
 };
 Game_Variables.prototype.SetFireColorshift = function (value) {
-  this._Community_Lighting_FireColorshift = value;
+  this._Community_Lighting_FireColorshift = orNaN(+value);
 };
 Game_Variables.prototype.GetFireColorshift = function () {
-  return this._Community_Lighting_FireColorshift || 10;
+  return orNullish(this._Community_Lighting_FireColorshift, 10);
 };
 Game_Variables.prototype.SetFire = function (value) {
   this._Community_Lighting_Fire = value;
 };
 Game_Variables.prototype.GetFire = function () {
-  return this._Community_Lighting_Fire || false;
+  return orNullish(this._Community_Lighting_Fire, false);
 };
 
 Game_Variables.prototype.SetLightArrayId = function (value) {
@@ -3468,49 +3483,49 @@ Game_Variables.prototype.SetLightArrayId = function (value) {
 };
 Game_Variables.prototype.GetLightArrayId = function () {
   let default_LAI = [];
-  return this._Community_Lighting_LightArrayId || default_LAI;
+  return orNullish(this._Community_Lighting_LightArrayId, default_LAI);
 };
 Game_Variables.prototype.SetLightArrayState = function (value) {
   this._Community_Lighting_LightArrayState = value;
 };
 Game_Variables.prototype.GetLightArrayState = function () {
   let default_LAS = [];
-  return this._Community_Lighting_LightArrayState || default_LAS;
+  return orNullish(this._Community_Lighting_LightArrayState, default_LAS);
 };
 Game_Variables.prototype.SetLightArrayColor = function (value) {
   this._Community_Lighting_LightArrayColor = value;
 };
 Game_Variables.prototype.GetLightArrayColor = function () {
   let default_LAS = [];
-  return this._Community_Lighting_LightArrayColor || default_LAS;
+  return orNullish(this._Community_Lighting_LightArrayColor, default_LAS);
 };
 Game_Variables.prototype.SetTileLightArray = function (value) {
   this._Community_Lighting_TileLightArray = value;
 };
 Game_Variables.prototype.GetTileLightArray = function () {
   let default_TA = [];
-  return this._Community_Lighting_TileLightArray || default_TA;
+  return orNullish(this._Community_Lighting_TileLightArray, default_TA);
 };
 Game_Variables.prototype.SetTileBlockArray = function (value) {
   this._Community_Lighting_TileBlockArray = value;
 };
 Game_Variables.prototype.GetTileBlockArray = function () {
   let default_TA = [];
-  return this._Community_Lighting_TileBlockArray || default_TA;
+  return orNullish(this._Community_Lighting_TileBlockArray, default_TA);
 };
 Game_Variables.prototype.SetLightTiles = function (value) {
   this._Community_Lighting_LightTiles = value;
 };
 Game_Variables.prototype.GetLightTiles = function () {
   let default_TA = [];
-  return this._Community_Lighting_LightTiles || default_TA;
+  return orNullish(this._Community_Lighting_LightTiles, default_TA);
 };
 Game_Variables.prototype.SetBlockTiles = function (value) {
   this._Community_Lighting_BlockTiles = value;
 };
 Game_Variables.prototype.GetBlockTiles = function () {
   let default_TA = [];
-  return this._Community_Lighting_BlockTiles || default_TA;
+  return orNullish(this._Community_Lighting_BlockTiles, default_TA);
 };
 function Window_TimeOfDay() {
   this.initialize(...arguments);
