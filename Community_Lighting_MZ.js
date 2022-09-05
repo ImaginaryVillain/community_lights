@@ -1714,26 +1714,23 @@ Imported[Community.Lighting.name] = true;
       y1 = y1 - flashlightYoffset;
       if (iplayer_radius < 100) {
         // dim the light a bit at lower lightradius for a less focused effect.
-        let red = hex2rgba(playercolor).r;
-        let green = hex2rgba(playercolor).g;
-        let blue = hex2rgba(playercolor).b;
-        let alpha = hex2rgba(playercolor).a;
-        green = green - 50;
-        red = red - 50;
-        blue = blue - 50;
-        if (green < 0) {
-          green = 0;
+        let c = hex2rgba(playercolor);
+        c.g = c.g - 50;
+        c.r = c.r - 50;
+        c.b = c.b - 50;
+        if (c.g < 0) {
+          c.g = 0;
         }
-        if (red < 0) {
-          red = 0;
+        if (c.r < 0) {
+          c.r = 0;
         }
-        if (blue < 0) {
-          blue = 0;
+        if (c.b < 0) {
+          c.b = 0;
         }
-        if (alpha < 0) {
-          alpha = 0;
+        if (c.a < 0) {
+          c.a = 0;
         }
-        let newcolor = rgba2hex(red, green, blue, alpha);
+        let newcolor = rgba2hex(c.r, c.g, c.b, c.a);
 
         this._maskBitmap.radialgradientFillRect(x1, y1, 0, iplayer_radius, newcolor, radialColor2, playerflicker, playerbrightness);
       } else {
@@ -1900,25 +1897,21 @@ Imported[Community.Lighting.name] = true;
       let objectflicker = tile.lightType.is(LightType.Fire);
       let tile_color = tile.color;
       if (tile.lightType.is(LightType.Glow)) {
-        let r = hex2rgba(tile.color).r;
-        let g = hex2rgba(tile.color).g;
-        let b = hex2rgba(tile.color).b;
-        let a = hex2rgba(tile.color).a;
+        let c = hex2rgba(tile.color);
+        c.r = Math.floor(c.r + (60 - tileglow));
+        c.g = Math.floor(c.g + (60 - tileglow));
+        c.b = Math.floor(c.b + (60 - tileglow));
+        c.a = Math.floor(c.a + (60 - tileglow));
 
-        r = Math.floor(r + (60 - tileglow));
-        g = Math.floor(g + (60 - tileglow));
-        b = Math.floor(b + (60 - tileglow));
-        a = Math.floor(a + (60 - tileglow));
-
-        if (r < 0) r = 0;
-        if (g < 0) g = 0;
-        if (b < 0) b = 0;
-        if (a < 0) a = 0;
-        if (r > 255) r = 255;
-        if (g > 255) g = 255;
-        if (b > 255) b = 255;
-        if (a > 255) a = 255;
-        tile_color = rgba2hex(r, g, b, a);
+        if (c.r < 0) c.r = 0;
+        if (c.g < 0) c.g = 0;
+        if (c.b < 0) c.b = 0;
+        if (c.a < 0) c.a = 0;
+        if (c.r > 255) c.r = 255;
+        if (c.g > 255) c.g = 255;
+        if (c.b > 255) c.b = 255;
+        if (c.a > 255) c.a = 255;
+        tile_color = rgba2hex(c.r, c.g, c.b, c.a);
       }
       this._maskBitmap.radialgradientFillRect(x1, y1, 0, tile.radius, tile_color, '#000000', objectflicker, tile.brightness);
     });
@@ -1975,29 +1968,20 @@ Imported[Community.Lighting.name] = true;
           nextcolor = 0;
         }
         let color2 = daynightcolors[nextcolor].color;
-        let rgb = hex2rgba(color1);
-        r = rgb.r;
-        g = rgb.g;
-        b = rgb.b;
-        a = rgb.a;
+        let c  = hex2rgba(color1);
+        let c2 = hex2rgba(color2);
 
-        rgb = hex2rgba(color2);
-        let r2 = rgb.r;
-        let g2 = rgb.g;
-        let b2 = rgb.b;
-        let a2 = rgb.a;
+        let stepR = (c2.r - c.r) / (60 * daynightspeed);
+        let stepG = (c2.g - c.g) / (60 * daynightspeed);
+        let stepB = (c2.b - c.b) / (60 * daynightspeed);
+        let stepA = (c2.a - c.a) / (60 * daynightspeed);
 
-        let stepR = (r2 - r) / (60 * daynightspeed);
-        let stepG = (g2 - g) / (60 * daynightspeed);
-        let stepB = (b2 - b) / (60 * daynightspeed);
-        let stepA = (a2 - a) / (60 * daynightspeed);
-
-        r = Math.floor(r + (stepR * daynighttimer));
-        g = Math.floor(g + (stepG * daynighttimer));
-        b = Math.floor(b + (stepB * daynighttimer));
-        a = Math.floor(a + (stepA * daynighttimer));
+        c.r = Math.floor(c.r + (stepR * daynighttimer));
+        c.g = Math.floor(c.g + (stepG * daynighttimer));
+        c.b = Math.floor(c.b + (stepB * daynighttimer));
+        c.a = Math.floor(c.a + (stepA * daynighttimer));
       }
-      color1 = rgba2hex(r, g, b, a);
+      color1 = rgba2hex(c.r, c.g, c.b, c.a);
 
       this._maskBitmap.FillRect(-lightMaskPadding, 0, maxX + lightMaskPadding, maxY, color1);
     }
@@ -2028,25 +2012,18 @@ Imported[Community.Lighting.name] = true;
           tint_timer++;
         }
 
-        let r = hex2rgba(tint_value).r;
-        let g = hex2rgba(tint_value).g;
-        let b = hex2rgba(tint_value).b;
-        let a = hex2rgba(tint_value).a;
+        let c = hex2rgba(tint_value);
+        let c2 = hex2rgba(tint_target);
 
-        let r2 = hex2rgba(tint_target).r;
-        let g2 = hex2rgba(tint_target).g;
-        let b2 = hex2rgba(tint_target).b;
-        let a2 = hex2rgba(tint_target).a;
+        let stepR = (c2.r - c.r) / (60 * tint_speed);
+        let stepG = (c2.g - c.g) / (60 * tint_speed);
+        let stepB = (c2.b - c.b) / (60 * tint_speed);
+        let stepA = (c2.a - c.a) / (60 * tint_speed);
 
-        let stepR = (r2 - r) / (60 * tint_speed);
-        let stepG = (g2 - g) / (60 * tint_speed);
-        let stepB = (b2 - b) / (60 * tint_speed);
-        let stepA = (a2 - a) / (60 * tint_speed);
-
-        let r3 = Math.floor(r + (stepR * tint_timer));
-        let g3 = Math.floor(g + (stepG * tint_timer));
-        let b3 = Math.floor(b + (stepB * tint_timer));
-        let a3 = Math.floor(a + (stepA * tint_timer));
+        let r3 = Math.floor(c.r + (stepR * tint_timer));
+        let g3 = Math.floor(c.g + (stepG * tint_timer));
+        let b3 = Math.floor(c.b + (stepB * tint_timer));
+        let a3 = Math.floor(c.a + (stepA * tint_timer));
         if (r3 < 0) {
           r3 = 0
         }
@@ -2079,32 +2056,32 @@ Imported[Community.Lighting.name] = true;
         //Greater than
 
 
-        if (stepR >= 0 && r3 >= r2) {
+        if (stepR >= 0 && r3 >= c2.r) {
           reddone = true;
         }
-        if (stepG >= 0 && g3 >= g2) {
+        if (stepG >= 0 && g3 >= c2.g) {
           greendone = true;
         }
-        if (stepB >= 0 && b3 >= b2) {
+        if (stepB >= 0 && b3 >= c2.b) {
           greendone = true;
         }
-        if (stepA >= 0 && a3 >= a2) {
+        if (stepA >= 0 && a3 >= c2.a) {
           alphadone = true;
         }
 
 
         // Less than
 
-        if (stepR <= 0 && r3 <= r2) {
+        if (stepR <= 0 && r3 <= c2.r) {
           bluedone = true;
         }
-        if (stepG <= 0 && g3 <= g2) {
+        if (stepG <= 0 && g3 <= c2.g) {
           greendone = true;
         }
-        if (stepB <= 0 && b3 <= b2) {
+        if (stepB <= 0 && b3 <= c2.b) {
           bluedone = true;
         }
-        if (stepA <= 0 && a3 <= a2) {
+        if (stepA <= 0 && a3 <= c2.a) {
           alphadone = true;
         }
 
@@ -2293,10 +2270,10 @@ Imported[Community.Lighting.name] = true;
 
     if (useSmootherLights) {
       for (let distanceFromCenter = 0; distanceFromCenter < 1; distanceFromCenter += 0.1) {
-        let data = hex2rgba(color1);
-        var newRed = data.r - (distanceFromCenter * 100 * 2.55);
-        var newGreen = data.g - (distanceFromCenter * 100 * 2.55);
-        let newBlue = data.b - (distanceFromCenter * 100 * 2.55);
+        let c = hex2rgba(color1);
+        var newRed = c.r - (distanceFromCenter * 100 * 2.55);
+        var newGreen = c.g - (distanceFromCenter * 100 * 2.55);
+        let newBlue = c.b - (distanceFromCenter * 100 * 2.55);
         let newAlpha = 1 - distanceFromCenter;
         if (brightness > 0) {
           newAlpha = Math.max(0, brightness - distanceFromCenter);
@@ -2374,19 +2351,15 @@ Imported[Community.Lighting.name] = true;
         let gradrnd = Math.floor((Math.random() * flickerradiusshift) + 1);
         let colorrnd = Math.floor((Math.random() * flickercolorshift) - (flickercolorshift / 2));
 
-        let r = hex2rgba(color1).r;
-        let g = hex2rgba(color1).g;
-        let b = hex2rgba(color1).b;
-        let a = hex2rgba(color1).a;
-
-        g = g + colorrnd;
-        if (g < 0) {
-          g = 0;
+        let c = hex2rgba(color1);
+        c.g = c.g + colorrnd;
+        if (c.g < 0) {
+          c.g = 0;
         }
-        if (g > 255) {
-          g = 255;
+        if (c.g > 255) {
+          c.g = 255;
         }
-        color1 = rgba2hex(r, g, b, a);
+        color1 = rgba2hex(c.r, c.g, c.b, c.a);
         r2 = r2 - gradrnd;
         if (r2 < 0) r2 = 0;
       }
@@ -2664,13 +2637,13 @@ Imported[Community.Lighting.name] = true;
     //Initialize the bitmap
     this._addSprite(-lightMaskPadding, 0, this._maskBitmap); // We are no longer based on battleback, we no longer to do shady shifting
 
-    var redhex = $gameTemp._MapTint.substring(1, 3);
-    var greenhex = $gameTemp._MapTint.substring(3, 5);
-    var bluehex = $gameTemp._MapTint.substring(5);
-    var red = parseInt(redhex, 16);
-    var green = parseInt(greenhex, 16);
-    var blue = parseInt(bluehex, 16);
-    var color = red + green + blue;
+    let redhex = $gameTemp._MapTint.substring(1, 3);
+    let greenhex = $gameTemp._MapTint.substring(3, 5);
+    let bluehex = $gameTemp._MapTint.substring(5);
+    let red = parseInt(redhex, 16);
+    let green = parseInt(greenhex, 16);
+    let blue = parseInt(bluehex, 16);
+    let color = red + green + blue;
     if (color < 200 && red < 66 && green < 66 && blue < 66) {
       $gameTemp._MapTint = '#666666' // Prevent the battle scene from being too dark.
     }
@@ -2683,7 +2656,6 @@ Imported[Community.Lighting.name] = true;
 
   BattleLightmask.prototype._createBitmap = function () {
     this._maskBitmap = new Bitmap(maxX + lightMaskPadding, maxY);   // one big bitmap to fill the intire screen with black
-    var canvas = this._maskBitmap.canvas;          // a bit larger then setting to take care of screenshakes
   };
 
   BattleLightmask.prototype.update = function () {
@@ -2692,26 +2664,18 @@ Imported[Community.Lighting.name] = true;
 
       $gameTemp._BattleTintTimer += 1;
 
-      let r = hex2rgba($gameTemp._BattleTintFade).r;
-      let g = hex2rgba($gameTemp._BattleTintFade).g;
-      let b = hex2rgba($gameTemp._BattleTintFade).b;
-      let a = hex2rgba($gameTemp._BattleTintFade).a;
+      let c = hex2rgba($gameTemp._BattleTintFade);
+      let c2 = hex2rgba($gameTemp._BattleTint);
 
-      var r2 = hex2rgba($gameTemp._BattleTint).r;
-      var g2 = hex2rgba($gameTemp._BattleTint).g;
-      let b2 = hex2rgba($gameTemp._BattleTint).b;
-      let a2 = hex2rgba($gameTemp._BattleTint).a;
+      let stepR = (c2.r - c.r) / (60 * $gameTemp._BattleTintSpeed);
+      let stepG = (c2.g - c.g) / (60 * $gameTemp._BattleTintSpeed);
+      let stepB = (c2.b - c.b) / (60 * $gameTemp._BattleTintSpeed);
+      let stepA = (c2.a - c.a) / (60 * $gameTemp._BattleTintSpeed);
 
-
-      let stepR = (r2 - r) / (60 * $gameTemp._BattleTintSpeed);
-      let stepG = (g2 - g) / (60 * $gameTemp._BattleTintSpeed);
-      let stepB = (b2 - b) / (60 * $gameTemp._BattleTintSpeed);
-      let stepA = (a2 - a) / (60 * $gameTemp._BattleTintSpeed);
-
-      let r3 = Math.floor(r + (stepR * $gameTemp._BattleTintTimer));
-      let g3 = Math.floor(g + (stepG * $gameTemp._BattleTintTimer));
-      let b3 = Math.floor(b + (stepB * $gameTemp._BattleTintTimer));
-      let a3 = Math.floor(a + (stepA * $gameTemp._BattleTintTimer));
+      let r3 = Math.floor(c.r + (stepR * $gameTemp._BattleTintTimer));
+      let g3 = Math.floor(c.g + (stepG * $gameTemp._BattleTintTimer));
+      let b3 = Math.floor(c.b + (stepB * $gameTemp._BattleTintTimer));
+      let a3 = Math.floor(c.a + (stepA * $gameTemp._BattleTintTimer));
       if (r3 < 0) { r3 = 0 }
       if (g3 < 0) { g3 = 0 }
       if (b3 < 0) { b3 = 0 }
@@ -2724,28 +2688,28 @@ Imported[Community.Lighting.name] = true;
       let greendone = false;
       let bluedone = false;
       let alphadone = false;
-      if (stepR >= 0 && r3 >= r2) {
+      if (stepR >= 0 && r3 >= c2.r) {
         reddone = true;
       }
-      if (stepR <= 0 && r3 <= r2) {
+      if (stepR <= 0 && r3 <= c2.r) {
         reddone = true;
       }
-      if (stepG >= 0 && g3 >= g2) {
+      if (stepG >= 0 && g3 >= c2.g) {
         greendone = true;
       }
-      if (stepG <= 0 && g3 <= g2) {
+      if (stepG <= 0 && g3 <= c2.g) {
         greendone = true;
       }
-      if (stepB >= 0 && b3 >= b2) {
+      if (stepB >= 0 && b3 >= c2.b) {
         bluedone = true;
       }
-      if (stepB <= 0 && b3 <= b2) {
+      if (stepB <= 0 && b3 <= c2.b) {
         bluedone = true;
       }
-      if (stepA >= 0 && a3 >= a2) {
+      if (stepA >= 0 && a3 >= c2.a) {
         alphadone = true;
       }
-      if (stepA <= 0 && a3 <= a2) {
+      if (stepA <= 0 && a3 <= c2.a) {
         alphadone = true;
       }
       if (reddone == true && bluedone == true && greendone == true && alphadone) {
@@ -2923,14 +2887,11 @@ Imported[Community.Lighting.name] = true;
           }
           else {
             let color = data[1];
-            let red = hex2rgba(color).r;
-            let green = hex2rgba(color).g;
-            let blue = hex2rgba(color).b;
-            let alpha = hex2rgba(color).a;
-            if (alpha == 255) {
-              alpha = $$.mapBrightness;
+            let c = hex2rgba(color);
+            if (c.a == 255) {
+              c.a = $$.mapBrightness;
             }
-            data[1] = rgba2hex(red, green, blue, alpha);
+            data[1] = rgba2hex(c.r, c.g, c.b, c.a);
             $$.tint(data);
           }
         }
@@ -2949,14 +2910,10 @@ Imported[Community.Lighting.name] = true;
             if (color == "#000000" || color == "#00000000") {
               color = "#FFFFFF";
             }
-            var red = hex2rgba(color).r;
-            var blue = hex2rgba(color).b;
-            var green = hex2rgba(color).g;
-
-
-            var value = Math.max(0, Math.min(Number(brightness[0], 100)));
-            var alphaNum = Math.floor(value * 2.55);
-            var trueColor = rgba2hex(red, green, blue, alphaNum);
+            let c = hex2rgba(color);
+            let value = Math.max(0, Math.min(Number(brightness[0], 100)));
+            let alphaNum = Math.floor(value * 2.55);
+            let trueColor = rgba2hex(c.r, c.g, c.b, alphaNum);
             $$.tint(["set", trueColor]);
             $$.mapBrightness = alphaNum;
           }
