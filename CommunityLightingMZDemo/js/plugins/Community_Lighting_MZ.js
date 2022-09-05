@@ -1034,6 +1034,8 @@ function orNaN() {
   let options_lighting_on = true;
   let maxX = (Number(parameters['Screensize X']) || 816) + 2 * lightMaskPadding;
   let maxY = Number(parameters['Screensize Y']) || 624;
+  let battleMaxX = maxX;
+  let battleMaxY = maxY + 24; // Plus 24 for rmmz Spriteset_Battle.prototype.battleFieldOffsetY()
   let tint_oldseconds = 0;
   let tint_timer = 0;
   let oldseconds = 0;
@@ -1564,7 +1566,6 @@ function orNaN() {
 
   Lightmask.prototype._createBitmap = function () {
     this._maskBitmap = new Bitmap(maxX + lightMaskPadding, maxY);   // one big bitmap to fill the intire screen with black
-    let canvas = this._maskBitmap.canvas;             // a bit larger then setting to take care of screenshakes
   };
 
   let _Game_Map_prototype_setupEvents = Game_Map.prototype.setupEvents;
@@ -2594,14 +2595,14 @@ function orNaN() {
       $gameTemp._MapTint = '#666666' // Prevent the battle scene from being too dark.
     }
     $gameTemp._BattleTint = $$.daynightset ? $gameVariables.GetTintByTime() : $gameTemp._MapTint;
-    this._maskBitmap.FillRect(-lightMaskPadding, 0, maxX + lightMaskPadding, maxY, $gameTemp._BattleTint);
+    this._maskBitmap.FillRect(-lightMaskPadding, 0, battleMaxX + lightMaskPadding, battleMaxY, $gameTemp._BattleTint);
     $gameTemp._BattleTintSpeed = 0;
   };
 
   //@method _createBitmaps
 
   BattleLightmask.prototype._createBitmap = function () {
-    this._maskBitmap = new Bitmap(maxX + lightMaskPadding, maxY);   // one big bitmap to fill the intire screen with black
+    this._maskBitmap = new Bitmap(battleMaxX + lightMaskPadding, battleMaxY);   // one big bitmap to fill the intire screen with black
   };
 
   BattleLightmask.prototype.update = function () {
@@ -2666,7 +2667,7 @@ function orNaN() {
       color1 = rgba2hex(r3, g3, b3, a3);
       $gameTemp._BattleTintFade = color1;
     }
-    this._maskBitmap.FillRect(-lightMaskPadding, 0, maxX + lightMaskPadding, maxY, color1);
+    this._maskBitmap.FillRect(-lightMaskPadding, 0, battleMaxX + lightMaskPadding, battleMaxY, color1);
     this._maskBitmap._baseTexture.update(); // Required to update battle texture in RMMZ
   };
 
