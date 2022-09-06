@@ -146,7 +146,7 @@ You can post your questions on the related thread on rpgmakerweb: https://forums
 	* Fire ...params
 	* - Same as Light params above, but adds a subtle flicker
 	*
-	* Flashlight [bl] [bw] [c] [onoff] [sdir] [x] [y] [id]
+	* Flashlight [bl] [bw] [c] [onoff] [sdir|angle] [x] [y] [id]
 	* - Sets the light as a flashlight with beam length (bl) beam width (bw) color (c),
 	*      0|1 (onoff), and 1=up, 2=right, 3=down, 4=left for static direction (sdir)
 	* - bl:       Beam length:  Any number, optionally preceded by "L", so 8, L8
@@ -158,12 +158,14 @@ You can post your questions on the related thread on rpgmakerweb: https://forums
 	* - onoff:    Initial state:  0, 1, off, on
 	* - sdir:     Forced direction (optional): 0:auto, 1:up, 2:right, 3:down, 4:left
 	*             Can be preceded by "D", so D4.  If omitted, defaults to 0
+	* - angle:    Forced direction in degrees (optional): must be preceded by "A". If
+	*             omitted, sdir is used.
 	* - x         x[offset] Work the same as regular light [optional]
 	* - y         y[offset] [optional]
 	* - day       Sets the event's light to only show during the day [optional]
 	* - night     Sets the event's light to only show during night time [optional]
 	* - id        1, 2, potato, etc. An id (alphanumeric) for plugin commands [optional]
-	*             Those should not begin with 'd', 'x' or 'y' otherwise
+	*             Those should not begin with 'a', 'd', 'x' or 'y' otherwise
 	*             they will be mistaken for one of the previous optional parameters.
 	*
 	* Example note tags:
