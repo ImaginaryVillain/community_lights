@@ -907,6 +907,9 @@ String.prototype.equalsIC = function() {
   return [...arguments].map(s => s.toLowerCase()).includes(this.toLowerCase());
 }
 
+let isRMMZ = () => Utils.RPGMAKER_NAME === "MZ";
+let isRMMV = () => Utils.RPGMAKER_NAME === "MV";
+
 function orNullish() {
   for (let i = 0; i < arguments.length; i++) {
     if(arguments[i] != null)
@@ -1059,6 +1062,9 @@ function orNaN() {
   let options_lighting_on = true;
   let maxX = (Number(parameters['Screensize X']) || 816) + 2 * lightMaskPadding;
   let maxY = Number(parameters['Screensize Y']) || 624;
+  let battleMaxX = maxX;
+  let battleMaxY = maxY;
+  if (isRMMZ()) battleMaxY += 24; // Plus 24 for RMMZ Spriteset_Battle.prototype.battleFieldOffsetY
   let tint_oldseconds = 0;
   let tint_timer = 0;
   let oldseconds = 0;
@@ -1547,13 +1553,13 @@ function orNaN() {
     if (!tintColor || tintColor.length < 7) {
       return '#666666' // Not an hex color string
     }
-    var redhex = tintColor.substring(1, 3);
-    var greenhex = tintColor.substring(3, 5);
-    var bluehex = tintColor.substring(5);
-    var red = parseInt(redhex, 16);
-    var green = parseInt(greenhex, 16);
-    var blue = parseInt(bluehex, 16);
-    var color = red + green + blue;
+    let redhex = tintColor.substring(1, 3);
+    let greenhex = tintColor.substring(3, 5);
+    let bluehex = tintColor.substring(5);
+    let red = parseInt(redhex, 16);
+    let green = parseInt(greenhex, 16);
+    let blue = parseInt(bluehex, 16);
+    let color = red + green + blue;
     if (color < 300 && red < 100 && green < 100 && blue < 100) { // Check for NaN values or too dark colors
       return '#666666' // The player have to see something
     }
@@ -1590,7 +1596,6 @@ function orNaN() {
 
   Lightmask.prototype._createBitmap = function () {
     this._maskBitmap = new Bitmap(maxX + lightMaskPadding, maxY);   // one big bitmap to fill the intire screen with black
-    let canvas = this._maskBitmap.canvas;             // a bit larger then setting to take care of screenshakes
   };
 
   let _Game_Map_prototype_setupEvents = Game_Map.prototype.setupEvents;
@@ -1974,16 +1979,14 @@ function orNaN() {
       let daynightcycle = $gameVariables.GetDaynightCycle();     // cycle = hours
       let daynighthoursinday = $gameVariables.GetDaynightHoursinDay();   // 24
       let daynightcolors = $gameVariables.GetDaynightColorArray();
-      let r, g, b;
       let color1 = daynightcolors[daynightcycle].color;
-
+      let c = hex2rgba(color1);
       if (daynightspeed > 0) {
         let nextcolor = daynightcycle + 1;
         if (nextcolor >= daynighthoursinday) {
           nextcolor = 0;
         }
         let color2 = daynightcolors[nextcolor].color;
-        let c  = hex2rgba(color1);
         let c2 = hex2rgba(color2);
 
         let stepR = (c2.r - c.r) / (60 * daynightspeed);
@@ -2159,15 +2162,14 @@ function orNaN() {
     x1 = x1 + lightMaskPadding;
     //x2=x2+lightMaskPadding;
     let context = this._context;
-    context.save();
+    //context.save(); // unnecessary significant performance hit
     context.fillStyle = color1;
     context.fillRect(x1, y1, x2, y2);
-    context.restore();
-    //this._setDirty(); // doesn't exist in RMMZ
+    //context.restore();
+    if (isRMMV()) this._setDirty(); // doesn't exist in RMMZ
   };
 
   // *******************  CIRCLE/OVAL SHAPE ***********************************
-  // from http://scienceprimer.com/draw-oval-html5-canvas
   /**
    * @param {Number} centerX
    * @param {Number} centerY
@@ -2179,26 +2181,13 @@ function orNaN() {
     centerX = centerX + lightMaskPadding;
 
     let context = this._context;
-    context.save();
+    //context.save(); // unnecessary significant performance hit
     context.fillStyle = color1;
     context.beginPath();
-    let rotation = 0;
-    let start_angle = 0;
-    let end_angle = 2 * Math.PI;
-    for (let i = start_angle * Math.PI; i < end_angle * Math.PI; i += 0.01) {
-      xPos = centerX - (yradius * Math.sin(i)) * Math.sin(rotation * Math.PI) + (xradius * Math.cos(i)) * Math.cos(rotation * Math.PI);
-      yPos = centerY + (xradius * Math.cos(i)) * Math.sin(rotation * Math.PI) + (yradius * Math.sin(i)) * Math.cos(rotation * Math.PI);
-
-      if (i == 0) {
-        context.moveTo(xPos, yPos);
-      } else {
-        context.lineTo(xPos, yPos);
-      }
-    }
+    context.ellipse(centerX, centerY, xradius, yradius, 0, 0, 2 * Math.PI);
     context.fill();
-    context.closePath();
-    context.restore();
-    //this._setDirty(); // doesn't exist in RMMZ
+    //context.restore();
+    if (isRMMV()) this._setDirty(); // doesn't exist in RMMZ
   };
 
   /**
@@ -2275,7 +2264,7 @@ function orNaN() {
 
     if (brightness) {
       if (!useSmootherLights) {
-        var alpha = Math.floor(brightness * 100 * 2.55).toString(16);
+        let alpha = Math.floor(brightness * 100 * 2.55).toString(16);
         if (alpha.length < 2) {
           alpha = "0" + alpha;
         }
@@ -2286,8 +2275,8 @@ function orNaN() {
     if (useSmootherLights) {
       for (let distanceFromCenter = 0; distanceFromCenter < 1; distanceFromCenter += 0.1) {
         let c = hex2rgba(color1);
-        var newRed = c.r - (distanceFromCenter * 100 * 2.55);
-        var newGreen = c.g - (distanceFromCenter * 100 * 2.55);
+        let newRed = c.r - (distanceFromCenter * 100 * 2.55);
+        let newGreen = c.g - (distanceFromCenter * 100 * 2.55);
         let newBlue = c.b - (distanceFromCenter * 100 * 2.55);
         let newAlpha = 1 - distanceFromCenter;
         if (brightness > 0) {
@@ -2382,7 +2371,7 @@ function orNaN() {
       grad = context.createRadialGradient(x1, y1, r1, x1, y1, r2);
       grad.addTransparentColorStops(brightness, color1, color2);
 
-      context.save();
+      //context.save(); // unnecessary significant performance hit
       context.fillStyle = grad;
       direction = Number(direction);
       let pw = $gameMap.tileWidth() / 2;
@@ -2433,8 +2422,8 @@ function orNaN() {
           context.fillRect(x1 + pw, y1 - r2 + hackishFix, r2 * 1 - pw, r2 * 1 - ph);
           break;
       }
-      context.restore();
-      //this._setDirty(); // doesn't exist in RMMZ
+      //context.restore();
+      if (isRMMV()) this._setDirty(); // doesn't exist in RMMZ
     }
   };
 
@@ -2469,9 +2458,9 @@ function orNaN() {
     }
 
     let context = this._context;
-    context.save();
 
     // small dim glove around player
+    //context.save(); // unnecessary significant performance hit
     let r1 = 1; let r2 = 40;
     let grad = context.createRadialGradient(x1, y1, r1, x1, y1, r2);
     grad.addColorStop(0, '#999999');
@@ -2564,8 +2553,8 @@ function orNaN() {
       context.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
     }
 
-    context.restore();
-    //this._setDirty(); // doesn't exist in RMMZ
+    //context.restore();
+    if (isRMMV()) this._setDirty(); // doesn't exist in RMMZ
   };
 
 
@@ -2575,7 +2564,7 @@ function orNaN() {
    * @returns {{r:number,g:number,b:number,a:number}}
    */
   function hex2rgba(hex) {
-    var regex = new RegExp(/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})?$/i);
+    let regex = new RegExp(/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})?$/i);
     let result = regex.exec(hex);
     result = result ? {
       r: parseInt(result[1], 16),
@@ -2614,7 +2603,7 @@ function orNaN() {
     }
   };
 
-  let Community_Lighting_Spriteset_Battle_createBattleField = Spriteset_Battle.prototype.createBattleField; // API change in RMMZ
+  let Community_Lighting_Spriteset_Battle_createBattleField = Spriteset_Battle.prototype.createBattleField;
   Spriteset_Battle.prototype.createBattleField = function () {
     Community_Lighting_Spriteset_Battle_createBattleField.call(this);
     if (battleMaskPosition.equalsIC('Between')) {
@@ -2663,14 +2652,14 @@ function orNaN() {
       $gameTemp._MapTint = '#666666' // Prevent the battle scene from being too dark.
     }
     $gameTemp._BattleTint = $$.daynightset ? $gameVariables.GetTintByTime() : $gameTemp._MapTint;
-    this._maskBitmap.FillRect(-lightMaskPadding, 0, maxX + lightMaskPadding, maxY, $gameTemp._BattleTint);
+    this._maskBitmap.FillRect(-lightMaskPadding, 0, battleMaxX + lightMaskPadding, battleMaxY, $gameTemp._BattleTint);
     $gameTemp._BattleTintSpeed = 0;
   };
 
   //@method _createBitmaps
 
   BattleLightmask.prototype._createBitmap = function () {
-    this._maskBitmap = new Bitmap(maxX + lightMaskPadding, maxY);   // one big bitmap to fill the intire screen with black
+    this._maskBitmap = new Bitmap(battleMaxX + lightMaskPadding, battleMaxY);   // one big bitmap to fill the intire screen with black
   };
 
   BattleLightmask.prototype.update = function () {
@@ -2735,8 +2724,8 @@ function orNaN() {
       color1 = rgba2hex(r3, g3, b3, a3);
       $gameTemp._BattleTintFade = color1;
     }
-    this._maskBitmap.FillRect(-lightMaskPadding, 0, maxX + lightMaskPadding, maxY, color1);
-    this._maskBitmap._baseTexture.update(); // Required to update battle texture in RMMZ
+    this._maskBitmap.FillRect(-lightMaskPadding, 0, battleMaxX + lightMaskPadding, battleMaxY, color1);
+    this._maskBitmap._baseTexture.update(); // Required to update battle texture in RMMZ optional for RMMV
   };
 
   /**
@@ -2771,7 +2760,7 @@ function orNaN() {
 
   let Alias_Game_Interpreter_command203 = Game_Interpreter.prototype.command203;
   Game_Interpreter.prototype.command203 = function (params) { // API change in RMMZ
-    Alias_Game_Interpreter_command203.call(this, params);
+    Alias_Game_Interpreter_command203.call(this, params); // extra parameter is ignored by RMMV
     $$.ReloadMapEvents();
     return true;
   };
@@ -3319,10 +3308,13 @@ function orNaN() {
     // Else, show no shadow
   };
 
-  let _Tilemap_addShadow = Tilemap.prototype._addShadow; // API change in RMMZ
-  Tilemap.prototype._addShadow = function (layer, shadowBits, dx, dy) {
+  // API differences: Tilemap._addshadow in RMMZ and ShaderTilemap._drawShadow in RMMV
+  let _Tilemap = isRMMZ() ? Tilemap : ShaderTilemap;
+  let _XShadow_LU = isRMMZ() ? "_addShadow" : "_drawShadow";
+  let _XTilemap_XShadow = _Tilemap.prototype[_XShadow_LU];
+  _Tilemap.prototype[_XShadow_LU] = function (layerOrBitmap, shadowBits, dx, dy) {
     if (!hideAutoShadow) {
-      _Tilemap_addShadow.call(this, layer, shadowBits, dx, dy);
+      _XTilemap_XShadow.call(this, layerOrBitmap, shadowBits, dx, dy);
     }
     // Else, show no shadow
   };
@@ -3579,10 +3571,11 @@ Window_TimeOfDay.prototype = Object.create(Window_Selectable.prototype);
 Window_TimeOfDay.prototype.constructor = Window_TimeOfDay;
 Window_TimeOfDay.prototype.initialize = function () {
   const ww = 150;
-  const wh = SceneManager._scene.calcWindowHeight(1, true);
-  const wx = Graphics.boxWidth - ww - (ConfigManager.touchUI ? 30 : 0);
+  const wh = isRMMZ() ? SceneManager._scene.calcWindowHeight(1, true) : 65;
+  const wx = Graphics.boxWidth - ww - (isRMMZ() ? (ConfigManager.touchUI ? 30 : 0) : 0);
   const wy = 0;
-  Window_Selectable.prototype.initialize.call(this, new Rectangle(wx, wy, ww, wh));
+  const rect = isRMMZ() ? [new Rectangle(wx, wy, ww, wh)] : [wx, wy, ww, wh];
+  Window_Selectable.prototype.initialize.call(this, ...rect);
   this._baseX = wx
   this._baseY = wy;
   this.setBackgroundType(0);
@@ -3592,11 +3585,24 @@ Window_TimeOfDay.prototype.update = function () {
   this.visible = $gameVariables._clShowTimeWindow;
   if (this.visible) {
     let time = Community.Lighting.time(!!$gameVariables._clShowTimeWindowSeconds);
-    let rect = this.itemLineRect(0);
-    let size = this.textSizeEx(time);
+    let x, y, width;
+    if (isRMMZ()) {
+      let rect = this.itemLineRect(0);
+      let size = this.textSizeEx(time);
+      x = rect.x + rect.width - size.width;
+      y = rect.y;
+      width = size.width;
+      this.x = this._baseX - (ConfigManager.touchUI ? 30 : 0);
+    } else {
+      let textWidth = this.textWidth(time);
+      x = this.contents.width - textWidth - this.textPadding();
+      y = 0;
+      width = 0;
+    }
+
     this.contents.clear();
-    this.drawTextEx(time, rect.x + rect.width - size.width, rect.y, size.width);
-    this.x = this._baseX - (ConfigManager.touchUI ? 30 : 0);
+    this.resetTextColor();
+    this.drawTextEx(time, x, y, width /*ignored by RMMV*/);
   }
 };
 Community.Lighting.Scene_Map_createAllWindows = Scene_Map.prototype.createAllWindows;
