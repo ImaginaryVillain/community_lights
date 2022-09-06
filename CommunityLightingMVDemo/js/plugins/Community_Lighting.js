@@ -596,6 +596,9 @@ String.prototype.equalsIC = function() {
   return [...arguments].map(s => s.toLowerCase()).includes(this.toLowerCase());
 }
 
+let isRMMZ = () => Utils.RPGMAKER_NAME === "MZ";
+let isRMMV = () => Utils.RPGMAKER_NAME === "MV";
+
 function orNullish() {
   for (let i = 0; i < arguments.length; i++) {
     if(arguments[i] != null)
@@ -733,6 +736,7 @@ function orNaN() {
   let maxY = Number(parameters['Screensize Y']) || 624;
   let battleMaxX = maxX;
   let battleMaxY = maxY;
+  if (isRMMZ()) battleMaxY += 24; // Plus 24 for RMMZ Spriteset_Battle.prototype.battleFieldOffsetY
   let tint_oldseconds = 0;
   let tint_timer = 0;
   let oldseconds = 0;
@@ -1823,7 +1827,7 @@ function orNaN() {
     context.fillStyle = color1;
     context.fillRect(x1, y1, x2, y2);
     //context.restore();
-    this._setDirty();
+    if (isRMMV()) this._setDirty(); // doesn't exist in RMMZ
   };
 
   // *******************  CIRCLE/OVAL SHAPE ***********************************
@@ -1844,7 +1848,7 @@ function orNaN() {
     context.ellipse(centerX, centerY, xradius, yradius, 0, 0, 2 * Math.PI);
     context.fill();
     //context.restore();
-    this._setDirty();
+    if (isRMMV()) this._setDirty(); // doesn't exist in RMMZ
   };
 
   /**
@@ -2080,7 +2084,7 @@ function orNaN() {
           break;
       }
       //context.restore();
-      this._setDirty();
+      if (isRMMV()) this._setDirty(); // doesn't exist in RMMZ
     }
   };
 
@@ -2162,7 +2166,7 @@ function orNaN() {
     context.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
 
     //context.restore();
-    this._setDirty();
+    if (isRMMV()) this._setDirty(); // doesn't exist in RMMZ
   };
 
 
@@ -2211,9 +2215,9 @@ function orNaN() {
     }
   };
 
-  let Community_Lighting_Spriteset_Battle_createBattleback = Spriteset_Battle.prototype.createBattleback;
-  Spriteset_Battle.prototype.createBattleback = function () {
-    Community_Lighting_Spriteset_Battle_createBattleback.call(this);
+  let Community_Lighting_Spriteset_Battle_createBattleField = Spriteset_Battle.prototype.createBattleField;
+  Spriteset_Battle.prototype.createBattleField = function () {
+    Community_Lighting_Spriteset_Battle_createBattleField.call(this);
     if (battleMaskPosition.equalsIC('Between')) {
       this.createBattleLightmask();
     }
@@ -2333,6 +2337,7 @@ function orNaN() {
       $gameTemp._BattleTintFade = color1;
     }
     this._maskBitmap.FillRect(-lightMaskPadding, 0, battleMaxX + lightMaskPadding, battleMaxY, color1);
+    this._maskBitmap._baseTexture.update(); // Required to update battle texture in RMMZ optional for RMMV
   };
 
   /**
@@ -2366,8 +2371,8 @@ function orNaN() {
   // ALLIASED Move event location => reload map.
 
   let Alias_Game_Interpreter_command203 = Game_Interpreter.prototype.command203;
-  Game_Interpreter.prototype.command203 = function () {
-    Alias_Game_Interpreter_command203.call(this);
+  Game_Interpreter.prototype.command203 = function (params) { // API change in RMMZ
+    Alias_Game_Interpreter_command203.call(this, params); // extra parameter is ignored by RMMV
     $$.ReloadMapEvents();
     return true;
   };
@@ -2923,10 +2928,13 @@ function orNaN() {
     // Else, show no shadow
   };
 
-  let _ShaderTilemap_drawShadow = ShaderTilemap.prototype._drawShadow;
-  ShaderTilemap.prototype._drawShadow = function (bitmap, shadowBits, dx, dy) {
+  // API differences: Tilemap._addshadow in RMMZ and ShaderTilemap._drawShadow in RMMV
+  let _Tilemap = isRMMZ() ? Tilemap : ShaderTilemap;
+  let _XShadow_LU = isRMMZ() ? "_addShadow" : "_drawShadow";
+  let _XTilemap_XShadow = _Tilemap.prototype[_XShadow_LU];
+  _Tilemap.prototype[_XShadow_LU] = function (layerOrBitmap, shadowBits, dx, dy) {
     if (!hideAutoShadow) {
-      _ShaderTilemap_drawShadow.call(this, bitmap, shadowBits, dx, dy);
+      _XTilemap_XShadow.call(this, layerOrBitmap, shadowBits, dx, dy);
     }
     // Else, show no shadow
   };
@@ -3179,14 +3187,17 @@ Game_Variables.prototype.GetBlockTiles = function () {
 function Window_TimeOfDay() {
   this.initialize(...arguments);
 };
-Window_TimeOfDay.prototype = Object.create(Window_Base.prototype);
+Window_TimeOfDay.prototype = Object.create(Window_Selectable.prototype);
 Window_TimeOfDay.prototype.constructor = Window_TimeOfDay;
 Window_TimeOfDay.prototype.initialize = function () {
   const ww = 150;
-  const wh = 65;
-  const wx = Graphics.boxWidth - ww;
+  const wh = isRMMZ() ? SceneManager._scene.calcWindowHeight(1, true) : 65;
+  const wx = Graphics.boxWidth - ww - (isRMMZ() ? (ConfigManager.touchUI ? 30 : 0) : 0);
   const wy = 0;
-  Window_Base.prototype.initialize.call(this, wx, wy, ww, wh);
+  const rect = isRMMZ() ? [new Rectangle(wx, wy, ww, wh)] : [wx, wy, ww, wh];
+  Window_Selectable.prototype.initialize.call(this, ...rect);
+  this._baseX = wx
+  this._baseY = wy;
   this.setBackgroundType(0);
   this.visible = $gameVariables._clShowTimeWindow;
 };
@@ -3194,10 +3205,24 @@ Window_TimeOfDay.prototype.update = function () {
   this.visible = $gameVariables._clShowTimeWindow;
   if (this.visible) {
     let time = Community.Lighting.time(!!$gameVariables._clShowTimeWindowSeconds);
-    let textWidth = this.textWidth(time);
+    let x, y, width;
+    if (isRMMZ()) {
+      let rect = this.itemLineRect(0);
+      let size = this.textSizeEx(time);
+      x = rect.x + rect.width - size.width;
+      y = rect.y;
+      width = size.width;
+      this.x = this._baseX - (ConfigManager.touchUI ? 30 : 0);
+    } else {
+      let textWidth = this.textWidth(time);
+      x = this.contents.width - textWidth - this.textPadding();
+      y = 0;
+      width = 0;
+    }
+
     this.contents.clear();
     this.resetTextColor();
-    this.drawTextEx(time, this.contents.width - textWidth - this.textPadding(), 0);
+    this.drawTextEx(time, x, y, width /*ignored by RMMV*/);
   }
 };
 Community.Lighting.Scene_Map_createAllWindows = Scene_Map.prototype.createAllWindows;
