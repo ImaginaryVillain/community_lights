@@ -915,14 +915,6 @@ String.prototype.equalsIC = function() {
 let isRMMZ = () => Utils.RPGMAKER_NAME === "MZ";
 let isRMMV = () => Utils.RPGMAKER_NAME === "MV";
 
-
-function orPositive() {
-  for (let i = 0; i < arguments.length; i++) {
-    if(arguments[i] > 0)
-      return arguments[i];
-  }
-}
-
 function orNullish() {
   for (let i = 0; i < arguments.length; i++) {
     if(arguments[i] != null)
@@ -2969,21 +2961,11 @@ function orValidColor() {
    */
   $$.flashlight = function (args) {
     if (isOn(args[0])) {
-      let flashlightlength = $gameVariables.GetFlashlightLength();
-      let flashlightwidth = $gameVariables.GetFlashlightWidth();
-      let flashlightdensity = $gameVariables.GetFlashlightDensity();
-      let playercolor = $gameVariables.GetPlayerColor();
-
-      args[1] && (flashlightlength = args[1]);
-      args[2] && (flashlightwidth = args[2]);
-      args[3] && (playercolor = args[3]);
-      args[4] && (flashlightdensity = args[4]); // density
-
       $gameVariables.SetFlashlight(true);
-      $gameVariables.SetPlayerColor(playercolor);
-      $gameVariables.SetFlashlightWidth(flashlightwidth);
-      $gameVariables.SetFlashlightLength(flashlightlength);
-      $gameVariables.SetFlashlightDensity(flashlightdensity);
+      $gameVariables.SetFlashlightLength(args[1]);  // cond set
+      $gameVariables.SetFlashlightWidth(args[2]);   // cond set
+      $gameVariables.SetPlayerColor(args[3]);       // cond set
+      $gameVariables.SetFlashlightDensity(args[4]); // cond set
     } else if (isOff(args[0])) {
       $gameVariables.SetFlashlight(false);
     }
@@ -2996,18 +2978,18 @@ function orValidColor() {
   $$.fireLight = function (args) {
     //******************* Light radius 100 #FFFFFF ************************
     if (args[0].equalsIC('radius')) {
-      args[1] && $gameVariables.SetRadius(args[1]);
-      args[1] && $gameVariables.SetRadiusTarget(args[1]);
-      args[2] && $gameVariables.SetPlayerColor(args[2]);
-      args[3] && $gameVariables.SetPlayerBrightness(args[3]);
+      $gameVariables.SetRadius(args[1]);           // cond set
+      $gameVariables.SetRadiusTarget(args[1]);     // cond set
+      $gameVariables.SetPlayerColor(args[2]);      // cond set
+      $gameVariables.SetPlayerBrightness(args[3]); // cond set
     }
 
     //******************* Light radiusgrow 100 #FFFFFF Brightness Frames ************************
     if (args[0].equalsIC('radiusgrow')) {
-      args[1] && $gameVariables.SetRadiusTarget(args[1]);
-      args[2] && $gameVariables.SetPlayerColor(args[2]);
-      args[3] && $gameVariables.SetPlayerBrightness(args[3]);
-      args[4] && $gameVariables.SetRadiusSpeed(args[4]); // must use AFTER setting target
+      $gameVariables.SetRadiusTarget(args[1]);     // cond set
+      $gameVariables.SetPlayerColor(args[2]);      // cond set
+      $gameVariables.SetPlayerBrightness(args[3]); // cond set
+      $gameVariables.SetRadiusSpeed(args[4]);      // always set, must use AFTER setting target
     }
 
     // *********************** TURN SPECIFIC LIGHT ON *********************
@@ -3253,46 +3235,50 @@ Game_Variables.prototype.SetFlashlight = function (value) {
 Game_Variables.prototype.GetFlashlight = function () {
   return orNullish(this._Community_Lighting_Flashlight, false);
 };
-Game_Variables.prototype.SetFlashlightDensity = function (value) {
-  this._Community_Lighting_FlashlightDensity = orPositive(+value);
+Game_Variables.prototype.SetFlashlightDensity = function (value) { // don't set if invalid or 0
+  +value > 0 && (this._Community_Lighting_FlashlightDensity = +value);
 };
 Game_Variables.prototype.GetFlashlightDensity = function () {
-  return orPositive(this._Community_Lighting_FlashlightDensity, 3);
+  let value = +this._Community_Lighting_FlashlightDensity;
+  return value || 3; // not undefined, null, NaN, or 0
 };
-Game_Variables.prototype.SetFlashlightLength = function (value) {
-  this._Community_Lighting_FlashlightLength = orPositive(+value);
+Game_Variables.prototype.SetFlashlightLength = function (value) { // don't set if invalid or 0
+  +value > 0 && (this._Community_Lighting_FlashlightLength = +value);
 };
 Game_Variables.prototype.GetFlashlightLength = function () {
-  return orPositive(this._Community_Lighting_FlashlightLength, 8);
+  let value = +this._Community_Lighting_FlashlightLength;
+  return value || 8; // not undefined, null, NaN, or 0
 };
-Game_Variables.prototype.SetFlashlightWidth = function (value) {
-  this._Community_Lighting_FlashlightWidth = orPositive(+value);
+Game_Variables.prototype.SetFlashlightWidth = function (value) { // don't set if invalid or 0
+  +value > 0 && (this._Community_Lighting_FlashlightWidth = +value);
 };
 Game_Variables.prototype.GetFlashlightWidth = function () {
-  return orPositive(this._Community_Lighting_FlashlightWidth, 12);
+  let value = +this._Community_Lighting_FlashlightWidth;
+  return value || 12; // not undefined, null, NaN, or 0
 };
 
 /**
  *
  * @param {String} value
  */
-Game_Variables.prototype.SetPlayerColor = function (value) {
-  this._Community_Lighting_PlayerColor = orValidColor(value);
+Game_Variables.prototype.SetPlayerColor = function (value) { // don't set if invalid.
+  isValidColorRegex.test(value) && (this._Community_Lighting_PlayerColor = value);
 };
 Game_Variables.prototype.GetPlayerColor = function () {
-  return orValidColor(this._Community_Lighting_PlayerColor, '#FFFFFF');
+  let value = this._Community_Lighting_PlayerColor;
+  return isValidColorRegex.test(value) ? value : '#FFFFFF';
 };
-Game_Variables.prototype.SetPlayerBrightness = function (value) {
-  if (value[0].equalsIC('b')) { // must be prefixed with b or B
-    let b = orNaN(+value.slice(1), 0); // strip and convert to number or 0
-    this._Community_Lighting_PlayerBrightness = (b / 100).clamp(0, 1); // clamp between [0,1]
+Game_Variables.prototype.SetPlayerBrightness = function (value) { // don't set if invalid.
+  if (value && value[0].equalsIC('b')) { // must exist and be prefixed with b or B
+    let b = +value.slice(1); // strip and convert to number
+    !isNaN(b) && (this._Community_Lighting_PlayerBrightness = (b / 100).clamp(0, 1)); // clamp between [0,1]
   }
 };
 Game_Variables.prototype.GetPlayerBrightness = function () {
   return orNullish(this._Community_Lighting_PlayerBrightness, 0);
 };
 Game_Variables.prototype.SetRadius = function (value) {
-  if (+value >= 0) this._Community_Lighting_Radius = +value; // don't set if <0 or invalid.
+  if (+value >= 0) this._Community_Lighting_Radius = +value; // don't set if invalid or <0
 };
 Game_Variables.prototype.GetRadius = function () {
   if (this._Community_Lighting_Radius == null) {
@@ -3302,7 +3288,7 @@ Game_Variables.prototype.GetRadius = function () {
   }
 };
 Game_Variables.prototype.SetRadiusTarget = function (value) {
-  if (+value >= 0) this._Community_Lighting_RadiusTarget = +value; // don't set if <0 or invalid.
+  if (+value >= 0) this._Community_Lighting_RadiusTarget = +value; // don't set if invalid or <0
 };
 Game_Variables.prototype.GetRadiusTarget = function () {
   if (this._Community_Lighting_RadiusTarget == null) {
@@ -3313,7 +3299,7 @@ Game_Variables.prototype.GetRadiusTarget = function () {
 };
 Game_Variables.prototype.SetRadiusSpeed = function (value) { // must use AFTER setting target
   let diff = Math.abs(this.GetRadiusTarget() - this.GetRadius());
-  let time = Math.max(1, (orNaN(+value, 500))); // set to 1 if < 0 or 500 if invalid.
+  let time = Math.max(1, (orNaN(+value, 500))); // set to 1 if < 1 or 500 if invalid.
   this._Community_Lighting_RadiusSpeed = diff / time;
 };
 Game_Variables.prototype.GetRadiusSpeed = function () {
@@ -3387,7 +3373,7 @@ Game_Variables.prototype.SetLightArray = function (value) {
 };
 Game_Variables.prototype.GetLightArray = function () {
   if (this._Community_Lighting_LightArray == null)
-  	this._Community_Lighting_LightArray = {};
+    this._Community_Lighting_LightArray = {};
   return this._Community_Lighting_LightArray;
 };
 Game_Variables.prototype.SetTileLightArray = function (value) {
