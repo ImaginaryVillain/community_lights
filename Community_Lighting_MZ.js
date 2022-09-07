@@ -915,6 +915,14 @@ String.prototype.equalsIC = function() {
 let isRMMZ = () => Utils.RPGMAKER_NAME === "MZ";
 let isRMMV = () => Utils.RPGMAKER_NAME === "MV";
 
+
+function orPositive() {
+  for (let i = 0; i < arguments.length; i++) {
+    if(arguments[i] > 0)
+      return arguments[i];
+  }
+}
+
 function orNullish() {
   for (let i = 0; i < arguments.length; i++) {
     if(arguments[i] != null)
@@ -2979,16 +2987,6 @@ function orNaN() {
         flashlightdensity = args[4]; // density
       }
 
-      if (flashlightlength == 0 || isNaN(flashlightlength)) {
-        flashlightlength = 8
-      }
-      if (flashlightwidth == 0 || isNaN(flashlightwidth)) {
-        flashlightwidth = 12
-      }
-      if (flashlightdensity == 0 || isNaN(flashlightdensity)) {
-        flashlightdensity = 3
-      }
-
       $gameVariables.SetFlashlight(true);
       $gameVariables.SetPlayerColor(playercolor);
       $gameVariables.SetFlashlightWidth(flashlightwidth);
@@ -3321,22 +3319,22 @@ Game_Variables.prototype.GetFlashlight = function () {
   return orNullish(this._Community_Lighting_Flashlight, false);
 };
 Game_Variables.prototype.SetFlashlightDensity = function (value) {
-  this._Community_Lighting_FlashlightDensity = orNaN(+value);
+  this._Community_Lighting_FlashlightDensity = orPositive(+value);
 };
 Game_Variables.prototype.GetFlashlightDensity = function () {
-  return orNullish(this._Community_Lighting_FlashlightDensity, 3);
+  return orPositive(this._Community_Lighting_FlashlightDensity, 3);
 };
 Game_Variables.prototype.SetFlashlightLength = function (value) {
-  this._Community_Lighting_FlashlightLength = orNaN(+value);
+  this._Community_Lighting_FlashlightLength = orPositive(+value);
 };
 Game_Variables.prototype.GetFlashlightLength = function () {
-  return orNullish(this._Community_Lighting_FlashlightLength, 8);
+  return orPositive(this._Community_Lighting_FlashlightLength, 8);
 };
 Game_Variables.prototype.SetFlashlightWidth = function (value) {
-  this._Community_Lighting_FlashlightWidth = orNaN(+value);
+  this._Community_Lighting_FlashlightWidth = orPositive(+value);
 };
 Game_Variables.prototype.GetFlashlightWidth = function () {
-  return orNullish(this._Community_Lighting_FlashlightWidth, 12);
+  return orPositive(this._Community_Lighting_FlashlightWidth, 12);
 };
 
 /**
