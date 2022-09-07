@@ -941,7 +941,7 @@ let isValidColorRegex = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)|(^#[0-9A-F]{8}$)/i;
 
 function orValidColor() {
   for (let i = 0; i < arguments.length; i++) {
-    if(isValidColorRegex.test(arguments[i].trim()))
+    if(arguments[i] && isValidColorRegex.test(arguments[i].trim()))
       return arguments[i];
   }
 }
@@ -1682,7 +1682,7 @@ function orValidColor() {
       Community_tint_speed_old = 60;
       Community_tint_target_old = '#000000';
       $gameVariables.SetFirstRun(false);
-      player_radius = Number(parameters['Player radius']);
+      player_radius = +parameters['Player radius'];
       $gameVariables.SetRadius(player_radius);
     } else {
       player_radius = $gameVariables.GetRadius();
@@ -1980,7 +1980,7 @@ function orValidColor() {
       else if (tile.shape == 2) {
         x1 = x1 + tile.xOffset;
         y1 = y1 + tile.yOffset;
-        this._maskBitmap.FillCircle(x1, y1, tile.blockWidth, tile.blockHeight, tile.color);
+        this._maskBitmap.FillEllipse(x1, y1, tile.blockWidth, tile.blockHeight, tile.color);
       }
     });
     ctx.globalCompositeOperation = 'lighter';
@@ -2191,7 +2191,7 @@ function orValidColor() {
    * @param {Number} yradius
    * @param {String} color1
    */
-  Bitmap.prototype.FillCircle = function (centerX, centerY, xradius, yradius, color1) {
+  Bitmap.prototype.FillEllipse = function (centerX, centerY, xradius, yradius, color1) {
     centerX = centerX + lightMaskPadding;
 
     let context = this._context;
@@ -2945,15 +2945,12 @@ function orValidColor() {
         for (let y = 0, mapHeight = $dataMap.height; y < mapHeight; y++) {
           for (let x = 0, mapWidth = $dataMap.width; x < mapWidth; x++) {
             let tag = 0;
-            if (tile.tileType == TileType.Terrain) {
+            if (tile.tileType == TileType.Terrain)
               tag = $gameMap.terrainTag(x, y);
-            }
-            else if (tile.tileType == TileType.Region) {
+            else if (tile.tileType == TileType.Region)
               tag = $gameMap.regionId(x, y);
-            }
-            if (tag == tile.id) {
+            if (tag == tile.id)
               onArray.push([tile, x, y]);
-            }
           }
         }
       });
@@ -2972,7 +2969,6 @@ function orValidColor() {
    */
   $$.flashlight = function (args) {
     if (isOn(args[0])) {
-
       let flashlightlength = $gameVariables.GetFlashlightLength();
       let flashlightwidth = $gameVariables.GetFlashlightWidth();
       let flashlightdensity = $gameVariables.GetFlashlightDensity();
@@ -3000,69 +2996,30 @@ function orValidColor() {
   $$.fireLight = function (args) {
     //******************* Light radius 100 #FFFFFF ************************
     if (args[0].equalsIC('radius')) {
-      let newradius = Number(args[1]);
-      if (newradius >= 0) {
-        $gameVariables.SetRadius(newradius);
-        $gameVariables.SetRadiusTarget(newradius);
-      }
-      if (args.length > 2) {
-        $gameVariables.SetPlayerColor(args[2]);
-      }
-      // player brightness
-      if (args.length > 3) {
-        if (args[3] && args[3][0].equalsIC('b')) {
-          let brightness = ((+args[3].substring(1) || 0) / 100).clamp(0, 1);
-          $gameVariables.SetPlayerBrightness(brightness);
-        }
-      }
+      args[1] && $gameVariables.SetRadius(args[1]);
+      args[1] && $gameVariables.SetRadiusTarget(args[1]);
+      args[2] && $gameVariables.SetPlayerColor(args[2]);
+      args[3] && $gameVariables.SetPlayerBrightness(args[3]);
     }
 
     //******************* Light radiusgrow 100 #FFFFFF Brightness Frames ************************
     if (args[0].equalsIC('radiusgrow')) {
-      let newradius = Number(args[1]);
-      if (newradius >= 0) {
-
-        let lightgrow_value = $gameVariables.GetRadius();
-        let lightgrow_target = newradius;
-        let lightgrow_speed = 0.0;
-        if (args.length >= 4) {
-        lightgrow_speed = (Math.abs(newradius - player_radius)) / Math.max(1, Number(args[4]));
-        } else {
-          lightgrow_speed = (Math.abs(newradius - player_radius)) / 500;
-        }
-        $gameVariables.SetRadius(lightgrow_value);
-        $gameVariables.SetRadiusTarget(lightgrow_target);
-        $gameVariables.SetRadiusSpeed(lightgrow_speed);
-      }
-      // player color
-      if (args.length > 2) {
-        $gameVariables.SetPlayerColor(args[2]);
-      }
-      // player brightness
-      if (args.length > 3) {
-        let brightness = 0.0;
-        let b_arg = args[3];
-        if (typeof b_arg !== 'undefined') {
-          let key = b_arg.substring(0, 1);
-          if (key.equalsIC('b')) {
-            brightness = ((+b_arg.substring(1) || 0) / 100).clamp(0, 1);
-            $gameVariables.SetPlayerBrightness(brightness);
-          }
-        }
-      }
-
+      args[1] && $gameVariables.SetRadiusTarget(args[1]);
+      args[2] && $gameVariables.SetPlayerColor(args[2]);
+      args[3] && $gameVariables.SetPlayerBrightness(args[3]);
+      args[4] && $gameVariables.SetRadiusSpeed(args[4]); // must use AFTER setting target
     }
 
     // *********************** TURN SPECIFIC LIGHT ON *********************
     else if (isOn(args[0])) {
-      let lightid = Number(args[1]);
+      let lightid = +args[1];
       let lightarray = $gameVariables.GetLightArray();
       lightarray[lightid] ? lightarray[lightid][0] = true : lightarray[lightid] = [true, 'defaultcolor'];
     }
 
     // *********************** TURN SPECIFIC LIGHT OFF *********************
     else if (isOff(args[0])) {
-      let lightid = Number(args[1]);
+      let lightid = +args[1];
       let lightarray = $gameVariables.GetLightArray();
       lightarray[lightid] ? lightarray[lightid][0] = false : lightarray[lightid] = [false, 'defaultcolor'];
     }
@@ -3071,7 +3028,7 @@ function orValidColor() {
     else if (args[0].equalsIC('color')) {
       let newcolor = args[2];
       if (!newcolor || newcolor.equalsIC('defaultcolor')) newcolor = 'defaultcolor';
-      let lightid = Number(args[1]);
+      let lightid = +args[1];
       let lightarray = $gameVariables.GetLightArray();
       lightarray[lightid] ? lightarray[lightid][1] = newcolor : lightarray[lightid] = [false, newcolor];
     }
@@ -3326,13 +3283,16 @@ Game_Variables.prototype.GetPlayerColor = function () {
   return orValidColor(this._Community_Lighting_PlayerColor, '#FFFFFF');
 };
 Game_Variables.prototype.SetPlayerBrightness = function (value) {
-  this._Community_Lighting_PlayerBrightness = orNaN(+value);
+  if (value[0].equalsIC('b')) { // must be prefixed with b or B
+    let b = orNaN(+value.slice(1), 0); // strip and convert to number or 0
+    this._Community_Lighting_PlayerBrightness = (b / 100).clamp(0, 1); // clamp between [0,1]
+  }
 };
 Game_Variables.prototype.GetPlayerBrightness = function () {
   return orNullish(this._Community_Lighting_PlayerBrightness, 0);
 };
 Game_Variables.prototype.SetRadius = function (value) {
-  this._Community_Lighting_Radius = orNaN(+value);
+  if (+value >= 0) this._Community_Lighting_Radius = +value; // don't set if <0 or invalid.
 };
 Game_Variables.prototype.GetRadius = function () {
   if (this._Community_Lighting_Radius == null) {
@@ -3342,7 +3302,7 @@ Game_Variables.prototype.GetRadius = function () {
   }
 };
 Game_Variables.prototype.SetRadiusTarget = function (value) {
-  this._Community_Lighting_RadiusTarget = orNaN(+value);
+  if (+value >= 0) this._Community_Lighting_RadiusTarget = +value; // don't set if <0 or invalid.
 };
 Game_Variables.prototype.GetRadiusTarget = function () {
   if (this._Community_Lighting_RadiusTarget == null) {
@@ -3351,13 +3311,14 @@ Game_Variables.prototype.GetRadiusTarget = function () {
     return this._Community_Lighting_RadiusTarget;
   }
 };
-Game_Variables.prototype.SetRadiusSpeed = function (value) {
-  this._Community_Lighting_RadiusSpeed = orNaN(+value);
+Game_Variables.prototype.SetRadiusSpeed = function (value) { // must use AFTER setting target
+  let diff = Math.abs(this.GetRadiusTarget() - this.GetRadius());
+  let time = Math.max(1, (orNaN(+value, 500))); // set to 1 if < 0 or 500 if invalid.
+  this._Community_Lighting_RadiusSpeed = diff / time;
 };
 Game_Variables.prototype.GetRadiusSpeed = function () {
   return orNullish(this._Community_Lighting_RadiusSpeed, 0);
 };
-
 Game_Variables.prototype.SetDaynightColorArray = function (value) {
   this._Community_Lighting_DayNightColorArray = value;
 };
