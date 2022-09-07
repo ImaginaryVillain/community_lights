@@ -830,6 +830,11 @@ Imported[Community.Lighting.name] = true;
 *             numbers are faster, and 0 stops the flow of time entirely.
 *             If speed is not specified, then the current speed is used.
 *
+* TileLight id ON c r
+* RegionLight id ON c r
+* - Turns on lights for tile tag or region tag (id) using color (c) and radius (r)
+* - Replace ON with OFF to turn them off
+*
 * RegionFire, RegionGlow
 * - Same as above, but different lighting effects
 *
@@ -1191,6 +1196,8 @@ function orNaN() {
     let tagData = this.getCLTag().toLowerCase().split(/\s+/);
     let needsCycleDuration = false;
     this._clType = LightType[tagData.shift()];
+
+    // Handle parsing of light and fire
     if (this._clType && this._clType.is(LightType.Light, LightType.Fire)) {
       this._clRadius = undefined;
       for (let x of tagData) {
@@ -1215,6 +1222,7 @@ function orNaN() {
         else if (x.length > 0 && this._clId === undefined) this._clId = x;
       }
     }
+    // Handle parsing of flashlight
     else if (this._clType && this._clType.is(LightType.Flashlight)) {
       this._clBeamLength = undefined;
       this._clBeamWidth = undefined;
@@ -1353,9 +1361,7 @@ function orNaN() {
   Game_Player.prototype.clearTransferInfo = function () {
     _Game_Player_clearTransferInfo.call(this);
     if (reset_each_map) {
-      $gameVariables.SetLightArrayId([]);
-      $gameVariables.SetLightArrayState([]);
-      $gameVariables.SetLightArrayColor([]);
+      $gameVariables.SetLightArray({});
       $$.defaultBrightness = 0;
       $$.mapBrightness = undefined;
       $gameVariables.SetTint(null);
@@ -1403,7 +1409,7 @@ function orNaN() {
     reg("setHoursInDay",      (a)  => f("dayNight",   ["hoursinday",    a.hours]));
     reg("showTime",           (a)  => f("dayNight",   [showMode(a)]));
     reg("setHourColor",       (a)  => f("dayNight",   ["color", a.hour, a.color]));
-    reg("flashlight",         (a)  => f("flashLight", [mapOnOff(a),        a.beamLength,    a.beamWidth,    a.color,          a.density]));
+    reg("flashlight",         (a)  => f("flashLight", [mapOnOff(a),     a.beamLength,    a.beamWidth,    a.color,          a.density]));
     reg("setFire",            (a)  => f("setFire",    [a.radiusShift,   a.colorShift]));
     reg("playerLightRadius",  (a)  => f("light",      [radMode(a),      a.radius,        a.color,        "B"+a.brightness, a.fadeSpeed]));
     reg("activateById",       (a)  => f("light",      [mapOnOff(a),     a.id]));
@@ -1599,7 +1605,6 @@ function orNaN() {
   };
 
   let _Game_Map_prototype_setupEvents = Game_Map.prototype.setupEvents;
-
   Game_Map.prototype.setupEvents = function () {
     _Game_Map_prototype_setupEvents.call(this);
     $$.ReloadMapEvents();
@@ -1833,19 +1838,12 @@ function orNaN() {
           let state = cur.getLightEnabled();
           if (lightid) {
             state = false;
-            let lightarray_id = $gameVariables.GetLightArrayId();
-            let lightarray_state = $gameVariables.GetLightArrayState();
-            let lightarray_color = $gameVariables.GetLightArrayColor();
 
-            for (let j = 0, jlen = lightarray_id.length; j < jlen; j++) {
-              if (lightarray_id[j] == lightid) {
-                // idfound = true;
-                state = lightarray_state[j];
-                let newcolor = lightarray_color[j];
-                if (newcolor != 'defaultcolor') {
-                  colorvalue = newcolor;
-                }
-              }
+            let lightarray = $gameVariables.GetLightArray();
+            if (lightarray[lightid]) {
+              let tcolorvalue;
+              [state, tcolorvalue] = lightarray[lightid];
+              if (tcolorvalue != 'defaultcolor') colorvalue = tcolorvalue;
             }
 
             // Set kill switch to ON if the conditional light is deactivated,
@@ -3088,91 +3086,31 @@ function orNaN() {
 
     // *********************** TURN SPECIFIC LIGHT ON *********************
     if (isOn(args[0])) {
-
-      let lightarray_id = $gameVariables.GetLightArrayId();
-      let lightarray_state = $gameVariables.GetLightArrayState();
-      let lightarray_color = $gameVariables.GetLightArrayColor();
-
       let lightid = Number(args[1]);
-      let idfound = false;
-      for (let i = 0, len = lightarray_id.length; i < len; i++) {
-        if (lightarray_id[i] == lightid) {
-          idfound = true;
-          lightarray_state[i] = true;
-        }
-      }
-      if (idfound === false) {
-        lightarray_id.push(lightid);
-        lightarray_state.push(true);
-        lightarray_color.push('defaultcolor');
-      }
-      $gameVariables.SetLightArrayId(lightarray_id);
-      $gameVariables.SetLightArrayState(lightarray_state);
-      $gameVariables.SetLightArrayColor(lightarray_color);
+      let lightarray = $gameVariables.GetLightArray();
+      lightarray[lightid] ? lightarray[lightid][0] = true : lightarray[lightid] = [true, 'defaultcolor'];
     }
 
     // *********************** TURN SPECIFIC LIGHT OFF *********************
     if (isOff(args[0])) {
-
-      let lightarray_id = $gameVariables.GetLightArrayId();
-      let lightarray_state = $gameVariables.GetLightArrayState();
-      let lightarray_color = $gameVariables.GetLightArrayColor();
-
       let lightid = Number(args[1]);
-      let idfound = false;
-      for (let i = 0, len = lightarray_id.length; i < len; i++) {
-        if (lightarray_id[i] == lightid) {
-          idfound = true;
-          lightarray_state[i] = false;
-        }
-      }
-      if (idfound === false) {
-        lightarray_id.push(lightid);
-        lightarray_state.push(false);
-        lightarray_color.push('defaultcolor');
-      }
-      $gameVariables.SetLightArrayId(lightarray_id);
-      $gameVariables.SetLightArrayState(lightarray_state);
-      $gameVariables.SetLightArrayColor(lightarray_color);
+      let lightarray = $gameVariables.GetLightArray();
+      lightarray[lightid] ? lightarray[lightid][0] = false : lightarray[lightid] = [false, 'defaultcolor'];
     }
 
     // *********************** SET COLOR *********************
-
     if (args[0].equalsIC('color')) {
 
       let newcolor = args[2];
-      if (newcolor && newcolor.equalsIC('defaultcolor')) {
-        newcolor = 'defaultcolor';
-      }
-
-      let lightarray_id = $gameVariables.GetLightArrayId();
-      let lightarray_state = $gameVariables.GetLightArrayState();
-      let lightarray_color = $gameVariables.GetLightArrayColor();
-
+      if (!newcolor || newcolor.equalsIC('defaultcolor')) newcolor = 'defaultcolor';
       let lightid = Number(args[1]);
-      idfound = false;
-      for (let i = 0, len = lightarray_id.length; i < len; i++) {
-        if (lightarray_id[i] == lightid) {
-          idfound = true;
-          lightarray_color[i] = newcolor;
-        }
-      }
-      if (idfound === false) {
-        lightarray_id.push(lightid);
-        lightarray_state.push(false);
-        lightarray_color.push(newcolor);
-      }
-      $gameVariables.SetLightArrayId(lightarray_id);
-      $gameVariables.SetLightArrayState(lightarray_state);
-      $gameVariables.SetLightArrayColor(lightarray_color);
+      let lightarray = $gameVariables.GetLightArray();
+      lightarray[lightid] ? lightarray[lightid][1] = newcolor : lightarray[lightid] = [false, newcolor];
     }
-
 
     // **************************** RESET ALL SWITCHES ***********************
     if (args[0].equalsIC('switch') && args[1].equalsIC('reset')) {
-      $gameVariables.SetLightArrayId([]);
-      $gameVariables.SetLightArrayState([]);
-      $gameVariables.SetLightArrayColor([]);
+      $gameVariables.SetLightArray({});
     }
   };
 
@@ -3515,26 +3453,13 @@ Game_Variables.prototype.GetFire = function () {
   return orNullish(this._Community_Lighting_Fire, false);
 };
 
-Game_Variables.prototype.SetLightArrayId = function (value) {
-  this._Community_Lighting_LightArrayId = value;
+Game_Variables.prototype.SetLightArray = function (value) {
+  this._Community_Lighting_LightArray = value;
 };
-Game_Variables.prototype.GetLightArrayId = function () {
-  let default_LAI = [];
-  return orNullish(this._Community_Lighting_LightArrayId, default_LAI);
-};
-Game_Variables.prototype.SetLightArrayState = function (value) {
-  this._Community_Lighting_LightArrayState = value;
-};
-Game_Variables.prototype.GetLightArrayState = function () {
-  let default_LAS = [];
-  return orNullish(this._Community_Lighting_LightArrayState, default_LAS);
-};
-Game_Variables.prototype.SetLightArrayColor = function (value) {
-  this._Community_Lighting_LightArrayColor = value;
-};
-Game_Variables.prototype.GetLightArrayColor = function () {
-  let default_LAS = [];
-  return orNullish(this._Community_Lighting_LightArrayColor, default_LAS);
+Game_Variables.prototype.GetLightArray = function () {
+  if (this._Community_Lighting_LightArray == null)
+  	this._Community_Lighting_LightArray = {};
+  return this._Community_Lighting_LightArray;
 };
 Game_Variables.prototype.SetTileLightArray = function (value) {
   this._Community_Lighting_TileLightArray = value;
