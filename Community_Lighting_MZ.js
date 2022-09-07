@@ -937,6 +937,15 @@ function orNaN() {
   }
 }
 
+let isValidColorRegex = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)|(^#[0-9A-F]{8}$)/i;
+
+function orValidColor() {
+  for (let i = 0; i < arguments.length; i++) {
+    if(isValidColorRegex.test(arguments[i].trim()))
+      return arguments[i];
+  }
+}
+
 (function ($$) {
   let isOn = (x) => x.toLowerCase() === "on";
   let isOff = (x) => x.toLowerCase() === "off";
@@ -1094,7 +1103,6 @@ function orNaN() {
   //let averagetimecount = 0;
   let notetag_reg = RegExp("<" + noteTagKey + ":[ ]*([^>]+)>", "i");
   let radialColor2 = useSmootherLights == true ? "#00000000" : "#000000";
-  let isValidColorRegex = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)|(^#[0-9A-F]{8}$)/i;
   $$.getFirstComment = function () {
     let result = null;
     let page = this.page();
@@ -2970,30 +2978,17 @@ function orNaN() {
       let flashlightdensity = $gameVariables.GetFlashlightDensity();
       let playercolor = $gameVariables.GetPlayerColor();
 
-      if (args.length >= 1) {
-        flashlightlength = args[1];
-      }
-      if (args.length >= 2) {
-        flashlightwidth = args[2];
-      }
-      if (args.length >= 3) {
-        playercolor = args[3];
-        let isValidPlayerColor = isValidColorRegex.test(playercolor.trim());
-        if (!isValidPlayerColor) {
-          playercolor = '#FFFFFF'
-        }
-      }
-      if (args.length >= 4) {
-        flashlightdensity = args[4]; // density
-      }
+      args[1] && (flashlightlength = args[1]);
+      args[2] && (flashlightwidth = args[2]);
+      args[3] && (playercolor = args[3]);
+      args[4] && (flashlightdensity = args[4]); // density
 
       $gameVariables.SetFlashlight(true);
       $gameVariables.SetPlayerColor(playercolor);
       $gameVariables.SetFlashlightWidth(flashlightwidth);
       $gameVariables.SetFlashlightLength(flashlightlength);
       $gameVariables.SetFlashlightDensity(flashlightdensity);
-    }
-    if (isOff(args[0])) {
+    } else if (isOff(args[0])) {
       $gameVariables.SetFlashlight(false);
     }
   };
@@ -3011,13 +3006,7 @@ function orNaN() {
         $gameVariables.SetRadiusTarget(newradius);
       }
       if (args.length > 2) {
-        playercolor = args[2];
-        let isValidPlayerColor = isValidColorRegex.test(playercolor.trim());
-
-        if (!isValidPlayerColor) {
-          playercolor = '#FFFFFF';
-        }
-        $gameVariables.SetPlayerColor(playercolor);
+        $gameVariables.SetPlayerColor(args[2]);
       }
       // player brightness
       if (args.length > 3) {
@@ -3052,12 +3041,7 @@ function orNaN() {
       }
       // player color
       if (args.length > 2) {
-        playercolor = args[2];
-        let isValidPlayerColor = isValidColorRegex.test(playercolor.trim());
-        if (!isValidPlayerColor) {
-          playercolor = '#FFFFFF'
-        }
-        $gameVariables.SetPlayerColor(playercolor);
+        $gameVariables.SetPlayerColor(args[2]);
       }
       // player brightness
       if (args.length > 3) {
@@ -3075,22 +3059,21 @@ function orNaN() {
     }
 
     // *********************** TURN SPECIFIC LIGHT ON *********************
-    if (isOn(args[0])) {
+    else if (isOn(args[0])) {
       let lightid = Number(args[1]);
       let lightarray = $gameVariables.GetLightArray();
       lightarray[lightid] ? lightarray[lightid][0] = true : lightarray[lightid] = [true, 'defaultcolor'];
     }
 
     // *********************** TURN SPECIFIC LIGHT OFF *********************
-    if (isOff(args[0])) {
+    else if (isOff(args[0])) {
       let lightid = Number(args[1]);
       let lightarray = $gameVariables.GetLightArray();
       lightarray[lightid] ? lightarray[lightid][0] = false : lightarray[lightid] = [false, 'defaultcolor'];
     }
 
     // *********************** SET COLOR *********************
-    if (args[0].equalsIC('color')) {
-
+    else if (args[0].equalsIC('color')) {
       let newcolor = args[2];
       if (!newcolor || newcolor.equalsIC('defaultcolor')) newcolor = 'defaultcolor';
       let lightid = Number(args[1]);
@@ -3099,7 +3082,7 @@ function orNaN() {
     }
 
     // **************************** RESET ALL SWITCHES ***********************
-    if (args[0].equalsIC('switch') && args[1].equalsIC('reset')) {
+    else if (args[0].equalsIC('switch') && args[1].equalsIC('reset')) {
       $gameVariables.SetLightArray({});
     }
   };
@@ -3342,10 +3325,10 @@ Game_Variables.prototype.GetFlashlightWidth = function () {
  * @param {String} value
  */
 Game_Variables.prototype.SetPlayerColor = function (value) {
-  this._Community_Lighting_PlayerColor = value;
+  this._Community_Lighting_PlayerColor = orValidColor(value);
 };
 Game_Variables.prototype.GetPlayerColor = function () {
-  return orNullish(this._Community_Lighting_PlayerColor, '#FFFFFF');
+  return orValidColor(this._Community_Lighting_PlayerColor, '#FFFFFF');
 };
 Game_Variables.prototype.SetPlayerBrightness = function (value) {
   this._Community_Lighting_PlayerBrightness = orNaN(+value);
