@@ -1010,6 +1010,13 @@ let isValidColorRegex = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)|(^#[0-9A-F]{8}$)/i;
     }
   };
 
+  class Mask_Bitmaps {
+    constructor(width, height) {
+      this.multiply = new Bitmap(width, height); // one big bitmap to fill the intire screen with black
+      this.additive = new Bitmap(width, height);
+    }
+  };
+
   let Community_tint_speed = 60;
   let Community_tint_target = '#000000';
   let colorcycle_count = [1000];
@@ -1592,7 +1599,7 @@ let isValidColorRegex = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)|(^#[0-9A-F]{8}$)/i;
     this._width = Graphics.width;
     this._height = Graphics.height;
     this._sprites = [];
-    this._createBitmap();
+    this._createBitmaps();
   };
 
   //Updates the Lightmask for each frame.
@@ -1602,9 +1609,8 @@ let isValidColorRegex = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)|(^#[0-9A-F]{8}$)/i;
   };
 
   //@method _createBitmaps
-
-  Lightmask.prototype._createBitmap = function () {
-    this._maskBitmap = new Bitmap(maxX + lightMaskPadding, maxY);   // one big bitmap to fill the intire screen with black
+  Lightmask.prototype._createBitmaps = function () {
+    this._maskBitmaps = new Mask_Bitmaps(maxX + lightMaskPadding, maxY);
   };
 
   let _Game_Map_prototype_setupEvents = Game_Map.prototype.setupEvents;
@@ -1659,8 +1665,8 @@ let isValidColorRegex = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)|(^#[0-9A-F]{8}$)/i;
 
     if (light_event_required && eventObjId.length <= 0) return; // If no lightsources on this map, no lighting if light_event_required set to true.
 
-    this._addSprite(-lightMaskPadding, 0, this._maskBitmap);
-
+    this._addSprite(-lightMaskPadding, 0, this._maskBitmaps.multiply, PIXI.BLEND_MODES.MULTIPLY);
+    this._addSprite(-lightMaskPadding, 0, this._maskBitmaps.additive, PIXI.BLEND_MODES.ADD);
     // ******** GROW OR SHRINK GLOBE PLAYER *********
     let firstrun = $gameVariables.GetFirstRun();
     if (firstrun === true) {
@@ -1699,11 +1705,13 @@ let isValidColorRegex = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)|(^#[0-9A-F]{8}$)/i;
 
     // ****** PLAYER LIGHTGLOBE ********
 
-    let canvas = this._maskBitmap.canvas;
-    let ctx = canvas.getContext("2d");
-    this._maskBitmap.fillRect(0, 0, maxX + lightMaskPadding, maxY, '#000000');
+    let ctxMultiply = this._maskBitmaps.multiply.context;
+    let ctxAdditive = this._maskBitmaps.additive.context;
+    this._maskBitmaps.multiply.fillRect(0, 0, maxX + lightMaskPadding, maxY, '#000000');
+    this._maskBitmaps.additive.clearRect(0, 0, maxX + lightMaskPadding, maxY);
 
-    ctx.globalCompositeOperation = 'lighter';
+    ctxMultiply.globalCompositeOperation = 'lighter';
+    ctxAdditive.globalCompositeOperation = 'lighter';
     let pw = $gameMap.tileWidth();
     let ph = $gameMap.tileHeight();
     let dx = $gameMap.displayX();
@@ -1735,7 +1743,7 @@ let isValidColorRegex = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)|(^#[0-9A-F]{8}$)/i;
     let iplayer_radius = Math.floor(player_radius);
 
     if (playerflashlight == true) {
-      this._maskBitmap.radialgradientFlashlight(x1, y1, playercolor, radialColor2, pd, flashlightlength, flashlightwidth);
+      this._maskBitmaps.radialgradientFlashlight(x1, y1, playercolor, radialColor2, pd, flashlightlength, flashlightwidth);
     }
     if (iplayer_radius > 0) {
       x1 = x1 - flashlightXoffset;
@@ -1760,9 +1768,9 @@ let isValidColorRegex = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)|(^#[0-9A-F]{8}$)/i;
         }
         let newcolor = rgba2hex(c.r, c.g, c.b, c.a);
 
-        this._maskBitmap.radialgradientFillRect(x1, y1, 0, iplayer_radius, newcolor, radialColor2, playerflicker, playerbrightness);
+        this._maskBitmaps.radialgradientFillRect(x1, y1, 0, iplayer_radius, newcolor, radialColor2, playerflicker, playerbrightness);
       } else {
-        this._maskBitmap.radialgradientFillRect(x1, y1, lightMaskPadding, iplayer_radius, playercolor, radialColor2, playerflicker, playerbrightness);
+        this._maskBitmaps.radialgradientFillRect(x1, y1, lightMaskPadding, iplayer_radius, playercolor, radialColor2, playerflicker, playerbrightness);
       }
 
     }
@@ -1880,9 +1888,9 @@ let isValidColorRegex = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)|(^#[0-9A-F]{8}$)/i;
 
               let tldir = cur.getLightFlashlightDirection();
               if (!isNaN(tldir)) ldir = tldir;
-              this._maskBitmap.radialgradientFlashlight(lx1, ly1, colorvalue, '#000000', ldir, flashlength, flashwidth);
+              this._maskBitmaps.radialgradientFlashlight(lx1, ly1, colorvalue, '#000000', ldir, flashlength, flashwidth);
             } else if(lightType.is(LightType.Light, LightType.Fire)) {
-              this._maskBitmap.radialgradientFillRect(lx1, ly1, 0, light_radius, colorvalue, '#000000', objectflicker, brightness, direction);
+              this._maskBitmaps.radialgradientFillRect(lx1, ly1, 0, light_radius, colorvalue, '#000000', objectflicker, brightness, direction);
             }
           }
         }
@@ -1934,11 +1942,11 @@ let isValidColorRegex = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)|(^#[0-9A-F]{8}$)/i;
         if (c.a > 255) c.a = 255;
         tile_color = rgba2hex(c.r, c.g, c.b, c.a);
       }
-      this._maskBitmap.radialgradientFillRect(x1, y1, 0, tile.radius, tile_color, '#000000', objectflicker, tile.brightness);
+      this._maskBitmaps.radialgradientFillRect(x1, y1, 0, tile.radius, tile_color, '#000000', objectflicker, tile.brightness);
     });
 
     // Tile blocks
-    ctx.globalCompositeOperation = "multiply";
+    ctxMultiply.globalCompositeOperation = "multiply";
     block_tiles.forEach(tuple => {
       let [tile, x, y] = tuple;
       let x1 = (x - dx) * pw;
@@ -1957,20 +1965,20 @@ let isValidColorRegex = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)|(^#[0-9A-F]{8}$)/i;
         }
       }
       if (tile.shape == 0) {
-        this._maskBitmap.FillRect(x1, y1, pw, ph, tile.color);
+        this._maskBitmaps.multiply.FillRect(x1, y1, pw, ph, tile.color);
       }
       else if (tile.shape == 1) {
         x1 = x1 + tile.xOffset;
         y1 = y1 + tile.yOffset;
-        this._maskBitmap.FillRect(x1, y1, tile.blockWidth, tile.blockHeight, tile.color);
+        this._maskBitmaps.multiply.FillRect(x1, y1, tile.blockWidth, tile.blockHeight, tile.color);
       }
       else if (tile.shape == 2) {
         x1 = x1 + tile.xOffset;
         y1 = y1 + tile.yOffset;
-        this._maskBitmap.FillEllipse(x1, y1, tile.blockWidth, tile.blockHeight, tile.color);
+        this._maskBitmaps.multiply.FillEllipse(x1, y1, tile.blockWidth, tile.blockHeight, tile.color);
       }
     });
-    ctx.globalCompositeOperation = 'lighter';
+    ctxMultiply.globalCompositeOperation = 'lighter';
 
 
     // *********************************** DAY NIGHT CYCLE FILTER **************************
@@ -2002,7 +2010,7 @@ let isValidColorRegex = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)|(^#[0-9A-F]{8}$)/i;
       }
       color1 = rgba2hex(c.r, c.g, c.b, c.a);
 
-      this._maskBitmap.FillRect(-lightMaskPadding, 0, maxX + lightMaskPadding, maxY, color1);
+      this._maskBitmaps.multiply.FillRect(-lightMaskPadding, 0, maxX + lightMaskPadding, maxY, color1);
     }
     // *********************************** TINT **************************
     else {
@@ -2113,23 +2121,23 @@ let isValidColorRegex = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)|(^#[0-9A-F]{8}$)/i;
       } else {
         tint_timer = 0;
       }
-      this._maskBitmap.FillRect(-lightMaskPadding, 0, maxX + lightMaskPadding, maxY, tcolor);
+      this._maskBitmaps.multiply.FillRect(-lightMaskPadding, 0, maxX + lightMaskPadding, maxY, tcolor);
     }
 
     // reset drawmode to normal
-    ctx.globalCompositeOperation = 'source-over';
+    ctxMultiply.globalCompositeOperation = 'source-over';
   };
 
   /**
    * @method _addSprite
    * @private
    */
-  Lightmask.prototype._addSprite = function (x1, y1, selectedbitmap) {
+  Lightmask.prototype._addSprite = function (x1, y1, selectedbitmap, blendMode) {
 
     let sprite = new Sprite(this.viewport);
     sprite.bitmap = selectedbitmap;
     sprite.opacity = 255;
-    sprite.blendMode = 2;
+    sprite.blendMode = blendMode;
     sprite.x = x1;
     sprite.y = y1;
     this._sprites.push(sprite);
@@ -2178,7 +2186,7 @@ let isValidColorRegex = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)|(^#[0-9A-F]{8}$)/i;
    * @param {Number} yradius
    * @param {String} color1
    */
-  Bitmap.prototype.FillEllipse = function (centerX, centerY, xradius, yradius, color1) {
+  Mask_Bitmaps.prototype.FillEllipse = function (centerX, centerY, xradius, yradius, color1) {
     centerX = centerX + lightMaskPadding;
 
     let context = this._context;
@@ -2295,18 +2303,18 @@ let isValidColorRegex = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)|(^#[0-9A-F]{8}$)/i;
   // Fill gradient circle
 
   /**
-   *
-   * @param {Number} x1
-   * @param {Number} y1
-   * @param {Number}  r1
-   * @param {Number} r2
-   * @param {String} color1
-   * @param {String} color2
-   * @param {Boolean} flicker
-   * @param {Number} brightness
-   * @param {Number} direction
-   */
-  Bitmap.prototype.radialgradientFillRect = function (x1, y1, r1, r2, color1, color2, flicker, brightness, direction) {
+  *
+  * @param {Number} x1
+  * @param {Number} y1
+  * @param {Number}  r1
+  * @param {Number} r2
+  * @param {String} color1
+  * @param {String} color2
+  * @param {Boolean} flicker
+  * @param {Number} brightness
+  * @param {Number} direction
+  */
+  Mask_Bitmaps.prototype.radialgradientFillRect = function (x1, y1, r1, r2, color1, color2, flicker, brightness, direction) {
 
     let isValidColor = isValidColorRegex.test(color1.trim());
     if (!isValidColor) {
@@ -2347,7 +2355,7 @@ let isValidColorRegex = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)|(^#[0-9A-F]{8}$)/i;
       if (!direction) {
         direction = 0;
       }
-      let context = this._context;
+      let contextMultiply = this.multiply._context;
       let grad;
       let wait = Math.floor((Math.random() * 8) + 1);
       if (flicker == true && wait == 1) {
@@ -2369,11 +2377,11 @@ let isValidColorRegex = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)|(^#[0-9A-F]{8}$)/i;
         if (r2 < 0) r2 = 0;
       }
 
-      grad = context.createRadialGradient(x1, y1, r1, x1, y1, r2);
+      grad = contextMultiply.createRadialGradient(x1, y1, r1, x1, y1, r2);
       grad.addTransparentColorStops(brightness, color1, color2);
 
-      //context.save(); // unnecessary significant performance hit
-      context.fillStyle = grad;
+      //contextMultiply.save(); // unnecessary significant performance hit
+      contextMultiply.fillStyle = grad;
       direction = Number(direction);
       let pw = $gameMap.tileWidth() / 2;
       let ph = $gameMap.tileHeight() / 2;
@@ -2411,11 +2419,11 @@ let isValidColorRegex = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)|(^#[0-9A-F]{8}$)/i;
           xS2=x1+pw;    yS2=y1-r2;    xE2=r2*1-pw;    yE2=r2*1-ph;    break;
       }
 
-      context.fillRect(xS1, yS1, xE1, yE1);
+      contextMultiply.fillRect(xS1, yS1, xE1, yE1);
       if (direction > 8)
-        context.fillRect(xS2, yS2, xE2, yE2);
+      contextMultiply.fillRect(xS2, yS2, xE2, yE2);
 
-      //context.restore();
+      //contextMultiply.restore();
       if (isRMMV()) this._setDirty(); // doesn't exist in RMMZ
     }
   };
@@ -2436,7 +2444,7 @@ let isValidColorRegex = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)|(^#[0-9A-F]{8}$)/i;
    * @param {Number} flashlength
    * @param {Number} flashwidth
    */
-  Bitmap.prototype.radialgradientFlashlight = function (x1, y1, color1, color2, dirAngle, flashlength, flashwidth) {
+  Mask_Bitmaps.prototype.radialgradientFlashlight = function (x1, y1, color1, color2, dirAngle, flashlength, flashwidth) {
     x1 = x1 + lightMaskPadding;
     x1 = x1 - flashlightXoffset;
     y1 = y1 - flashlightYoffset;
@@ -2450,16 +2458,16 @@ let isValidColorRegex = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)|(^#[0-9A-F]{8}$)/i;
       color2 = '#000000'
     }
 
-    let context = this._context;
+    let contextMultiply = this.multiply._context;
 
     // small dim glove around player
-    //context.save(); // unnecessary significant performance hit
+    //contextMultiply.save(); // unnecessary significant performance hit
     let r1 = 1; let r2 = 40;
-    let grad = context.createRadialGradient(x1, y1, r1, x1, y1, r2);
+    let grad = contextMultiply.createRadialGradient(x1, y1, r1, x1, y1, r2);
     grad.addColorStop(0, '#999999');
     grad.addColorStop(1, color2);
-    context.fillStyle = grad;
-    context.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
+    contextMultiply.fillStyle = grad;
+    contextMultiply.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
 
     // flashlight
     let flashlightdensity = $gameVariables.GetFlashlightDensity();
@@ -2491,41 +2499,41 @@ let isValidColorRegex = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)|(^#[0-9A-F]{8}$)/i;
       let beamAngleEnd   = dirAngle + beamWidth;
 
       // Clear fillstyle for drawing beam
-      context.fillStyle = undefined;
+      contextMultiply.fillStyle = undefined;
 
       // grab flashlight color
       let c = hex2rgba(color1);
 
       // Draw outer beam as a shadow
-      context.beginPath();
-      context.arc(xBeamStart, yBeamStart, beamDistance, beamAngleStart, beamAngleEnd, false);
-      context.arc(xBeamStart, yBeamStart, adjustForPlayer, beamAngleEnd, beamAngleStart, true);
-      context.shadowColor = rgba2hex(c.r, c.g, c.b, Math.round(0.7 * c.a));
-      context.shadowBlur = 30;
-      context.fill();
+      contextMultiply.beginPath();
+      contextMultiply.arc(xBeamStart, yBeamStart, beamDistance, beamAngleStart, beamAngleEnd, false);
+      contextMultiply.arc(xBeamStart, yBeamStart, adjustForPlayer, beamAngleEnd, beamAngleStart, true);
+      contextMultiply.shadowColor = rgba2hex(c.r, c.g, c.b, Math.round(0.7 * c.a));
+      contextMultiply.shadowBlur = 30;
+      contextMultiply.fill();
 
       // Draw inner beam as a shadow
-      context.beginPath();
-      context.arc(xBeamStart, yBeamStart, beamDistance, beamAngleStart, beamAngleEnd, false);
-      context.arc(xBeamStart, yBeamStart, adjustForPlayer, beamAngleEnd, beamAngleStart, true);
-      context.shadowColor = rgba2hex(c.r, c.g, c.b,  Math.round(0.1 * c.a));
-      context.shadowBlur = 2;
-      context.fill();
+      contextMultiply.beginPath();
+      contextMultiply.arc(xBeamStart, yBeamStart, beamDistance, beamAngleStart, beamAngleEnd, false);
+      contextMultiply.arc(xBeamStart, yBeamStart, adjustForPlayer, beamAngleEnd, beamAngleStart, true);
+      contextMultiply.shadowColor = rgba2hex(c.r, c.g, c.b,  Math.round(0.1 * c.a));
+      contextMultiply.shadowBlur = 2;
+      contextMultiply.fill();
 
       // Clear shadow style
-      context.shadowColor = "";
-      context.shadowBlur = 0;
+      contextMultiply.shadowColor = "";
+      contextMultiply.shadowBlur = 0;
 
       // Compute spot location
       x1 += distance * Math.cos(dirAngle);
       y1 += distance * Math.sin(dirAngle);
 
       // Draw spot
-      grad = context.createRadialGradient(x1, y1, r1, x1, y1, r2);
+      grad = contextMultiply.createRadialGradient(x1, y1, r1, x1, y1, r2);
       grad.addTransparentColorStops(0, color1, color2);
-      context.fillStyle = grad;
-      context.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
-      context.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
+      contextMultiply.fillStyle = grad;
+      contextMultiply.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
+      contextMultiply.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
     } else { // Circular flashlight
       // Compute diagonal length scalars.
       let xScalar = Math.cos(dirAngle);
@@ -2537,16 +2545,16 @@ let isValidColorRegex = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)|(^#[0-9A-F]{8}$)/i;
         r2 = cone * flashwidth;
         x1 = x1 + cone * 6 * xScalar; // apply scalars.
         y1 = y1 + cone * 6 * yScalar;
-        grad = context.createRadialGradient(x1, y1, r1, x1, y1, r2);
+        grad = contextMultiply.createRadialGradient(x1, y1, r1, x1, y1, r2);
         grad.addTransparentColorStops(0, color1, color2);
-        context.fillStyle = grad;
-        context.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
+        contextMultiply.fillStyle = grad;
+        contextMultiply.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
       }
-      context.fillStyle = grad;
-      context.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
+      contextMultiply.fillStyle = grad;
+      contextMultiply.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
     }
 
-    //context.restore();
+    //contextMultiply.restore();
     if (isRMMV()) this._setDirty(); // doesn't exist in RMMZ
   };
 
