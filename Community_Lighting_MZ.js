@@ -3010,14 +3010,9 @@ function orValidColor() {
       }
       // player brightness
       if (args.length > 3) {
-        let brightness = 0.0;
-        let b_arg = args[3];
-        if (typeof b_arg !== 'undefined') {
-          let key = b_arg.substring(0, 1);
-          if (key.equalsIC('b')) {
-            brightness = ((+b_arg.substring(1) || 0) / 100).clamp(0, 1);
-            $gameVariables.SetPlayerBrightness(brightness);
-          }
+        if (args[3] && args[3][0].equalsIC('b')) {
+          let brightness = ((+args[3].substring(1) || 0) / 100).clamp(0, 1);
+          $gameVariables.SetPlayerBrightness(brightness);
         }
       }
     }
