@@ -1389,7 +1389,7 @@ function orNaN() {
     let tintMode = (args) => args.color ? "set" : "reset";
     let mathMode = (args) => args.mode === "set" ? "hour" : args.mode; // set, add, or subtract.
     let showMode = (args) => args.enabled.equalsIC("true") ? (args.showSeconds.equalsIC("true") ? "showseconds" : "show") : "hide";
-    let radMode  = (args) => +args.speed ? "radiusgrow" : "radius";
+    let radMode  = (args) => +args.fadeSpeed ? "radiusgrow" : "radius";
 
     let reg = PluginManager.registerCommand.bind(PluginManager, $$.name); // registar bound with first parameter.
     let f = (cmd, args) => $gameMap._interpreter.communityLighting_Commands(cmd, args.filter(_ => _ !== "")); //command wrapper.
