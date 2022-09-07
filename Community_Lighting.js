@@ -626,7 +626,7 @@ function orNaN() {
   }
 }
 
-let isValidColorRegex = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)|(^#[0-9A-F]{8}$)/i;
+let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-9A-F]{8}$)/i; // a|A before # for additive lighting
 
 (function ($$) {
   let isOn = (x) => x.toLowerCase() === "on";
