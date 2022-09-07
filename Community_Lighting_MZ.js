@@ -2374,52 +2374,44 @@ function orNaN() {
       direction = Number(direction);
       let pw = $gameMap.tileWidth() / 2;
       let ph = $gameMap.tileHeight() / 2;
-      let hackishFix = 0; // I'm not proud of having to do this...
+      let xS1, yS1, xE1, yE1, xS2, yS2, xE2, yE2;
       switch (direction) {
         case 0:
-          context.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
-          break;
+          xS1=x1-r2;    yS1=y1-r2;    xE1=r2*2;       yE1=r2*2;       break;
         case 1:
-          context.fillRect(x1 - r2, y1 - ph, r2 * 2, r2 * 2);
-          break;
+          xS1=x1-r2;    yS1=y1-ph;    xE1=r2*2;       yE1=r2*2;       break;
         case 2:
-          context.fillRect(x1 - r2, y1 - r2, r2 * 1 + pw, r2 * 2);
-          break;
+          xS1=x1-r2;    yS1=y1-r2;    xE1=r2*1+pw;    yE1=r2*2;       break;
         case 3:
-          context.fillRect(x1 - r2, y1 - r2 + hackishFix, r2 * 2, r2 * 1 + ph);
-          break;
+          xS1=x1-r2;    yS1=y1-r2;    xE1=r2*2;       yE1=r2*1+ph;    break;
         case 4:
-          context.fillRect(x1 - pw, y1 - r2, r2 * 2, r2 * 2);
-          break;
+          xS1=x1-pw;    yS1=y1-r2;    xE1=r2*2;       yE1=r2*2;       break;
         case 5:
-          context.fillRect(x1 - r2, y1 - ph, r2 * 1 + pw, r2 * 1 + ph);
-          break;
+          xS1=x1-r2;    yS1=y1-ph;    xE1=r2*1+pw;    yE1=r2*1+ph;    break;
         case 6:
-          context.fillRect(x1 - r2, y1 - r2 + hackishFix, r2 * 1 + pw, r2 * 1 + ph);
-          break;
+          xS1=x1-r2;    yS1=y1-r2;    xE1=r2*1+pw;    yE1=r2*1+ph;    break;
         case 7:
-          context.fillRect(x1 - pw, y1 - r2 + hackishFix, r2 * 1 + pw, r2 * 1 + ph);
-          break;
+          xS1=x1-pw;    yS1=y1-r2;    xE1=r2*1+pw;    yE1=r2*1+ph;    break;
         case 8:
-          context.fillRect(x1 - pw, y1 - ph, r2 * 1 + pw, r2 * 1 + ph);
-          break;
+          xS1=x1-pw;    yS1=y1-ph;    xE1=r2*1+pw;    yE1=r2*1+ph;    break;
         case 9:
-          context.fillRect(x1 - r2, y1 - ph + hackishFix, r2 * 2, r2 * 2);
-          context.fillRect(x1 - r2, y1 - r2 + hackishFix, r2 * 1 - pw, r2 * 1 - ph);
-          break;
+          xS1=x1-r2;    yS1=y1-ph;    xE1=r2*2;       yE1=r2*2;
+          xS2=x1-r2;    yS2=y1-r2;    xE2=r2*1-pw;    yE2=r2*1-ph;    break;
         case 10:
-          context.fillRect(x1 - r2, y1 - r2 + hackishFix, r2 * 2, r2 * 1 + ph);
-          context.fillRect(x1 - r2, y1 + pw + hackishFix, r2 * 1 - pw, r2 * 1 - ph);
-          break;
+          xS1=x1-r2;    yS1=y1-r2;    xE1=r2*2;       yE1=r2*1+ph;
+          xS2=x1-r2;    yS2=y1+pw;    xE2=r2*1-pw;    yE2=r2*1-ph;    break;
         case 11:
-          context.fillRect(x1 - r2, y1 - r2 + hackishFix, r2 * 2, r2 * 1 + ph);
-          context.fillRect(x1 + pw, y1 + pw + hackishFix, r2 * 1 - pw, r2 * 1 - ph);
-          break;
+          xS1=x1-r2;    yS1=y1-r2;    xE1=r2*2;       yE1=r2*1+ph;
+          xS2=x1+pw;    yS2=y1+pw;    xE2=r2*1-pw;    yE2=r2*1-ph;    break;
         case 12:
-          context.fillRect(x1 - r2, y1 - ph + hackishFix, r2 * 2, r2 * 2);
-          context.fillRect(x1 + pw, y1 - r2 + hackishFix, r2 * 1 - pw, r2 * 1 - ph);
-          break;
+          xS1=x1-r2;    yS1=y1-ph;    xE1=r2*2;       yE1=r2*2;
+          xS2=x1+pw;    yS2=y1-r2;    xE2=r2*1-pw;    yE2=r2*1-ph;    break;
       }
+
+      context.fillRect(xS1, yS1, xE1, yE1);
+      if (direction > 8)
+        context.fillRect(xS2, yS2, xE2, yE2);
+
       //context.restore();
       if (isRMMV()) this._setDirty(); // doesn't exist in RMMZ
     }
