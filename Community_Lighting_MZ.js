@@ -917,14 +917,14 @@ let isRMMV = () => Utils.RPGMAKER_NAME === "MV";
 
 function orNullish() {
   for (let i = 0; i < arguments.length; i++) {
-    if(arguments[i] != null)
+    if (arguments[i] != null)
       return arguments[i];
   }
 }
 
 function orNaN() {
   for (let i = 0; i < arguments.length; i++) {
-    if(!isNaN(arguments[i]))
+    if (!isNaN(arguments[i]))
       return arguments[i];
   }
 }
