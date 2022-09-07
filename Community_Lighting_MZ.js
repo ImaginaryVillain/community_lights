@@ -2316,6 +2316,7 @@ let isValidColorRegex = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)|(^#[0-9A-F]{8}$)/i;
   */
   Mask_Bitmaps.prototype.radialgradientFillRect = function (x1, y1, r1, r2, color1, color2, flicker, brightness, direction) {
 
+    let enableAdditive = false;
     let isValidColor = isValidColorRegex.test(color1.trim());
     if (!isValidColor) {
       color1 = '#000000'
@@ -2356,7 +2357,7 @@ let isValidColorRegex = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)|(^#[0-9A-F]{8}$)/i;
         direction = 0;
       }
       let contextMultiply = this.multiply._context;
-      let grad;
+      let contextAdditive = this.additive._context;
       let wait = Math.floor((Math.random() * 8) + 1);
       if (flicker == true && wait == 1) {
         let flickerradiusshift = $gameVariables.GetFireRadius();
@@ -2377,11 +2378,14 @@ let isValidColorRegex = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)|(^#[0-9A-F]{8}$)/i;
         if (r2 < 0) r2 = 0;
       }
 
-      grad = contextMultiply.createRadialGradient(x1, y1, r1, x1, y1, r2);
+      let grad = contextMultiply.createRadialGradient(x1, y1, r1, x1, y1, r2);
       grad.addTransparentColorStops(brightness, color1, color2);
 
       //contextMultiply.save(); // unnecessary significant performance hit
+
       contextMultiply.fillStyle = grad;
+      contextAdditive.fillStyle = grad;
+
       direction = Number(direction);
       let pw = $gameMap.tileWidth() / 2;
       let ph = $gameMap.tileHeight() / 2;
@@ -2420,8 +2424,11 @@ let isValidColorRegex = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)|(^#[0-9A-F]{8}$)/i;
       }
 
       contextMultiply.fillRect(xS1, yS1, xE1, yE1);
-      if (direction > 8)
-      contextMultiply.fillRect(xS2, yS2, xE2, yE2);
+      enableAdditive && contextAdditive.fillRect(xS1, yS1, xE1, yE1);
+      if (direction > 8) {
+        contextMultiply.fillRect(xS2, yS2, xE2, yE2);
+        enableAdditive && contextAdditive.fillRect(xS2, yS2, xE2, yE2);
+      }
 
       //contextMultiply.restore();
       if (isRMMV()) this._setDirty(); // doesn't exist in RMMZ
@@ -2445,6 +2452,7 @@ let isValidColorRegex = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)|(^#[0-9A-F]{8}$)/i;
    * @param {Number} flashwidth
    */
   Mask_Bitmaps.prototype.radialgradientFlashlight = function (x1, y1, color1, color2, dirAngle, flashlength, flashwidth) {
+    let enableAdditive = false;
     x1 = x1 + lightMaskPadding;
     x1 = x1 - flashlightXoffset;
     y1 = y1 - flashlightYoffset;
@@ -2459,6 +2467,7 @@ let isValidColorRegex = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)|(^#[0-9A-F]{8}$)/i;
     }
 
     let contextMultiply = this.multiply._context;
+    let contextAdditive = this.additive._context;
 
     // small dim glove around player
     //contextMultiply.save(); // unnecessary significant performance hit
@@ -2468,6 +2477,10 @@ let isValidColorRegex = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)|(^#[0-9A-F]{8}$)/i;
     grad.addColorStop(1, color2);
     contextMultiply.fillStyle = grad;
     contextMultiply.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
+    if (enableAdditive) {
+      contextAdditive.fillStyle = grad;
+      contextAdditive.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
+    }
 
     // flashlight
     let flashlightdensity = $gameVariables.GetFlashlightDensity();
@@ -2498,31 +2511,44 @@ let isValidColorRegex = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)|(^#[0-9A-F]{8}$)/i;
       let beamAngleStart = dirAngle - beamWidth;
       let beamAngleEnd   = dirAngle + beamWidth;
 
-      // Clear fillstyle for drawing beam
-      contextMultiply.fillStyle = undefined;
-
       // grab flashlight color
       let c = hex2rgba(color1);
 
       // Draw outer beam as a shadow
+      contextMultiply.fillStyle = undefined; // Clear fillstyle for drawing beam
+      contextMultiply.shadowColor = rgba2hex(c.r, c.g, c.b, Math.round(0.7 * c.a));
+      contextMultiply.shadowBlur = 30;
       contextMultiply.beginPath();
       contextMultiply.arc(xBeamStart, yBeamStart, beamDistance, beamAngleStart, beamAngleEnd, false);
       contextMultiply.arc(xBeamStart, yBeamStart, adjustForPlayer, beamAngleEnd, beamAngleStart, true);
-      contextMultiply.shadowColor = rgba2hex(c.r, c.g, c.b, Math.round(0.7 * c.a));
-      contextMultiply.shadowBlur = 30;
       contextMultiply.fill();
 
       // Draw inner beam as a shadow
+      contextMultiply.shadowColor = rgba2hex(c.r, c.g, c.b,  Math.round(0.1 * c.a));
+      contextMultiply.shadowBlur = 2;
       contextMultiply.beginPath();
       contextMultiply.arc(xBeamStart, yBeamStart, beamDistance, beamAngleStart, beamAngleEnd, false);
       contextMultiply.arc(xBeamStart, yBeamStart, adjustForPlayer, beamAngleEnd, beamAngleStart, true);
-      contextMultiply.shadowColor = rgba2hex(c.r, c.g, c.b,  Math.round(0.1 * c.a));
-      contextMultiply.shadowBlur = 2;
       contextMultiply.fill();
 
-      // Clear shadow style
-      contextMultiply.shadowColor = "";
-      contextMultiply.shadowBlur = 0;
+      if (enableAdditive) {
+        // Draw outer beam as a shadow
+        contextAdditive.fillStyle = undefined; // Clear fillstyle for drawing beam
+        contextAdditive.shadowColor = rgba2hex(c.r, c.g, c.b, Math.round(0.7 * c.a));
+        contextAdditive.shadowBlur = 30;
+        contextAdditive.beginPath();
+        contextAdditive.arc(xBeamStart, yBeamStart, beamDistance, beamAngleStart, beamAngleEnd, false);
+        contextAdditive.arc(xBeamStart, yBeamStart, adjustForPlayer, beamAngleEnd, beamAngleStart, true);
+        contextAdditive.fill();
+
+        // Draw inner beam as a shadow
+        contextAdditive.shadowColor = rgba2hex(c.r, c.g, c.b, Math.round(0.1 * c.a));
+        contextAdditive.shadowBlur = 2;
+        contextAdditive.beginPath();
+        contextAdditive.arc(xBeamStart, yBeamStart, beamDistance, beamAngleStart, beamAngleEnd, false);
+        contextAdditive.arc(xBeamStart, yBeamStart, adjustForPlayer, beamAngleEnd, beamAngleStart, true);
+        contextAdditive.fill();
+      }
 
       // Compute spot location
       x1 += distance * Math.cos(dirAngle);
@@ -2531,9 +2557,17 @@ let isValidColorRegex = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)|(^#[0-9A-F]{8}$)/i;
       // Draw spot
       grad = contextMultiply.createRadialGradient(x1, y1, r1, x1, y1, r2);
       grad.addTransparentColorStops(0, color1, color2);
+      contextMultiply.shadowColor = ""; // Clear shadow style
+      contextMultiply.shadowBlur = 0;
       contextMultiply.fillStyle = grad;
       contextMultiply.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
       contextMultiply.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
+      if (enableAdditive) {
+        contextAdditive.shadowColor = ""; // Clear shadow style
+        contextAdditive.shadowBlur = 0;
+        contextAdditive.fillStyle = grad;
+        enableAdditive && contextAdditive.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
+      }
     } else { // Circular flashlight
       // Compute diagonal length scalars.
       let xScalar = Math.cos(dirAngle);
@@ -2548,10 +2582,14 @@ let isValidColorRegex = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)|(^#[0-9A-F]{8}$)/i;
         grad = contextMultiply.createRadialGradient(x1, y1, r1, x1, y1, r2);
         grad.addTransparentColorStops(0, color1, color2);
         contextMultiply.fillStyle = grad;
+        contextAdditive.fillStyle = grad;
         contextMultiply.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
+        enableAdditive && contextAdditive.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
       }
       contextMultiply.fillStyle = grad;
+      contextAdditive.fillStyle = grad;
       contextMultiply.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
+      enableAdditive && contextAdditive.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
     }
 
     //contextMultiply.restore();
