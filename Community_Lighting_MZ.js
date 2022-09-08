@@ -931,13 +931,6 @@ function orNaN() {
 
 let isValidColorRegex = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)|(^#[0-9A-F]{8}$)/i;
 
-function orValidColor() {
-  for (let i = 0; i < arguments.length; i++) {
-    if(arguments[i] && isValidColorRegex.test(arguments[i].trim()))
-      return arguments[i];
-  }
-}
-
 (function ($$) {
   let isOn = (x) => x.toLowerCase() === "on";
   let isOff = (x) => x.toLowerCase() === "off";
