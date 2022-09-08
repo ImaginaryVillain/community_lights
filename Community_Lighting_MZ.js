@@ -3099,20 +3099,14 @@ function orValidColor() {
 
       $gameVariables.SetDaynightTimer(daynighttimer);     // timer = minutes * speed
       $gameVariables.SetDaynightCycle(daynightcycle);     // cycle = hours
-
     }
 
     if (args[0].equalsIC('hoursinday')) {
-
-      let old_value = daynighthoursinday;
-      daynighthoursinday = Number(args[1]);
-      if (daynighthoursinday < 0) {
-        daynighthoursinday = 0;
-      }
-      if (daynighthoursinday > old_value) {
-        for (let i = old_value; i < daynighthoursinday; i++) {
-          daynightcolors.push({ "color": "#ffffff", "isNight": false });
-        }
+      daynighthoursinday = Math.max(+args[1], 0);
+      if (daynighthoursinday > daynightcolors.length) {
+        let origLength = daynightcolors.length;
+        daynightcolors.length = daynighthoursinday; // more efficient than a for loop
+        daynightcolors.fill({ "color": "#ffffff", "isNight": false }, origLength);
       }
       $gameVariables.SetDaynightColorArray(daynightcolors);
       $gameVariables.SetDaynightHoursinDay(daynighthoursinday);
@@ -3134,13 +3128,10 @@ function orValidColor() {
     }
 
     if (args[0].equalsIC('color')) {
-
       let hour = (+args[1] || 0).clamp(0, daynighthoursinday - 1);
       let hourcolor = args[2];
       let isValidColor = isValidColorRegex.test(hourcolor.trim());
-      if (isValidColor) {
-        daynightcolors[hour].color = hourcolor;
-      }
+      if (isValidColor) daynightcolors[hour].color = hourcolor;
       $gameVariables.SetDaynightColorArray(daynightcolors);
     }
   };
