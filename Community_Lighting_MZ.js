@@ -985,7 +985,7 @@ function orNaN() {
       this.enabled    = isOn(onoff);
       this.color      = $$.validateColor(color, "#ffffff");
       this.radius     = +radius || 0;
-      this.brightness = brightness && (brightness.substr(1, brightness.length) / 100).clamp(0, 1) || 0;
+      this.brightness = brightness && (brightness.substr(1, brightness.length) / 100).clamp(0, 1) || $$.defaultBrightness || 0;
     }
   };
 
