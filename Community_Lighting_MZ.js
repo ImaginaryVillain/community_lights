@@ -2844,7 +2844,7 @@ function orValidColor() {
           $$.daynightset = true;
           let dnspeed = note.match(/\d+/);
           if (dnspeed) {
-            daynightspeed = +dnspeed[0];
+            let daynightspeed = +dnspeed[0];
             if (daynightspeed < 1) daynightspeed = 5000;
             $gameVariables.SetDaynightSpeed(daynightspeed);
           }
@@ -2867,12 +2867,6 @@ function orValidColor() {
           data.map(x => x.trim());
           $gameMap._interpreter.addTileLight("regionlight", data);
         }
-        else if ((/^RegionGlow/i).test(mapnote)) {
-          let data = mapnote.split(/\s+/);
-          data.splice(0, 1);
-          data.map(x => x.trim());
-          $gameMap._interpreter.addTileLight("regionglow", data);
-        }
         else if ((/^RegionBlock/i).test(mapnote)) {
           let data = mapnote.split(/\s+/);
           data.splice(0, 1);
@@ -2880,38 +2874,25 @@ function orValidColor() {
           $gameMap._interpreter.addTileBlock("regionblock", data);
         }
         else if ((/^tint/i).test(mapnote)) {
-
           let data = mapnote.split(/\s+/);
           data.splice(0, 1);
           data.map(x => x.trim());
-          if (typeof $$.mapBrightness === "undefined") {
-            $$.tint(data);
-          }
-          else {
-            let color = data[1];
-            let c = hex2rgba(color);
-            if (c.a == 255) {
-              c.a = $$.mapBrightness;
-            }
+          if (typeof $$.mapBrightness !== "undefined") {
+            let c = hex2rgba(data[1]);
+            if (c.a == 255) c.a = $$.mapBrightness;
             data[1] = rgba2hex(c.r, c.g, c.b, c.a);
-            $$.tint(data);
           }
+          $$.tint(data);
         }
         else if ((/^defaultBrightness/i).test(mapnote)) {
           let brightness = note.match(/\d+/);
-          if (brightness) {
-            $$.defaultBrightness = Math.max(0, Math.min(Number(brightness[0], 100))) / 100;
-          }
+          if (brightness) $$.defaultBrightness = Math.max(0, Math.min(Number(brightness[0], 100))) / 100;
         }
-
         else if ((/^mapBrightness/i).test(mapnote)) {
           let brightness = note.match(/\d+/);
-
           if (brightness) {
             let color = $gameVariables.GetTint();
-            if (color == "#000000" || color == "#00000000") {
-              color = "#FFFFFF";
-            }
+            if (color.equalsIC("#000000", "#00000000")) color = "#FFFFFF";
             let c = hex2rgba(color);
             let value = Math.max(0, Math.min(Number(brightness[0], 100)));
             let alphaNum = Math.floor(value * 2.55);
@@ -3064,14 +3045,12 @@ function orValidColor() {
       daynightminutes = daynightminutes + minuteadd + 60*(daynightcycle + houradd);
       daynightcycle = Math.trunc(daynightminutes/60)%daynighthoursinday;
       daynightminutes = daynightminutes%60;
+
       if (daynightminutes < 0) { daynightminutes += 60; daynightcycle--; };
       if (daynightcycle < 0) { daynightcycle += daynighthoursinday; };
-
-
       daynighttimer = daynightminutes * daynightspeed;
 
       $$.saveTime(daynightcycle, daynightminutes);
-
       $gameVariables.SetDaynightTimer(daynighttimer);     // timer = minutes * speed
       $gameVariables.SetDaynightCycle(daynightcycle);     // cycle = hours
     }
@@ -3080,29 +3059,24 @@ function orValidColor() {
       addTime(+args[1], args.length > 2 ? +args[2] : 0);
     }
 
-    if (args[0].equalsIC('subtract')) {
+    else if (args[0].equalsIC('subtract')) {
       addTime(+args[1]*-1, args.length > 2 ? +args[2]*-1 : 0);
     }
 
-    if (args[0].equalsIC('hour')) {
-      daynightcycle = Number(args[1]);
-      if (args.length > 2) {
-        daynightminutes = Number(args[2]);
-      } else {
-        daynightminutes = 0;
-      }
+    else if (args[0].equalsIC('hour')) {
+      daynightcycle = Math.max(+args[1], 0) || 0;
+      daynightminutes = Math.max(+args[2], 0) || 0;
       daynighttimer = daynightminutes * daynightspeed;
 
-      if (daynightcycle < 0) daynightcycle = 0;
       if (daynightcycle >= daynighthoursinday) daynightcycle = daynighthoursinday - 1;
-      $$.saveTime(daynightcycle, daynightminutes);
 
+      $$.saveTime(daynightcycle, daynightminutes);
       $gameVariables.SetDaynightTimer(daynighttimer);     // timer = minutes * speed
       $gameVariables.SetDaynightCycle(daynightcycle);     // cycle = hours
     }
 
-    if (args[0].equalsIC('hoursinday')) {
-      daynighthoursinday = Math.max(+args[1], 0);
+    else if (args[0].equalsIC('hoursinday')) {
+      daynighthoursinday = Math.max(orNaN(+args[1], 0), 0);
       if (daynighthoursinday > daynightcolors.length) {
         let origLength = daynightcolors.length;
         daynightcolors.length = daynighthoursinday; // more efficient than a for loop
@@ -3112,22 +3086,22 @@ function orValidColor() {
       $gameVariables.SetDaynightHoursinDay(daynighthoursinday);
     }
 
-    if (args[0].equalsIC('show')) {
+    else if (args[0].equalsIC('show')) {
       $gameVariables._clShowTimeWindow = true;
       $gameVariables._clShowTimeWindowSeconds = false;
     }
 
-    if (args[0].equalsIC('showseconds')) {
+    else if (args[0].equalsIC('showseconds')) {
       $gameVariables._clShowTimeWindow = true;
       $gameVariables._clShowTimeWindowSeconds = true;
     }
 
-    if (args[0].equalsIC('hide')) {
+    else if (args[0].equalsIC('hide')) {
       $gameVariables._clShowTimeWindow = false;
       $gameVariables._clShowTimeWindowSeconds = false;
     }
 
-    if (args[0].equalsIC('color')) {
+    else if (args[0].equalsIC('color')) {
       let hour = (+args[1] || 0).clamp(0, daynighthoursinday - 1);
       let hourcolor = args[2];
       let isValidColor = isValidColorRegex.test(hourcolor.trim());
