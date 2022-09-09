@@ -2541,7 +2541,7 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
       let endCtrlPointDistance = distance + 1.4*r2;
 
       // Compute beam width based off of angle (for drawing beam)
-      let beamWidth = Math.atan(0.65 * r2 / distance); // 70% of spot outer radius.
+      let beamWidth = Math.atan(0.80 * r2 / distance); // 70% of spot outer radius.
 
       // Compute left beam angle and coordinates
       let leftBeamAngle = dirAngle + beamWidth;
@@ -2566,8 +2566,8 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
 
       // Draw outer beam as a shadow
       ctxMul.fillStyle = undefined; // Clear fillstyle for drawing beam
-      ctxMul.shadowColor = rgba2hex(c.r, c.g, c.b, Math.round(0.7 * c.a));
-      ctxMul.shadowBlur = 30;
+      ctxMul.shadowColor = rgba2hex(c.r, c.g, c.b, Math.round(0.65 * c.a));
+      ctxMul.shadowBlur = 20;
       ctxMul.beginPath();
       ctxMul.moveTo(xRightBeamStart, yRightBeamStart);
       ctxMul.quadraticCurveTo(xStartCtrlPoint, yStartCtrlPoint, xLeftBeamStart, yLeftBeamStart);
@@ -2578,7 +2578,7 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
 
       // Draw inner beam as a shadow
       ctxMul.shadowColor = rgba2hex(c.r, c.g, c.b, Math.round(0.1 * c.a));
-      ctxMul.shadowBlur = 2;
+      ctxMul.shadowBlur = 1;
       ctxMul.beginPath();
       ctxMul.moveTo(xRightBeamStart, yRightBeamStart);
       ctxMul.quadraticCurveTo(xStartCtrlPoint, yStartCtrlPoint, xLeftBeamStart, yLeftBeamStart);
@@ -2590,8 +2590,8 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
       if (bAdd) {
         // Draw outer beam as a shadow
         ctxAdd.fillStyle = undefined; // Clear fillstyle for drawing beam
-        ctxAdd.shadowColor = rgba2hex(c.r, c.g, c.b, Math.round(0.7 * c.a));
-        ctxAdd.shadowBlur = 30;
+        ctxAdd.shadowColor = rgba2hex(c.r, c.g, c.b, Math.round(0.65 * c.a));
+        ctxAdd.shadowBlur = 20;
         ctxAdd.beginPath();
         ctxAdd.moveTo(xRightBeamStart, yRightBeamStart);
         ctxAdd.quadraticCurveTo(xStartCtrlPoint, yStartCtrlPoint, xLeftBeamStart, yLeftBeamStart);
@@ -2602,7 +2602,7 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
 
         // Draw inner beam as a shadow
         ctxAdd.shadowColor = rgba2hex(c.r, c.g, c.b, Math.round(0.1 * c.a));
-        ctxAdd.shadowBlur = 2;
+        ctxAdd.shadowBlur = 1;
         ctxAdd.beginPath();
         ctxAdd.moveTo(xRightBeamStart, yRightBeamStart);
         ctxAdd.quadraticCurveTo(xStartCtrlPoint, yStartCtrlPoint, xLeftBeamStart, yLeftBeamStart);
