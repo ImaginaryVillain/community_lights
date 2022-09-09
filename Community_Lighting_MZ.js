@@ -2525,19 +2525,19 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
       r2 = (flashlength - 1) * flashwidth;
 
       // Compute beam left start coordinates
-      let xLeftBeamStart = x1 - 12 * Math.sin(dirAngle);
-      let yLeftBeamStart = y1 + 12 * Math.cos(dirAngle);
+      let xLeftBeamStart = x1 - (r2 / 7) * Math.sin(dirAngle);
+      let yLeftBeamStart = y1 + (r2 / 7) * Math.cos(dirAngle);
 
       // Compute beam right start coordinates
-      let xRightBeamStart = x1 + 12 * Math.sin(dirAngle);
-      let yRightBeamStart = y1 - 12 * Math.cos(dirAngle);
+      let xRightBeamStart = x1 + (r2 / 7) * Math.sin(dirAngle);
+      let yRightBeamStart = y1 - (r2 / 7) * Math.cos(dirAngle);
 
       // Compute beam start control point coordinates
-      let xStartCtrlPoint = x1 - 18 * Math.cos(dirAngle);
-      let yStartCtrlPoint = y1 - 18 * Math.sin(dirAngle);
+      let xStartCtrlPoint = x1 - (r2 / 4.5) * Math.cos(dirAngle);
+      let yStartCtrlPoint = y1 - (r2 / 4.5) * Math.sin(dirAngle);
 
       // Compute beam distance
-      let endPointDistance = distance - 0.5*r2;
+      let endPointDistance = distance - r2/2;
       let endCtrlPointDistance = distance + 1.4*r2;
 
       // Compute beam width based off of angle (for drawing beam)
