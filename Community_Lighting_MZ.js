@@ -2565,16 +2565,29 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
       let yRightCtrlPoint = yRightBeamStart + endCtrlPointDistance * Math.sin(rightBeamAngle);
 
       // Draw outer beam as a shadow
-      ctxMul.fillStyle = "#000000"; // Clear fillstyle for drawing beam
-      ctxMul.shadowColor = rgba2hex(c.r, c.g, c.b, Math.round(0.65 * c.a));
-      ctxMul.shadowBlur = 20;
-      ctxMul.beginPath();
-      ctxMul.moveTo(xRightBeamStart, yRightBeamStart);
-      ctxMul.quadraticCurveTo(xStartCtrlPoint, yStartCtrlPoint, xLeftBeamStart, yLeftBeamStart);
-      ctxMul.lineTo(xLeftBeamEnd, yLeftBeamEnd);
-      ctxMul.bezierCurveTo(xLeftCtrlPoint, yLeftCtrlPoint, xRightCtrlPoint, yRightCtrlPoint, xRightBeamEnd, yRightBeamEnd);
-      ctxMul.lineTo(xRightBeamStart, yRightBeamStart);
-      ctxMul.fill();
+      if (!bAdd) {
+        ctxMul.fillStyle = "#000000"; // Clear fillstyle for drawing beam
+        ctxMul.shadowColor = rgba2hex(c.r, c.g, c.b, Math.round(0.65 * c.a));
+        ctxMul.shadowBlur = 20;
+        ctxMul.beginPath();
+        ctxMul.moveTo(xRightBeamStart, yRightBeamStart);
+        ctxMul.quadraticCurveTo(xStartCtrlPoint, yStartCtrlPoint, xLeftBeamStart, yLeftBeamStart);
+        ctxMul.lineTo(xLeftBeamEnd, yLeftBeamEnd);
+        ctxMul.bezierCurveTo(xLeftCtrlPoint, yLeftCtrlPoint, xRightCtrlPoint, yRightCtrlPoint, xRightBeamEnd, yRightBeamEnd);
+        ctxMul.lineTo(xRightBeamStart, yRightBeamStart);
+        ctxMul.fill();
+      } else {
+        ctxAdd.fillStyle = "#000000"; // Clear fillstyle for drawing beam
+        ctxAdd.shadowColor = rgba2hex(c.r, c.g, c.b, Math.round(0.65 * c.a));
+        ctxAdd.shadowBlur = 20;
+        ctxAdd.beginPath();
+        ctxAdd.moveTo(xRightBeamStart, yRightBeamStart);
+        ctxAdd.quadraticCurveTo(xStartCtrlPoint, yStartCtrlPoint, xLeftBeamStart, yLeftBeamStart);
+        ctxAdd.lineTo(xLeftBeamEnd, yLeftBeamEnd);
+        ctxAdd.bezierCurveTo(xLeftCtrlPoint, yLeftCtrlPoint, xRightCtrlPoint, yRightCtrlPoint, xRightBeamEnd, yRightBeamEnd);
+        ctxAdd.lineTo(xRightBeamStart, yRightBeamStart);
+        ctxAdd.fill();
+      }
 
       // Draw inner beam as a shadow
       ctxMul.shadowColor = rgba2hex(c.r, c.g, c.b, Math.round(0.1 * c.a));
@@ -2587,31 +2600,6 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
       ctxMul.lineTo(xRightBeamStart, yRightBeamStart);
       ctxMul.fill();
 
-      if (bAdd) {
-        // Draw outer beam as a shadow
-        ctxAdd.fillStyle = "#000000"; // Clear fillstyle for drawing beam
-        ctxAdd.shadowColor = rgba2hex(c.r, c.g, c.b, Math.round(0.65 * c.a));
-        ctxAdd.shadowBlur = 20;
-        ctxAdd.beginPath();
-        ctxAdd.moveTo(xRightBeamStart, yRightBeamStart);
-        ctxAdd.quadraticCurveTo(xStartCtrlPoint, yStartCtrlPoint, xLeftBeamStart, yLeftBeamStart);
-        ctxAdd.lineTo(xLeftBeamEnd, yLeftBeamEnd);
-        ctxAdd.bezierCurveTo(xLeftCtrlPoint, yLeftCtrlPoint, xRightCtrlPoint, yRightCtrlPoint, xRightBeamEnd, yRightBeamEnd);
-        ctxAdd.lineTo(xRightBeamStart, yRightBeamStart);
-        ctxAdd.fill();
-
-        // Draw inner beam as a shadow
-        ctxAdd.shadowColor = rgba2hex(c.r, c.g, c.b, Math.round(0.1 * c.a));
-        ctxAdd.shadowBlur = 1;
-        ctxAdd.beginPath();
-        ctxAdd.moveTo(xRightBeamStart, yRightBeamStart);
-        ctxAdd.quadraticCurveTo(xStartCtrlPoint, yStartCtrlPoint, xLeftBeamStart, yLeftBeamStart);
-        ctxAdd.lineTo(xLeftBeamEnd, yLeftBeamEnd);
-        ctxAdd.bezierCurveTo(xLeftCtrlPoint, yLeftCtrlPoint, xRightCtrlPoint, yRightCtrlPoint, xRightBeamEnd, yRightBeamEnd);
-        ctxAdd.lineTo(xRightBeamStart, yRightBeamStart);
-        ctxAdd.fill();
-      }
-
       // Compute spot location
       x1 += distance * Math.cos(dirAngle);
       y1 += distance * Math.sin(dirAngle);
@@ -2619,16 +2607,16 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
       // Draw spot
       grad = ctxMul.createRadialGradient(x1, y1, r1, x1, y1, r2);
       grad.addTransparentColorStops(0, color1, color2);
-      ctxMul.shadowColor = "#000000"; // Clear shadow style
-      ctxMul.shadowBlur = 0;
-      ctxMul.fillStyle = grad;
-      ctxMul.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
-      ctxMul.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
-      if (bAdd) {
+      if (!bAdd) {
+        ctxMul.shadowColor = "#000000"; // Clear shadow style
+        ctxMul.shadowBlur = 0;
+        ctxMul.fillStyle = grad;
+        ctxMul.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
+        ctxMul.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
+      } else {
         ctxAdd.shadowColor = "#000000"; // Clear shadow style
         ctxAdd.shadowBlur = 0;
         ctxAdd.fillStyle = grad;
-        ctxAdd.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
         ctxAdd.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
       }
     } else { // Circular flashlight
