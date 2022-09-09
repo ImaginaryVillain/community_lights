@@ -2503,6 +2503,7 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
     let c = hex2rgba(color1);
 
     // small dim glove around player
+    // there's no additive light globe for flashlights because it looks bad
     let r1 = 1; let r2 = 40;
     let grad = ctxMul.createRadialGradient(x1, y1, r1, x1, y1, r2);
     let scale = Math.max(c.r, c.g, c.b); // max should be 0x99
@@ -2513,10 +2514,6 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
     grad.addColorStop(1, color2);
     ctxMul.fillStyle = grad;
     ctxMul.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
-    if (!bAdd) {
-        ctxAdd.fillStyle = grad;
-        ctxAdd.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
-    }
 
     // flashlight
     let flashlightdensity = $gameVariables.GetFlashlightDensity();
