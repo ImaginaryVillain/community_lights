@@ -2499,17 +2499,23 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
 
     //ctxMul.save(); // unnecessary significant performance hit
 
+    // grab flashlight color
+    let c = hex2rgba(color1);
+
     // small dim glove around player
+    let r1 = 1; let r2 = 40;
+    let grad = ctxMul.createRadialGradient(x1, y1, r1, x1, y1, r2);
+    let scale = Math.max(c.r, c.g, c.b); // max should be 0x99
+    let scale_r = 0x99 * c.r / scale;
+    let scale_g = 0x99 * c.g / scale;
+    let scale_b = 0x99 * c.b / scale;
+    grad.addColorStop(0, rgba2hex(scale_r, scale_g, scale_b, 0xFF));
+    grad.addColorStop(1, color2);
+    ctxMul.fillStyle = grad;
+    ctxMul.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
     if (!bAdd) {
-      let r1 = 1; let r2 = 40;
-      let grad = ctxMul.createRadialGradient(x1, y1, r1, x1, y1, r2);
-      grad.addColorStop(0, '#999999');
-      grad.addColorStop(1, color2);
-      ctxMul.fillStyle = grad;
-      ctxMul.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
-      //
-      //  ctxAdd.fillStyle = grad;
-      //  ctxAdd.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
+        ctxAdd.fillStyle = grad;
+        ctxAdd.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
     }
 
     // flashlight
@@ -2560,9 +2566,6 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
       // Compute right bezier curve control point
       let xRightCtrlPoint = xRightBeamStart + endCtrlPointDistance * Math.cos(rightBeamAngle);
       let yRightCtrlPoint = yRightBeamStart + endCtrlPointDistance * Math.sin(rightBeamAngle);
-
-      // grab flashlight color
-      let c = hex2rgba(color1);
 
       // Draw outer beam as a shadow
       ctxMul.fillStyle = "#000000"; // Clear fillstyle for drawing beam
