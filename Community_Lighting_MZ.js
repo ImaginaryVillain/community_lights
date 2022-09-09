@@ -2565,7 +2565,7 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
       let c = hex2rgba(color1);
 
       // Draw outer beam as a shadow
-      ctxMul.fillStyle = undefined; // Clear fillstyle for drawing beam
+      ctxMul.fillStyle = "#000000"; // Clear fillstyle for drawing beam
       ctxMul.shadowColor = rgba2hex(c.r, c.g, c.b, Math.round(0.65 * c.a));
       ctxMul.shadowBlur = 20;
       ctxMul.beginPath();
@@ -2589,7 +2589,7 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
 
       if (bAdd) {
         // Draw outer beam as a shadow
-        ctxAdd.fillStyle = undefined; // Clear fillstyle for drawing beam
+        ctxAdd.fillStyle = "#000000"; // Clear fillstyle for drawing beam
         ctxAdd.shadowColor = rgba2hex(c.r, c.g, c.b, Math.round(0.65 * c.a));
         ctxAdd.shadowBlur = 20;
         ctxAdd.beginPath();
@@ -2619,13 +2619,13 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
       // Draw spot
       grad = ctxMul.createRadialGradient(x1, y1, r1, x1, y1, r2);
       grad.addTransparentColorStops(0, color1, color2);
-      ctxMul.shadowColor = ""; // Clear shadow style
+      ctxMul.shadowColor = "#000000"; // Clear shadow style
       ctxMul.shadowBlur = 0;
       ctxMul.fillStyle = grad;
       ctxMul.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
       ctxMul.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
       if (bAdd) {
-        ctxAdd.shadowColor = ""; // Clear shadow style
+        ctxAdd.shadowColor = "#000000"; // Clear shadow style
         ctxAdd.shadowBlur = 0;
         ctxAdd.fillStyle = grad;
         ctxAdd.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
