@@ -2632,14 +2632,14 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
       // Draw spot
       grad = ctxMul.createRadialGradient(x1, y1, r1, x1, y1, r2);
       grad.addTransparentColorStops(0, color1, color2);
+      ctxMul.shadowColor = "#000000"; // Clear shadow style outside of check as ctxMul state changes always occur
+      ctxMul.shadowBlur = 0;
       if (!bAdd) {
-        ctxMul.shadowColor = "#000000"; // Clear shadow style
-        ctxMul.shadowBlur = 0;
         ctxMul.fillStyle = grad;
         ctxMul.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
         ctxMul.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
       } else {
-        ctxAdd.shadowColor = "#000000"; // Clear shadow style
+        ctxAdd.shadowColor = "#000000"; // Clear shadow style inside of check as ctxAdd state changes are always guarded
         ctxAdd.shadowBlur = 0;
         ctxAdd.fillStyle = grad;
         ctxAdd.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2); // single call as to not blur things so much.
