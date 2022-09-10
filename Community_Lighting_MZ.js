@@ -1338,8 +1338,10 @@ let isValidColorRegex = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)|(^#[0-9A-F]{8}$)/i;
         let cycleList = this.getLightCycle();
         this._clCycleIndex++;
         if (this._clCycleIndex >= cycleList.length) this._clCycleIndex = 0;
-        this._clColor = cycleList[this._clCycleIndex].color;
-        this._clCycleTimer = cycleList[this._clCycleIndex].duration;
+        if (this._clCycleIndex < cycleList.length) {
+          this._clColor = cycleList[this._clCycleIndex].color;
+          this._clCycleTimer = cycleList[this._clCycleIndex].duration;
+        }
       }
     }
   };
