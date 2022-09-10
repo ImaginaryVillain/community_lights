@@ -190,6 +190,7 @@ You can post your questions on the related thread on rpgmakerweb: https://forums
 	* in front of any color light color.
 	*
 	* Example note tags:
+	*
 	* <cl: light 300 cycle a#990000 15 a#999900 15 a#009900 15 a#009999 15 a#000099 15>
 	* Creates a cycling volumetric light that rotates every 15 frames.
 	*
