@@ -177,11 +177,25 @@ You can post your questions on the related thread on rpgmakerweb: https://forums
 	* Creates a cycling light that rotates every 15 frames.  Great for parties!
 	*
 	* <cl: fire 150 #ff8800 b15 night>
-	* Creates a fire that only lights up at night
+	* Creates a fire that only lights up at night.
 	*
 	* <cl: Flashlight l8 w12 #ff0000 on asdf>
 	* Creates a flashlight beam with id asdf which can be turned on or off via
-	* plugin commands
+	* plugin commands.
+	*
+	* --------------------------------------------------------------------------
+	* Additive Lighting Effects
+	* --------------------------------------------------------------------------
+	* Additive lighting gives lights a volumetric appearance. To enable, put 'a' or 'A'
+	* in front of any color light color.
+	*
+	* Example note tags:
+	* <cl: light 300 cycle a#990000 15 a#999900 15 a#009900 15 a#009999 15 a#000099 15>
+	* Creates a cycling volumetric light that rotates every 15 frames.
+	*
+	* <cl: Flashlight l8 w12 a#660000 on asdf>
+	* Creates a red volumetric flashlight beam with id asdf which can be turned on or off
+	* via plugin commands.
 	*
 	* --------------------------------------------------------------------------
 	* Easy hex color references
