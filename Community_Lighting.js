@@ -1723,7 +1723,7 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
           tint_timer++;
         }
 
-        let add = playercolor[0].equalsIC('a') ? 'a' : ''; // additive lighting
+        let add = tint_target[0].equalsIC('a') ? 'a' : ''; // additive lighting
         let c = hex2rgba(tint_value);
         let c2 = hex2rgba(tint_target);
 
