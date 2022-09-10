@@ -1031,8 +1031,6 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
     }
   };
 
-  let Community_tint_speed = 60;
-  let Community_tint_target = '#000000';
   let colorcycle_count = [1000];
   let colorcycle_timer = [1000];
   let eventObjId = [];
@@ -1097,8 +1095,6 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
   let tint_timer = 0;
   let oldseconds = 0;
   let event_reload_counter = 0;
-  let Community_tint_speed_old = 60;
-  let Community_tint_target_old = '#000000';
   let tileglow = 0;
   let glow_oldseconds = 0;
   let glow_dir = 1;
@@ -1686,10 +1682,6 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
     // ******** GROW OR SHRINK GLOBE PLAYER *********
     let firstrun = $gameVariables.GetFirstRun();
     if (firstrun === true) {
-      Community_tint_speed = 60;
-      Community_tint_target = '#000000';
-      Community_tint_speed_old = 60;
-      Community_tint_target_old = '#000000';
       $gameVariables.SetFirstRun(false);
       player_radius = +parameters['Player radius'];
       $gameVariables.SetRadius(player_radius);
@@ -2036,21 +2028,8 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
       let tint_value = $gameVariables.GetTint();
       let tint_target = $gameVariables.GetTintTarget();
       let tint_speed = $gameVariables.GetTintSpeed();
-
-
-      if (Community_tint_target != Community_tint_target_old) {
-        Community_tint_target_old = Community_tint_target;
-        tint_target = Community_tint_target;
-        $gameVariables.SetTintTarget(tint_target);
-      }
-      if (Community_tint_speed != Community_tint_speed_old) {
-        Community_tint_speed_old = Community_tint_speed;
-        tint_speed = Community_tint_speed;
-        $gameVariables.SetTintSpeed(tint_speed);
-      }
       let tcolor = tint_value;
       if (tint_value != tint_target) {
-
         let tintdatenow = new Date();
         let tintseconds = Math.floor(tintdatenow.getTime() / 10);
         if (tintseconds > tint_oldseconds) {
@@ -2058,7 +2037,7 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
           tint_timer++;
         }
 
-        let add = playercolor[0].equalsIC('a') ? 'a' : ''; // additive lighting
+        let add = tint_target[0].equalsIC('a') ? 'a' : ''; // additive lighting
         let c = hex2rgba(tint_value);
         let c2 = hex2rgba(tint_target);
 
@@ -2071,67 +2050,32 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
         let g3 = Math.floor(c.g + (stepG * tint_timer));
         let b3 = Math.floor(c.b + (stepB * tint_timer));
         let a3 = Math.floor(c.a + (stepA * tint_timer));
-        if (r3 < 0) {
-          r3 = 0
-        }
-        if (g3 < 0) {
-          g3 = 0
-        }
-        if (b3 < 0) {
-          b3 = 0
-        }
-        if (a3 < 0) {
-          a3 = 0;
-        }
-        if (r3 > 255) {
-          r3 = 255
-        }
-        if (g3 > 255) {
-          g3 = 255
-        }
-        if (b3 > 255) {
-          b3 = 255
-        }
-        if (a3 > 255) {
-          a3 = 255;
-        }
+        if (r3 < 0) r3 = 0
+        if (g3 < 0) g3 = 0
+        if (b3 < 0) b3 = 0
+        if (a3 < 0) a3 = 0;
+        if (r3 > 255) r3 = 255
+        if (g3 > 255) g3 = 255
+        if (b3 > 255) b3 = 255
+        if (a3 > 255) a3 = 255;
         let reddone = false;
         let greendone = false;
         let bluedone = false;
         let alphadone = false;
 
         //Greater than
-
-
-        if (stepR >= 0 && r3 >= c2.r) {
-          reddone = true;
-        }
-        if (stepG >= 0 && g3 >= c2.g) {
-          greendone = true;
-        }
-        if (stepB >= 0 && b3 >= c2.b) {
-          greendone = true;
-        }
-        if (stepA >= 0 && a3 >= c2.a) {
-          alphadone = true;
-        }
-
+        if (stepR >= 0 && r3 >= c2.r) reddone = true;
+        if (stepG >= 0 && g3 >= c2.g) greendone = true;
+        if (stepB >= 0 && b3 >= c2.b) bluedone = true;
+        if (stepA >= 0 && a3 >= c2.a) alphadone = true;
 
         // Less than
+        if (stepR <= 0 && r3 <= c2.r) reddone = true;
+        if (stepG <= 0 && g3 <= c2.g) greendone = true;
+        if (stepB <= 0 && b3 <= c2.b) bluedone = true;
+        if (stepA <= 0 && a3 <= c2.a) alphadone = true;
 
-        if (stepR <= 0 && r3 <= c2.r) {
-          bluedone = true;
-        }
-        if (stepG <= 0 && g3 <= c2.g) {
-          greendone = true;
-        }
-        if (stepB <= 0 && b3 <= c2.b) {
-          bluedone = true;
-        }
-        if (stepA <= 0 && a3 <= c2.a) {
-          alphadone = true;
-        }
-
+        console.log(reddone, bluedone, greendone);
         if (reddone == true && bluedone == true && greendone == true && alphadone == true) {
           $gameVariables.SetTint(tint_target);
         }
