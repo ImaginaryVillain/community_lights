@@ -2565,18 +2565,17 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
       let yRightCtrlPoint = yRightBeamStart + endCtrlPointDistance * Math.sin(rightBeamAngle);
 
       // Draw outer beam as a shadow
-      if (!bAdd) {
-        ctxMul.fillStyle = "#000000"; // Clear fillstyle for drawing beam
-        ctxMul.shadowColor = rgba2hex(c.r, c.g, c.b, Math.round(0.65 * c.a));
-        ctxMul.shadowBlur = 20;
-        ctxMul.beginPath();
-        ctxMul.moveTo(xRightBeamStart, yRightBeamStart);
-        ctxMul.quadraticCurveTo(xStartCtrlPoint, yStartCtrlPoint, xLeftBeamStart, yLeftBeamStart);
-        ctxMul.lineTo(xLeftBeamEnd, yLeftBeamEnd);
-        ctxMul.bezierCurveTo(xLeftCtrlPoint, yLeftCtrlPoint, xRightCtrlPoint, yRightCtrlPoint, xRightBeamEnd, yRightBeamEnd);
-        ctxMul.lineTo(xRightBeamStart, yRightBeamStart);
-        ctxMul.fill();
-      } else {
+      ctxMul.fillStyle = "#000000"; // Clear fillstyle for drawing beam
+      ctxMul.shadowColor = rgba2hex(c.r, c.g, c.b, Math.round(0.65 * c.a));
+      ctxMul.shadowBlur = 20;
+      ctxMul.beginPath();
+      ctxMul.moveTo(xRightBeamStart, yRightBeamStart);
+      ctxMul.quadraticCurveTo(xStartCtrlPoint, yStartCtrlPoint, xLeftBeamStart, yLeftBeamStart);
+      ctxMul.lineTo(xLeftBeamEnd, yLeftBeamEnd);
+      ctxMul.bezierCurveTo(xLeftCtrlPoint, yLeftCtrlPoint, xRightCtrlPoint, yRightCtrlPoint, xRightBeamEnd, yRightBeamEnd);
+      ctxMul.lineTo(xRightBeamStart, yRightBeamStart);
+      ctxMul.fill();
+      if (bAdd) {
         ctxAdd.fillStyle = "#000000"; // Clear fillstyle for drawing beam
         ctxAdd.shadowColor = rgba2hex(c.r, c.g, c.b, Math.round(0.65 * c.a));
         ctxAdd.shadowBlur = 20;
@@ -2599,6 +2598,18 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
       ctxMul.bezierCurveTo(xLeftCtrlPoint, yLeftCtrlPoint, xRightCtrlPoint, yRightCtrlPoint, xRightBeamEnd, yRightBeamEnd);
       ctxMul.lineTo(xRightBeamStart, yRightBeamStart);
       ctxMul.fill();
+      if (bAdd) {
+        // Draw inner beam as a shadow
+        ctxAdd.shadowColor = rgba2hex(c.r, c.g, c.b, Math.round(0.1 * c.a));
+        ctxAdd.shadowBlur = 1;
+        ctxAdd.beginPath();
+        ctxAdd.moveTo(xRightBeamStart, yRightBeamStart);
+        ctxAdd.quadraticCurveTo(xStartCtrlPoint, yStartCtrlPoint, xLeftBeamStart, yLeftBeamStart);
+        ctxAdd.lineTo(xLeftBeamEnd, yLeftBeamEnd);
+        ctxAdd.bezierCurveTo(xLeftCtrlPoint, yLeftCtrlPoint, xRightCtrlPoint, yRightCtrlPoint, xRightBeamEnd, yRightBeamEnd);
+        ctxAdd.lineTo(xRightBeamStart, yRightBeamStart);
+        ctxAdd.fill();
+      }
 
       // Compute spot location
       x1 += distance * Math.cos(dirAngle);
@@ -2617,7 +2628,7 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
         ctxAdd.shadowColor = "#000000"; // Clear shadow style
         ctxAdd.shadowBlur = 0;
         ctxAdd.fillStyle = grad;
-        ctxAdd.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
+        ctxAdd.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2); // single call as to not blur things so much.
       }
     } else { // Circular flashlight
       // Compute diagonal length scalars.
