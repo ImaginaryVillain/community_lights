@@ -364,11 +364,25 @@ Imported[Community.Lighting.name] = true;
 * Creates a cycling light that rotates every 15 frames.  Great for parties!
 *
 * <cl: fire 150 #ff8800 b15 night>
-* Creates a fire that only lights up at night
+* Creates a fire that only lights up at night.
 *
 * <cl: Flashlight l8 w12 #ff0000 on asdf>
 * Creates a flashlight beam with id asdf which can be turned on or off via
-* plugin commands
+* plugin commands.
+*
+* --------------------------------------------------------------------------
+* Additive Lighting Effects
+* --------------------------------------------------------------------------
+* Additive lighting gives lights a volumetric appearance. To enable, put 'a' or 'A'
+* in front of any color light color.
+*
+* Example note tags:
+* <cl: light 300 cycle a#990000 15 a#999900 15 a#009900 15 a#009999 15 a#000099 15>
+* Creates a cycling volumetric light that rotates every 15 frames.
+*
+* <cl: Flashlight l8 w12 a#660000 on asdf>
+* Creates a red volumetric flashlight beam with id asdf which can be turned on or off
+* via plugin commands.
 *
 * --------------------------------------------------------------------------
 * Easy hex color references
@@ -908,7 +922,7 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
       for (let x of tagData) {
         if (!isNaN(+x) && this._clRadius === undefined) this._clRadius = +x;
         else if (x.equalsIC("cycle") && this._clColor === undefined) this._clCycle = [];
-        else if (this._clCycle && !needsCycleDuration && x[0].equalsIC("#")) {
+        else if (this._clCycle && !needsCycleDuration && (x[0].equalsIC("#") || x.slice(0, 2).equalsIC("a#"))) {
           this._clCycle.push({ "color": $$.validateColor(x), "duration": 1 });
           needsCycleDuration = true;
         }
@@ -916,7 +930,7 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
           this._clCycle[this._clCycle.length - 1].duration = +x || 1;
           needsCycleDuration = false;
         }
-        else if ((x[0].equalsIC("#") || x[0].equalsIC("a") && x[1] && x[1].equalsIC("#"))
+        else if ((x[0].equalsIC("#") || x.slice(0, 2).equalsIC("a#"))
                   && this._clColor === undefined) this._clColor = $$.validateColor(x);
         else if (x[0].equalsIC("b") && this._clBrightness === undefined) {
           this._clBrightness = Number(+(x.substr(1, x.length)) / 100).clamp(0, 1);
@@ -941,7 +955,7 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
         else if (x[0].equalsIC("l") && this._clBeamLength === undefined) this._clBeamLength = this._clBeamLength = +(x.substr(1, x.length));
         else if (x[0].equalsIC("w") && this._clBeamWidth === undefined) this._clBeamWidth = this._clBeamWidth = +(x.substr(1, x.length));
         else if (x.equalsIC("cycle") && this._clColor === undefined) this._clCycle = [];
-        else if (this._clCycle && !needsCycleDuration && x[0].equalsIC("#")) {
+        else if (this._clCycle && !needsCycleDuration && (x[0].equalsIC("#") || x.slice(0, 2).equalsIC("a#"))) {
           this._clCycle.push({ "color": $$.validateColor(x), "duration": 1 });
           needsCycleDuration = true;
         }
@@ -949,7 +963,7 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
           this._clCycle[this._clCycle.length - 1].duration = +x || 1;
           needsCycleDuration = false;
         }
-        else if ((x[0].equalsIC("#") || x[0].equalsIC("a") && x[1] && x[1].equalsIC("#"))
+        else if ((x[0].equalsIC("#") || x.slice(0, 2).equalsIC("a#"))
                   && this._clBeamColor === undefined) this._clColor = $$.validateColor(x);
         else if (!isNaN(+x) && this._clOnOff === undefined) this._clOnOff = +x;
         else if (!isNaN(+x) && this._clFlashlightDirection === undefined) this._clFlashlightDirection = +x;
@@ -2162,18 +2176,23 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
     let ctxMul = this.multiply._context;
     let ctxAdd = this.additive._context; // Additive lighting context
 
-    // small dim glove around player
     //ctxMul.save(); // unnecessary significant performance hit
+
+    // grab flashlight color
+    let c = hex2rgba(color1);
+
+    // small dim glove around player
+    // there's no additive light globe for flashlights because it looks bad
     let r1 = 1; let r2 = 40;
     let grad = ctxMul.createRadialGradient(x1, y1, r1, x1, y1, r2);
-    grad.addColorStop(0, '#999999');
+    let scale = Math.max(c.r, c.g, c.b); // max should be 0x99
+    let scale_r = 0x99 * c.r / scale;
+    let scale_g = 0x99 * c.g / scale;
+    let scale_b = 0x99 * c.b / scale;
+    grad.addColorStop(0, rgba2hex(scale_r, scale_g, scale_b, 0xFF));
     grad.addColorStop(1, color2);
     ctxMul.fillStyle = grad;
     ctxMul.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
-    if (bAdd) {
-      ctxAdd.fillStyle = grad;
-      ctxAdd.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
-    }
 
     // flashlight
     let flashlightdensity = $gameVariables.GetFlashlightDensity();
@@ -2187,59 +2206,87 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
       r1 = (flashlength - 1) * flashlightdensity;
       r2 = (flashlength - 1) * flashwidth;
 
-      // Offset so the beam begins in front of the player
-      let adjustForPlayer = (6 * flashlength);
+      // Compute beam left start coordinates
+      let xLeftBeamStart = x1 - (r2 / 7) * Math.sin(dirAngle);
+      let yLeftBeamStart = y1 + (r2 / 7) * Math.cos(dirAngle);
 
-      // Compute beam start coordinates (for drawing beam)
-      let xBeamStart = x1 - adjustForPlayer * Math.cos(dirAngle);
-      let yBeamStart = y1 - adjustForPlayer * Math.sin(dirAngle);
+      // Compute beam right start coordinates
+      let xRightBeamStart = x1 + (r2 / 7) * Math.sin(dirAngle);
+      let yRightBeamStart = y1 - (r2 / 7) * Math.cos(dirAngle);
 
-      // Compute beam distance (for drawing beam)
-      let beamDistance = distance + adjustForPlayer;
+      // Compute beam start control point coordinates
+      let xStartCtrlPoint = x1 - (r2 / 4.5) * Math.cos(dirAngle);
+      let yStartCtrlPoint = y1 - (r2 / 4.5) * Math.sin(dirAngle);
+
+      // Compute beam distance
+      let endPointDistance = distance - r2 / 2;
+      let endCtrlPointDistance = distance + 1.6 * r2;
 
       // Compute beam width based off of angle (for drawing beam)
-      let beamWidth = Math.atan(0.70 * r2 / beamDistance); // 70% of spot outer radius.
+      let beamWidth = Math.atan(0.80 * r2 / distance); // 70% of spot outer radius.
 
-      // Compute beam angles
-      let beamAngleStart = dirAngle - beamWidth;
-      let beamAngleEnd   = dirAngle + beamWidth;
+      // Compute left beam angle and coordinates
+      let leftBeamAngle = dirAngle + beamWidth;
+      let xLeftBeamEnd = xLeftBeamStart + endPointDistance * Math.cos(leftBeamAngle);
+      let yLeftBeamEnd = yLeftBeamStart + endPointDistance * Math.sin(leftBeamAngle);
 
-      // grab flashlight color
-      let c = hex2rgba(color1);
+      // Compute right beam angle and coordinates
+      let rightBeamAngle = dirAngle - beamWidth;
+      let xRightBeamEnd = xRightBeamStart + endPointDistance * Math.cos(rightBeamAngle);
+      let yRightBeamEnd = yRightBeamStart + endPointDistance * Math.sin(rightBeamAngle);
+
+      // Compute left bezier curve control point
+      let xLeftCtrlPoint = xLeftBeamStart + endCtrlPointDistance * Math.cos(leftBeamAngle);
+      let yLeftCtrlPoint = yLeftBeamStart + endCtrlPointDistance * Math.sin(leftBeamAngle);
+
+      // Compute right bezier curve control point
+      let xRightCtrlPoint = xRightBeamStart + endCtrlPointDistance * Math.cos(rightBeamAngle);
+      let yRightCtrlPoint = yRightBeamStart + endCtrlPointDistance * Math.sin(rightBeamAngle);
 
       // Draw outer beam as a shadow
-      ctxMul.fillStyle = undefined; // Clear fillstyle for drawing beam
-      ctxMul.shadowColor = rgba2hex(c.r, c.g, c.b, Math.round(0.7 * c.a));
-      ctxMul.shadowBlur = 30;
+      ctxMul.fillStyle = "#000000"; // Clear fillstyle for drawing beam
+      ctxMul.shadowColor = rgba2hex(c.r, c.g, c.b, Math.round(0.65 * c.a));
+      ctxMul.shadowBlur = 20;
       ctxMul.beginPath();
-      ctxMul.arc(xBeamStart, yBeamStart, beamDistance, beamAngleStart, beamAngleEnd, false);
-      ctxMul.arc(xBeamStart, yBeamStart, adjustForPlayer, beamAngleEnd, beamAngleStart, true);
+      ctxMul.moveTo(xRightBeamStart, yRightBeamStart);
+      ctxMul.quadraticCurveTo(xStartCtrlPoint, yStartCtrlPoint, xLeftBeamStart, yLeftBeamStart);
+      ctxMul.lineTo(xLeftBeamEnd, yLeftBeamEnd);
+      ctxMul.bezierCurveTo(xLeftCtrlPoint, yLeftCtrlPoint, xRightCtrlPoint, yRightCtrlPoint, xRightBeamEnd, yRightBeamEnd);
+      ctxMul.lineTo(xRightBeamStart, yRightBeamStart);
       ctxMul.fill();
+      if (bAdd) {
+        ctxAdd.fillStyle = "#000000"; // Clear fillstyle for drawing beam
+        ctxAdd.shadowColor = rgba2hex(c.r, c.g, c.b, Math.round(0.65 * c.a));
+        ctxAdd.shadowBlur = 20;
+        ctxAdd.beginPath();
+        ctxAdd.moveTo(xRightBeamStart, yRightBeamStart);
+        ctxAdd.quadraticCurveTo(xStartCtrlPoint, yStartCtrlPoint, xLeftBeamStart, yLeftBeamStart);
+        ctxAdd.lineTo(xLeftBeamEnd, yLeftBeamEnd);
+        ctxAdd.bezierCurveTo(xLeftCtrlPoint, yLeftCtrlPoint, xRightCtrlPoint, yRightCtrlPoint, xRightBeamEnd, yRightBeamEnd);
+        ctxAdd.lineTo(xRightBeamStart, yRightBeamStart);
+        ctxAdd.fill();
+      }
 
       // Draw inner beam as a shadow
-      ctxMul.shadowColor = rgba2hex(c.r, c.g, c.b,  Math.round(0.1 * c.a));
-      ctxMul.shadowBlur = 2;
+      ctxMul.shadowColor = rgba2hex(c.r, c.g, c.b, Math.round(0.1 * c.a));
+      ctxMul.shadowBlur = 1;
       ctxMul.beginPath();
-      ctxMul.arc(xBeamStart, yBeamStart, beamDistance, beamAngleStart, beamAngleEnd, false);
-      ctxMul.arc(xBeamStart, yBeamStart, adjustForPlayer, beamAngleEnd, beamAngleStart, true);
+      ctxMul.moveTo(xRightBeamStart, yRightBeamStart);
+      ctxMul.quadraticCurveTo(xStartCtrlPoint, yStartCtrlPoint, xLeftBeamStart, yLeftBeamStart);
+      ctxMul.lineTo(xLeftBeamEnd, yLeftBeamEnd);
+      ctxMul.bezierCurveTo(xLeftCtrlPoint, yLeftCtrlPoint, xRightCtrlPoint, yRightCtrlPoint, xRightBeamEnd, yRightBeamEnd);
+      ctxMul.lineTo(xRightBeamStart, yRightBeamStart);
       ctxMul.fill();
-
       if (bAdd) {
-        // Draw outer beam as a shadow
-        ctxAdd.fillStyle = undefined; // Clear fillstyle for drawing beam
-        ctxAdd.shadowColor = rgba2hex(c.r, c.g, c.b, Math.round(0.7 * c.a));
-        ctxAdd.shadowBlur = 30;
-        ctxAdd.beginPath();
-        ctxAdd.arc(xBeamStart, yBeamStart, beamDistance, beamAngleStart, beamAngleEnd, false);
-        ctxAdd.arc(xBeamStart, yBeamStart, adjustForPlayer, beamAngleEnd, beamAngleStart, true);
-        ctxAdd.fill();
-
         // Draw inner beam as a shadow
         ctxAdd.shadowColor = rgba2hex(c.r, c.g, c.b, Math.round(0.1 * c.a));
-        ctxAdd.shadowBlur = 2;
+        ctxAdd.shadowBlur = 1;
         ctxAdd.beginPath();
-        ctxAdd.arc(xBeamStart, yBeamStart, beamDistance, beamAngleStart, beamAngleEnd, false);
-        ctxAdd.arc(xBeamStart, yBeamStart, adjustForPlayer, beamAngleEnd, beamAngleStart, true);
+        ctxAdd.moveTo(xRightBeamStart, yRightBeamStart);
+        ctxAdd.quadraticCurveTo(xStartCtrlPoint, yStartCtrlPoint, xLeftBeamStart, yLeftBeamStart);
+        ctxAdd.lineTo(xLeftBeamEnd, yLeftBeamEnd);
+        ctxAdd.bezierCurveTo(xLeftCtrlPoint, yLeftCtrlPoint, xRightCtrlPoint, yRightCtrlPoint, xRightBeamEnd, yRightBeamEnd);
+        ctxAdd.lineTo(xRightBeamStart, yRightBeamStart);
         ctxAdd.fill();
       }
 
@@ -2250,16 +2297,17 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
       // Draw spot
       grad = ctxMul.createRadialGradient(x1, y1, r1, x1, y1, r2);
       grad.addTransparentColorStops(0, color1, color2);
-      ctxMul.shadowColor = ""; // Clear shadow style
-      ctxMul.shadowBlur = 0;
-      ctxMul.fillStyle = grad;
-      ctxMul.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
-      ctxMul.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
-      if (bAdd) {
-        ctxAdd.shadowColor = ""; // Clear shadow style
+      if (!bAdd) {
+        ctxMul.shadowColor = "#000000"; // Clear shadow style
+        ctxMul.shadowBlur = 0;
+        ctxMul.fillStyle = grad;
+        ctxMul.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
+        ctxMul.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
+      } else {
+        ctxAdd.shadowColor = "#000000"; // Clear shadow style
         ctxAdd.shadowBlur = 0;
         ctxAdd.fillStyle = grad;
-        bAdd && ctxAdd.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
+        ctxAdd.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2); // single call as to not blur things so much.
       }
     } else { // Circular flashlight
       // Compute diagonal length scalars.
