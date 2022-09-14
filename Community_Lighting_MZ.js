@@ -1552,7 +1552,7 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
 
   Game_Interpreter.prototype.tintbattle = function (command, args) {
     if ($gameParty.inBattle()) {
-      let cmd = args[0].trim().toLowerCase();
+      let cmd = args[0].trim();
       if (cmd.equalsIC("set", 'fade')) {
         $gameTemp._BattleTintFade = $gameTemp._BattleTint;
         $gameTemp._BattleTintTimer = 0;
@@ -3069,7 +3069,7 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
    * @param {String[]} args
    */
   $$.tint = function (args) {
-    let cmd = args[0].trim().toLowerCase();
+    let cmd = args[0].trim();
     if (cmd.equalsIC('set', 'fade')) {
       let currentColor = args[1];
       let speed = +args[2] || 0;
