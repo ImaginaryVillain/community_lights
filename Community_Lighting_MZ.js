@@ -918,13 +918,10 @@ Imported[Community.Lighting.name] = true;
 * ....where # is the max distance you want in tiles.
 */
 
-Number.prototype.is = function() {
-  return [...arguments].includes(Number(this));
-}
-
-String.prototype.equalsIC = function() {
-  return [...arguments].map(s => s.toLowerCase()).includes(this.toLowerCase());
-}
+Number.prototype.is           = function (...a) { return a.includes(Number(this)); }
+Number.prototype.inRange      = function (min, max) { return this >= min && this <= max; }
+String.prototype.equalsIC     = function (...a) { return a.map(s => s.toLowerCase()).includes(this.toLowerCase()); }
+String.prototype.startsWithIC = function (s) { return this.toLowerCase().startsWith(s.toLowerCase()); }
 
 let isRMMZ = () => Utils.RPGMAKER_NAME === "MZ";
 let isRMMV = () => Utils.RPGMAKER_NAME === "MV";
