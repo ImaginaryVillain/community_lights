@@ -18,7 +18,7 @@ if (typeof require !== "undefined" && typeof module != "undefined") {
     BattleManager,
     ConfigManager,
   } = require("../rpg_managers");
-  var { Window_Base, Window_Options } = require("../rpg_windows");
+  var { Window_Selectable, Window_Options } = require("../rpg_windows");
   var { Spriteset_Map, Spriteset_Battle } = require("../rpg_sprites");
   var { Scene_Map } = require("../rpg_scenes");
   var { Bitmap, Tilemap, ShaderTilemap } = require("../rpg_core");
@@ -491,10 +491,10 @@ Imported[Community.Lighting.name] = true;
 * - Turn off the flashlight.  yup.
 *
 * Daynight speed n
-* - Changes the speed by which hours pass ingame in relation to real life seconds
+* - Changes the speed by which hours pass in game in relation to real life seconds
 *
 * Daynight hour h m
-* - Sets the ingame time to hh:mm
+* - Sets the in game time to hh:mm
 *
 * Daynight color h c
 * - Sets the hour (h) to use color (c)
