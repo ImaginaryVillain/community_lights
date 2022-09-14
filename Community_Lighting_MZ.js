@@ -1621,10 +1621,6 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
     $$.ReloadMapEvents();
   }
 
-  /**
-   * @method _updateAllSprites
-   * @private
-   */
   Lightmask.prototype._updateMask = function () {
     // ****** DETECT MAP CHANGES ********
     let map_id = $gameMap.mapId();
@@ -2692,6 +2688,9 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
     this._addSprite(-lightMaskPadding, 0, this._maskBitmaps.multiply, PIXI.BLEND_MODES.MULTIPLY);
     this._addSprite(-lightMaskPadding, 0, this._maskBitmaps.additive, PIXI.BLEND_MODES.ADD);
 
+    this._maskBitmaps.multiply.fillRect(0, 0, maxX + lightMaskPadding, maxY, '#000000');
+    this._maskBitmaps.additive.clearRect(0, 0, maxX + lightMaskPadding, maxY);
+
     let redhex = $gameTemp._MapTint.substring(1, 3);
     let greenhex = $gameTemp._MapTint.substring(3, 5);
     let bluehex = $gameTemp._MapTint.substring(5);
@@ -2714,6 +2713,9 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
   };
 
   BattleLightmask.prototype.update = function () {
+    this._maskBitmaps.multiply.fillRect(0, 0, maxX + lightMaskPadding, maxY, '#000000');
+    this._maskBitmaps.additive.clearRect(0, 0, maxX + lightMaskPadding, maxY);
+
     let color1 = $gameTemp._BattleTint;
     if ($gameTemp._BattleTintSpeed > 0) {
 
