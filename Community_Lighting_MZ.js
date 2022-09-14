@@ -1800,21 +1800,9 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
       if (iplayer_radius < 100) {
         // dim the light a bit at lower lightradius for a less focused effect.
         let c = playercolor;
-        c.g = c.g - 50;
-        c.r = c.r - 50;
-        c.b = c.b - 50;
-        if (c.g < 0) {
-          c.g = 0;
-        }
-        if (c.r < 0) {
-          c.r = 0;
-        }
-        if (c.b < 0) {
-          c.b = 0;
-        }
-        if (c.a < 0) {
-          c.a = 0;
-        }
+        c.r = Math.max(0, c.r - 50);
+        c.g = Math.max(0, c.g - 50);
+        c.b = Math.max(0, c.b - 50);
         let newcolor = c;
 
         this._maskBitmaps.radialgradientFillRect(x1, y1, 0, iplayer_radius, newcolor, radialColor2, playerflicker, playerbrightness);
@@ -2082,17 +2070,11 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
 
         let [reddone, greendone, bluedone, alphadone] = [false, false, false, false];
 
-        //Greater than
-        if (stepR >= 0 && c3.r >= c2.r) reddone = true;
-        if (stepG >= 0 && c3.g >= c2.g) greendone = true;
-        if (stepB >= 0 && c3.b >= c2.b) bluedone = true;
-        if (stepA >= 0 && c3.a >= c2.a) alphadone = true;
-
-        // Less than
-        if (stepR <= 0 && c3.r <= c2.r) reddone = true;
-        if (stepG <= 0 && c3.g <= c2.g) greendone = true;
-        if (stepB <= 0 && c3.b <= c2.b) bluedone = true;
-        if (stepA <= 0 && c3.a <= c2.a) alphadone = true;
+        //Greater than or less than
+        if ((stepR >= 0 && c3.r >= c2.r) || (stepR <= 0 && c3.r <= c2.r)) reddone = true;
+        if ((stepG >= 0 && c3.g >= c2.g) || (stepG <= 0 && c3.g <= c2.g)) greendone = true;
+        if ((stepB >= 0 && c3.b >= c2.b) || (stepB <= 0 && c3.b <= c2.b)) bluedone = true;
+        if ((stepA >= 0 && c3.a >= c2.a) || (stepA <= 0 && c3.a <= c2.a)) alphadone = true;
 
         if (reddone == true && bluedone == true && greendone == true && alphadone == true) {
           $gameVariables.SetTint(tint_target);
@@ -2644,17 +2626,11 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
 
       let [reddone, greendone, bluedone, alphadone] = [false, false, false, false];
 
-      //Greater than
-      if (stepR >= 0 && c3.r >= c2.r) reddone = true;
-      if (stepG >= 0 && c3.g >= c2.g) greendone = true;
-      if (stepB >= 0 && c3.b >= c2.b) bluedone = true;
-      if (stepA >= 0 && c3.a >= c2.a) alphadone = true;
-
-      // Less than
-      if (stepR <= 0 && c3.r <= c2.r) reddone = true;
-      if (stepG <= 0 && c3.g <= c2.g) greendone = true;
-      if (stepB <= 0 && c3.b <= c2.b) bluedone = true;
-      if (stepA <= 0 && c3.a <= c2.a) alphadone = true;
+      //Greater than or less than
+      if ((stepR >= 0 && c3.r >= c2.r) || (stepR <= 0 && c3.r <= c2.r)) reddone = true;
+      if ((stepG >= 0 && c3.g >= c2.g) || (stepG <= 0 && c3.g <= c2.g)) greendone = true;
+      if ((stepB >= 0 && c3.b >= c2.b) || (stepB <= 0 && c3.b <= c2.b)) bluedone = true;
+      if ((stepA >= 0 && c3.a >= c2.a) || (stepA <= 0 && c3.a <= c2.a)) alphadone = true;
 
       if (reddone == true && bluedone == true && greendone == true && alphadone) {
         $gameTemp._BattleTintFade = new VRGBA($gameTemp._BattleTint);
