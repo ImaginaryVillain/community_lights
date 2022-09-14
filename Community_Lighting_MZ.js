@@ -1976,19 +1976,10 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
       let tile_color = tile.color;
       if (tile.lightType.is(LightType.Glow)) {
         let c = new VRGBA(tile.color);
-        c.r = Math.floor(c.r + (60 - tileglow));
-        c.g = Math.floor(c.g + (60 - tileglow));
-        c.b = Math.floor(c.b + (60 - tileglow));
-        c.a = Math.floor(c.a + (60 - tileglow));
-
-        if (c.r < 0) c.r = 0;
-        if (c.g < 0) c.g = 0;
-        if (c.b < 0) c.b = 0;
-        if (c.a < 0) c.a = 0;
-        if (c.r > 255) c.r = 255;
-        if (c.g > 255) c.g = 255;
-        if (c.b > 255) c.b = 255;
-        if (c.a > 255) c.a = 255;
+        c.r = Math.floor(c.r + (60 - tileglow)).clamp(0, 255);
+        c.g = Math.floor(c.g + (60 - tileglow)).clamp(0, 255);
+        c.b = Math.floor(c.b + (60 - tileglow)).clamp(0, 255);
+        c.a = Math.floor(c.a + (60 - tileglow)).clamp(0, 255);
         tile_color = c;
       }
       this._maskBitmaps.radialgradientFillRect(x1, y1, 0, tile.radius, tile_color, new VRGBA(), objectflicker, tile.brightness);
@@ -2084,22 +2075,12 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
         let stepA = (c2.a - c.a) / (60 * tint_speed);
 
         let c3 = new VRGBA(c2.v,
-          Math.floor(c.r + (stepR * tint_timer)),
-          Math.floor(c.g + (stepG * tint_timer)),
-          Math.floor(c.b + (stepB * tint_timer)),
-          Math.floor(c.a + (stepA * tint_timer)));
-        if (c3.r < 0) c3.r = 0;
-        if (c3.g < 0) c3.g = 0;
-        if (c3.b < 0) c3.b = 0;
-        if (c3.a < 0) c3.a = 0;
-        if (c3.r > 255) c3.r = 255;
-        if (c3.g > 255) c3.g = 255;
-        if (c3.b > 255) c3.b = 255;
-        if (c3.a > 255) c3.a = 255;
-        let reddone = false;
-        let greendone = false;
-        let bluedone = false;
-        let alphadone = false;
+          Math.floor(c.r + (stepR * tint_timer)).clamp(0, 255),
+          Math.floor(c.g + (stepG * tint_timer)).clamp(0, 255),
+          Math.floor(c.b + (stepB * tint_timer)).clamp(0, 255),
+          Math.floor(c.a + (stepA * tint_timer)).clamp(0, 255));
+
+        let [reddone, greendone, bluedone, alphadone] = [false, false, false, false];
 
         //Greater than
         if (stepR >= 0 && c3.r >= c2.r) reddone = true;
@@ -2656,48 +2637,25 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
       let stepA = (c2.a - c.a) / (60 * $gameTemp._BattleTintSpeed);
 
       let c3 = new VRGBA(c2.v,
-        Math.floor(c.r + (stepR * $gameTemp._BattleTintTimer)),
-        Math.floor(c.g + (stepG * $gameTemp._BattleTintTimer)),
-        Math.floor(c.b + (stepB * $gameTemp._BattleTintTimer)),
-        Math.floor(c.a + (stepA * $gameTemp._BattleTintTimer)));
+        Math.floor(c.r + (stepR * $gameTemp._BattleTintTimer)).clamp(0, 255),
+        Math.floor(c.g + (stepG * $gameTemp._BattleTintTimer)).clamp(0, 255),
+        Math.floor(c.b + (stepB * $gameTemp._BattleTintTimer)).clamp(0, 255),
+        Math.floor(c.a + (stepA * $gameTemp._BattleTintTimer)).clamp(0, 255));
 
-      if (c3.r < 0) { c3.r = 0; }
-      if (c3.g < 0) { c3.g = 0; }
-      if (c3.b < 0) { c3.b = 0; }
-      if (c3.a < 0) { c3.a = 0; }
-      if (c3.r > 255) { c3.r = 255; }
-      if (c3.g > 255) { c3.g = 255; }
-      if (c3.b > 255) { c3.b = 255; }
-      if (c3.a > 255) { c3.a = 255; }
+      let [reddone, greendone, bluedone, alphadone] = [false, false, false, false];
 
-      let reddone = false;
-      let greendone = false;
-      let bluedone = false;
-      let alphadone = false;
-      if (stepR >= 0 && c3.r >= c2.r) {
-        reddone = true;
-      }
-      if (stepR <= 0 && c3.r <= c2.r) {
-        reddone = true;
-      }
-      if (stepG >= 0 && c3.g >= c2.g) {
-        greendone = true;
-      }
-      if (stepG <= 0 && c3.g <= c2.g) {
-        greendone = true;
-      }
-      if (stepB >= 0 && c3.b >= c2.b) {
-        bluedone = true;
-      }
-      if (stepB <= 0 && c3.b <= c2.b) {
-        bluedone = true;
-      }
-      if (stepA >= 0 && c3.a >= c2.a) {
-        alphadone = true;
-      }
-      if (stepA <= 0 && c3.a <= c2.a) {
-        alphadone = true;
-      }
+      //Greater than
+      if (stepR >= 0 && c3.r >= c2.r) reddone = true;
+      if (stepG >= 0 && c3.g >= c2.g) greendone = true;
+      if (stepB >= 0 && c3.b >= c2.b) bluedone = true;
+      if (stepA >= 0 && c3.a >= c2.a) alphadone = true;
+
+      // Less than
+      if (stepR <= 0 && c3.r <= c2.r) reddone = true;
+      if (stepG <= 0 && c3.g <= c2.g) greendone = true;
+      if (stepB <= 0 && c3.b <= c2.b) bluedone = true;
+      if (stepA <= 0 && c3.a <= c2.a) alphadone = true;
+
       if (reddone == true && bluedone == true && greendone == true && alphadone) {
         $gameTemp._BattleTintFade = new VRGBA($gameTemp._BattleTint);
         $gameTemp._BattleTintSpeed = 0;
