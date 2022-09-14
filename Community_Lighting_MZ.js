@@ -2625,7 +2625,7 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
 
   let Community_Lighting_BattleManager_setup = BattleManager.setup;
   BattleManager.setup = function (troopId, canEscape, canLose) {
-    $$._MapTint = '#FFFFFF';                                          // By default, no darkness during battle
+    $gameTemp._MapTint = '#FFFFFF';                                          // By default, no darkness during battle
     if (!DataManager.isBattleTest() && !DataManager.isEventTest() && $gameMap.mapId() >= 0) { // If we went there from a map...
       if ($gameVariables.GetScriptActive() === true) {                                        // If the script is active...
         if (options_lighting_on && lightInBattle) {                                           // If configuration autorise using lighting effects
