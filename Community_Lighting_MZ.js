@@ -722,7 +722,7 @@ Imported[Community.Lighting.name] = true;
 * DayNight
 * - Activates day/night cycle.  Put in map note or event note
 *
-* Light radius [cycle] color [day|night] [brightness] [direction] [x] [y] [id]
+* Light radius [cycle] color [onoff] [day|night] [brightness] [direction] [x] [y] [id]
 * - Light
 * - radius      100, 250, etc
 * - cycle       Allows any number of color + duration pairs to follow that will be
@@ -731,6 +731,7 @@ Imported[Community.Lighting.name] = true;
 *               In Terrax Lighting, there was a hard limit of 4, but now you can use
 *               as many as you want. [optional]
 * - color       #ffffff, #ff0000, etc
+* - onoff:      Initial state:  0, 1, off, on (default). Ignored if day|night passed [optional]
 * - day         Causes the light to only come on during the day [optional]
 * - night       Causes the light to only come on during the night [optional]
 * - brightness  B50, B25, etc [optional]
@@ -745,7 +746,7 @@ Imported[Community.Lighting.name] = true;
 * Fire ...params
 * - Same as Light params above, but adds a subtle flicker
 *
-* Flashlight [bl] [bw] [c] [onoff] [sdir|angle] [x] [y] [id]
+* Flashlight bl bw [cycle] color [onoff] [day|night] [sdir|angle] [x] [y] [id]
 * - Sets the light as a flashlight with beam length (bl) beam width (bw) color (c),
 *      0|1 (onoff), and 1=up, 2=right, 3=down, 4=left for static direction (sdir)
 * - bl:       Beam length:  Any number, optionally preceded by "L", so 8, L8
@@ -754,15 +755,16 @@ Imported[Community.Lighting.name] = true;
 *             cycled through before repeating from the beginning:
 *             <cl: Flashlight l8 w12 cycle #f00 15 #ff0 15 #0f0 15 on someId d3>
 *             There's no limit to how many colors can be cycled. [optional]
-* - onoff:    Initial state:  0, 1, off, on
+* - color     #ffffff, #ff0000, etc
+* - onoff:    Initial state:  0, 1, off, on (default). Ignored if day|night passed [optional]
+* - day       Sets the event's light to only show during the day [optional]
+* - night     Sets the event's light to only show during night time [optional]
 * - sdir:     Forced direction (optional): 0:auto, 1:up, 2:right, 3:down, 4:left
 *             Can be preceded by "D", so D4.  If omitted, defaults to 0
 * - angle:    Forced direction in degrees (optional): must be preceded by "A". If
-*             omitted, sdir is used.
+*             omitted, sdir is used. [optional]
 * - x         x[offset] Work the same as regular light [optional]
 * - y         y[offset] [optional]
-* - day       Sets the event's light to only show during the day [optional]
-* - night     Sets the event's light to only show during night time [optional]
 * - id        1, 2, potato, etc. An id (alphanumeric) for plugin commands [optional]
 *             Those should not begin with 'a', 'd', 'x' or 'y' otherwise
 *             they will be mistaken for one of the previous optional parameters.
@@ -1023,7 +1025,7 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
   let isDeactivate = (x) => x.toLowerCase() === "deactivate";
 
   /**
-   * Tests the index of this object for equality with value and sets it if not.
+   * Tests the specified index of this object for equality with value and sets it if not.
    * Returns true if the index is set, or false otherwise.
    * @param {String} index
    * @param {any}    value
@@ -1129,7 +1131,7 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
       this.enabled    = isOn(onoff);
       this.color      = new VRGBA(color);
       this.radius     = +radius || 0;
-      this.brightness = brightness && (brightness.substr(1, brightness.length) / 100).clamp(0, 1) || $$.defaultBrightness || 0;
+      this.brightness = brightness && (brightness.slice(1, brightness.length) / 100).clamp(0, 1) || $$.defaultBrightness || 0;
     }
   }
 
@@ -1341,13 +1343,16 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
         }
         else if ((x[0].equalsIC("#") || x.slice(0, 2).equalsIC("a#")) &&
                   this._clColor === undefined) this._clColor = new VRGBA(x);
-        else if (x[0].equalsIC("b") && this._clBrightness === undefined) {
-          this._clBrightness = Number(+(x.substr(1, x.length)) / 100).clamp(0, 1);
-        }
+        else if (!isNaN(+x) && this._clOnOff === undefined) this._clOnOff = +x ? true : false;
+        else if (isOn(x) && this._clOnOff === undefined) this._clOnOff = true;
+        else if (isOff(x) && this._clOnOff === undefined) this._clOnOff = false;
         else if (x.equalsIC("night", "day") && this._clSwitch === undefined) this._clSwitch = x;
-        else if (x[0].equalsIC("d") && this._clDirection === undefined) this._clDirection = +(x.substr(1, x.length));
-        else if (x[0].equalsIC("x") && this._clXOffset === undefined) this._clXOffset = +(x.substr(1, x.length));
-        else if (x[0].equalsIC("y") && this._clYOffset === undefined) this._clYOffset = +(x.substr(1, x.length));
+        else if (x[0].equalsIC("b") && this._clBrightness === undefined) {
+          this._clBrightness = Number(+(x.slice(1, x.length)) / 100).clamp(0, 1);
+        }
+        else if (x[0].equalsIC("d") && this._clDirection === undefined) this._clDirection = +(x.slice(1, x.length));
+        else if (x[0].equalsIC("x") && this._clXOffset === undefined) this._clXOffset = +(x.slice(1, x.length));
+        else if (x[0].equalsIC("y") && this._clYOffset === undefined) this._clYOffset = +(x.slice(1, x.length));
         else if (x.length > 0 && this._clId === undefined) this._clId = x;
       }
     }
@@ -1361,8 +1366,8 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
       for (let x of tagData) {
         if (!isNaN(+x) && this._clBeamLength === undefined) this._clBeamLength = +x;
         else if (!isNaN(+x) && this._clBeamWidth === undefined) this._clBeamWidth = +x;
-        else if (x[0].equalsIC("l") && this._clBeamLength === undefined) this._clBeamLength = this._clBeamLength = +(x.substr(1, x.length));
-        else if (x[0].equalsIC("w") && this._clBeamWidth === undefined) this._clBeamWidth = this._clBeamWidth = +(x.substr(1, x.length));
+        else if (x[0].equalsIC("l") && this._clBeamLength === undefined) this._clBeamLength = this._clBeamLength = +(x.slice(1, x.length));
+        else if (x[0].equalsIC("w") && this._clBeamWidth === undefined) this._clBeamWidth = this._clBeamWidth = +(x.slice(1, x.length));
         else if (x.equalsIC("cycle") && this._clColor === undefined) this._clCycle = [];
         else if (this._clCycle && !needsCycleDuration && (x[0].equalsIC("#") || x.slice(0, 2).equalsIC("a#"))) {
           this._clCycle.push({ "color": new VRGBA(x), "duration": 1 });
@@ -1374,26 +1379,26 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
         }
         else if ((x[0].equalsIC("#") || x.slice(0, 2).equalsIC("a#")) &&
                   this._clBeamColor === undefined) this._clColor = new VRGBA(x);
-        else if (!isNaN(+x) && this._clOnOff === undefined) this._clOnOff = +x;
-        else if (!isNaN(+x) && this._clFlashlightDirection === undefined) this._clFlashlightDirection = +x;
-        else if (isOn(x) && this._clOnOff === undefined) this._clOnOff = 1;
-        else if (isOff(x) && this._clOnOff === undefined) this._clOnOff = 0;
+        else if (!isNaN(+x) && this._clOnOff === undefined) this._clOnOff = +x ? true : false;
+        else if (isOn(x) && this._clOnOff === undefined) this._clOnOff = true;
+        else if (isOff(x) && this._clOnOff === undefined) this._clOnOff = false;
         else if (x.equalsIC("night", "day") && this._clSwitch === undefined) this._clSwitch = x;
-        else if (x[0].equalsIC("d") && this._clFlashlightDirection === undefined) this._clFlashlightDirection = CLDirectionMap[+(x.substr(1, x.length))];
-        else if (x[0].equalsIC("a") && this._clFlashlightDirection === undefined) this._clFlashlightDirection = Math.PI/180*+(x.substr(1, x.length));
-        else if (x[0].equalsIC("x") && this._clXOffset === undefined) this._clXOffset = +(x.substr(1, x.length));
-        else if (x[0].equalsIC("y") && this._clYOffset === undefined) this._clYOffset = +(x.substr(1, x.length));
+        else if (!isNaN(+x) && this._clFlashlightDirection === undefined) this._clFlashlightDirection = +x;
+        else if (x[0].equalsIC("d") && this._clFlashlightDirection === undefined) this._clFlashlightDirection = CLDirectionMap[+(x.slice(1, x.length))];
+        else if (x[0].equalsIC("a") && this._clFlashlightDirection === undefined) this._clFlashlightDirection = Math.PI/180*+(x.slice(1, x.length));
+        else if (x[0].equalsIC("x") && this._clXOffset === undefined) this._clXOffset = +(x.slice(1, x.length));
+        else if (x[0].equalsIC("y") && this._clYOffset === undefined) this._clYOffset = +(x.slice(1, x.length));
         else if (x.length > 0 && this._clId === undefined) this._clId = x;
       }
     }
     this._clRadius = this._clRadius || 0;
-    this._clColor = this._clColor || new VRGBA();
+    this._clColor = new VRGBA(this._clColor);
     this._clBrightness = this._clBrightness || 0;
     this._clDirection = this._clDirection || 0;
     this._clId = this._clId || 0;
     this._clBeamWidth = this._clBeamWidth || 0;
     this._clBeamLength = this._clBeamLength || 0;
-    this._clOnOff = this._clOnOff || 0;
+    this._clOnOff = orBoolean(this._clOnOff, true);
     this._clFlashlightDirection = this._clFlashlightDirection || undefined; // Must be undefined.
     this._clXOffset = this._clXOffset || 0;
     this._clYOffset = this._clYOffset || 0;
@@ -1446,16 +1451,9 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
     return this._clYOffset;
   };
   Game_Event.prototype.getLightEnabled = function () {
-    let type = this.getLightType();
-    let result = false;
-    if (this._clSwitch === undefined) {
-      if (type.is(LightType.Flashlight) && this._clOnOff === 1) result = true;
-      else result = true;
-    } else {
-      result = (this._clSwitch.equalsIC("night") && $$.isNight()) ||
-               (this._clSwitch.equalsIC("day") && !$$.isNight());
-    }
-    return result;
+    if (!this._clSwitch) return this._clOnOff;
+    return (this._clSwitch.equalsIC("night") &&  $$.isNight()) ||
+           (this._clSwitch.equalsIC("day")   && !$$.isNight());
   };
   Game_Event.prototype.getLightCycle = function () {
     if (this._clType === undefined) this.initLightData();
