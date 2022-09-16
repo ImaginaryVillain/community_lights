@@ -923,6 +923,7 @@ Number.prototype.is           = function (...a) { return a.includes(Number(this)
 Number.prototype.inRange      = function (min, max) { return this >= min && this <= max; };
 String.prototype.equalsIC     = function (...a) { return a.map(s => s.toLowerCase()).includes(this.toLowerCase()); };
 String.prototype.startsWithIC = function (s) { return this.toLowerCase().startsWith(s.toLowerCase()); };
+Math.minmax                   = function (minOrMax, ...a) { return minOrMax ? Math.min(...a) : Math.max(...a); }; // min if positive
 
 let isRMMZ = () => Utils.RPGMAKER_NAME === "MZ";
 let isRMMV = () => Utils.RPGMAKER_NAME === "MV";
@@ -1025,6 +1026,20 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
   let isDeactivate = (x) => x.toLowerCase() === "deactivate";
 
   /**
+   * Gets the specified index of this object.
+   * @param {String} index
+   * @returns {any}
+   */
+  let get = (index) => this[index];
+
+  /**
+   * Sets the specified index of this object.
+   * @param {String} index
+   * @param {any}    value
+   */
+  let set = (index, value) => this[index] = value;
+
+  /**
    * Tests the specified index of this object for equality with value and sets it if not.
    * Returns true if the index is set, or false otherwise.
    * @param {String} index
@@ -1049,7 +1064,7 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
     if (current.equals(target)) return target; // Already equal so short-circuit
 
     // only compute new delta on target or speed change
-    let delta = $gameTemp._tintDelta;
+    let delta = get('_tintDelta');
     if (!delta || testAndSet('_OldTintTarget', target) || testAndSet('_OldTintSpeed', speed)) {
       // tint delta based off of remainder of time in hour if not battle, daynight cycle, & tint enabled OR 60
       let useMinutesRemaining = !$gameParty.inBattle() && daynightCycleEnabled && daynightTintEnabled;
@@ -1061,7 +1076,7 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
         (target.b - current.b) / (minutes * speed),
         (target.a - current.a) / (minutes * speed));
 
-      $gameTemp._tintDelta = delta; // set new tint.
+      set('_tintDelta', delta); // set new tint.
     }
 
     // Compute next color step
@@ -1218,9 +1233,6 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
   let battleMaxY = maxY;
   if (isRMMZ()) battleMaxY += 24; // Plus 24 for RMMZ Spriteset_Battle.prototype.battleFieldOffsetY
   let event_reload_counter = 0;
-  let tileglow = 0;
-  let glow_oldseconds = 0;
-  let glow_dir = 1;
   let notetag_reg = RegExp("<" + noteTagKey + ":[ ]*([^>]+)>", "i");
   let radialColor2 = new VRGBA(useSmootherLights ? "#00000000" : "#000000");
   $$.getFirstComment = function () {
@@ -1482,9 +1494,7 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
    */
   Game_Interpreter.prototype.pluginCommand = function (command, args) {
     _Game_Interpreter_pluginCommand.call(this, command, args);
-    if (typeof command !== 'undefined') {
-      this.communityLighting_Commands(command, args);
-    }
+    if (typeof command !== 'undefined') this.communityLighting_Commands(command, args);
   };
 
   let _Game_Player_clearTransferInfo = Game_Player.prototype.clearTransferInfo;
@@ -1512,9 +1522,7 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
       script: 'scriptF', reload: 'reload', tintbattle: 'tintbattle'
     };
     const result = allCommands[command];
-    if (result) {
-      this[result](command, args);
-    }
+    if (result) this[result](command, args);
   };
 
   (function () { // don't pollute the namespace.
@@ -1673,9 +1681,7 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
     this.addChild(this._lightmask);
   };
 
-  function Lightmask() {
-    this.initialize.apply(this, arguments);
-  }
+  function Lightmask() { this.initialize.apply(this, arguments); }
 
   Lightmask.prototype = Object.create(PIXI.Container.prototype);
   Lightmask.prototype.constructor = Lightmask;
@@ -1690,14 +1696,10 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
 
   //Updates the Lightmask for each frame.
 
-  Lightmask.prototype.update = function () {
-    this._updateMask();
-  };
+  Lightmask.prototype.update = function () { this._updateMask(); };
 
   //@method _createBitmaps
-  Lightmask.prototype._createBitmaps = function () {
-    this._maskBitmaps = new Mask_Bitmaps(maxX + lightMaskPadding, maxY);
-  };
+  Lightmask.prototype._createBitmaps = function () { this._maskBitmaps = new Mask_Bitmaps(maxX + lightMaskPadding, maxY); };
 
   let _Game_Map_prototype_setupEvents = Game_Map.prototype.setupEvents;
   Game_Map.prototype.setupEvents = function () {
@@ -1724,19 +1726,13 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
     }
 
     // reload mapevents if event_data has changed (deleted or spawned events/saves)
-    if (event_eventcount != $gameMap.events().length) {
-      $$.ReloadMapEvents();
-    }
+    if (event_eventcount != $gameMap.events().length) $$.ReloadMapEvents();
 
-    // remove old sprites
-    for (let i = 0, len = this._sprites.length; i < len; i++) { // remove all old sprites
-      this._removeSprite();
-    }
+    // remove all old sprites
+    for (let i = 0, len = this._sprites.length; i < len; i++) this._removeSprite();
 
-    if (map_id <= 0) return;                               // No lighting on map 0
-    if (options_lighting_on !== true) return;              // Plugin deactivated in the option
-    if ($gameVariables.GetScriptActive() !== true) return; // Plugin deactivated by plugin command
-
+    // No lighting on maps less than 1 || Plugin deactivated in options || Plugin deactivated by plugin command
+    if (map_id <= 0 || !options_lighting_on || !$gameVariables.GetScriptActive()) return;
 
     // reload map events every 200 cycles just in case or when a refresh is requested
     event_reload_counter++;
@@ -1745,10 +1741,12 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
       $$.ReloadMapEvents();
     }
 
-    if (light_event_required && eventObjId.length <= 0) return; // If no lightsources on this map, no lighting if light_event_required set to true.
+    // If no lightsources on this map, no lighting if light_event_required set to true.
+    if (light_event_required && eventObjId.length <= 0) return;
 
     this._addSprite(-lightMaskPadding, 0, this._maskBitmaps.multiply, PIXI.BLEND_MODES.MULTIPLY);
     this._addSprite(-lightMaskPadding, 0, this._maskBitmaps.additive, PIXI.BLEND_MODES.ADD);
+
     // ******** GROW OR SHRINK GLOBE PLAYER *********
     let firstrun = $gameVariables.GetFirstRun();
     if (firstrun === true) {
@@ -1758,27 +1756,11 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
     } else {
       player_radius = $gameVariables.GetRadius();
     }
-    let lightgrow_value = player_radius;
+
+    // compute radius lightgrow.
     let lightgrow_target = $gameVariables.GetRadiusTarget();
-    let lightgrow_speed = $gameVariables.GetRadiusSpeed();
-
-    if (lightgrow_value < lightgrow_target) {
-      lightgrow_value = lightgrow_value + lightgrow_speed;
-      if (lightgrow_value > lightgrow_target) {
-        //other wise it can keep fliping back and forth between > and <
-        lightgrow_value = lightgrow_target;
-      }
-      player_radius = lightgrow_value;
-    }
-    if (lightgrow_value > lightgrow_target) {
-      lightgrow_value = lightgrow_value - lightgrow_speed;
-      if (lightgrow_value < lightgrow_target) {
-        //other wise it can keep fliping back and forth between > and <
-        lightgrow_value = lightgrow_target;
-      }
-      player_radius = lightgrow_value;
-    }
-
+    let lightgrow_speed = (player_radius < lightgrow_target ? 1 : -1) * $gameVariables.GetRadiusSpeed();
+    player_radius = Math.minmax(lightgrow_speed > 0, player_radius + lightgrow_speed, lightgrow_target); // compute and clamp
     $gameVariables.SetRadius(player_radius);
 
     // ****** PLAYER LIGHTGLOBE ********
@@ -1903,9 +1885,9 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
 
           let brightness = cur.getLightBrightness();
           let direction = cur.getLightDirection();
+          let state = cur.getLightEnabled(); // checks for on, off, day, and night
           // conditional lighting
           let lightid = cur.getLightId();
-          let state = cur.getLightEnabled();
           if (lightid) {
             state = false;
 
@@ -1958,19 +1940,13 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
 
     // *************************** TILE TAG *********************
     //glow/colorfade
-    let glowdatenow = new Date();
-    let glowseconds = Math.floor(glowdatenow.getTime() / 100);
-
-    if (glowseconds > glow_oldseconds) {
-      glow_oldseconds = glowseconds;
-      tileglow = tileglow + glow_dir;
-
-      if (tileglow > 120) {
-        glow_dir = -1;
-      }
-      if (tileglow < 1) {
-        glow_dir = 1;
-      }
+    if (testAndSet('_glowTimeout', Math.floor((new Date()).getTime() / 100))) {
+      let glowAmount    = orNaN(get('_glowAmount'), 0);
+      let glowDirection = orNaN(get('_glowDirection'), 1);
+      glowAmount += glowDirection;
+      if (glowAmount > 120) set('_glowDirection', -1);
+      if (glowAmount < 1)   set('_glowDirection', 1);
+      set('_glowAmount', glowAmount);
     }
 
     light_tiles = $gameVariables.GetLightTiles();
@@ -1985,10 +1961,11 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
       let tile_color = tile.color;
       if (tile.lightType.is(LightType.Glow)) {
         let c = new VRGBA(tile.color);
-        c.r = Math.floor(c.r + (60 - tileglow)).clamp(0, 255);
-        c.g = Math.floor(c.g + (60 - tileglow)).clamp(0, 255);
-        c.b = Math.floor(c.b + (60 - tileglow)).clamp(0, 255);
-        c.a = Math.floor(c.a + (60 - tileglow)).clamp(0, 255);
+        let glowAmount = get('_glowAmount');
+        c.r = Math.floor(c.r + (60 - glowAmount)).clamp(0, 255);
+        c.g = Math.floor(c.g + (60 - glowAmount)).clamp(0, 255);
+        c.b = Math.floor(c.b + (60 - glowAmount)).clamp(0, 255);
+        c.a = Math.floor(c.a + (60 - glowAmount)).clamp(0, 255);
         tile_color = c;
       }
       this._maskBitmaps.radialgradientFillRect(x1, y1, 0, tile.radius, tile_color, new VRGBA(), objectflicker, tile.brightness);
@@ -2076,9 +2053,7 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
     if (brightness) {
       if (!useSmootherLights) {
         let alpha = Math.floor(brightness * 100 * 2.55).toString(16);
-        if (alpha.length < 2) {
-          alpha = "0" + alpha;
-        }
+        if (alpha.length < 2) alpha = "0" + alpha;
         this.addColorStop(0, '#FFFFFF' + alpha);
       }
     }
@@ -2089,9 +2064,7 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
         let newGreen = c1.g - (distanceFromCenter * 100 * 2.55);
         let newBlue  = c1.b - (distanceFromCenter * 100 * 2.55);
         let newAlpha = 1 - distanceFromCenter;
-        if (brightness > 0) {
-          newAlpha = Math.max(0, brightness - distanceFromCenter);
-        }
+        if (brightness > 0) newAlpha = Math.max(0, brightness - distanceFromCenter);
         this.addColorStop(distanceFromCenter, rgba(~~newRed, ~~newGreen, ~~newBlue, newAlpha));
       }
     } else {
@@ -2178,29 +2151,11 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
     let ny1 = Number(y1);
     let nr2 = Number(r2);
 
-    let clip = false;
+    // if not clipped
+    if (!(nx1 - nr2 > maxX || ny1 - nr2 > maxY || nx1 + nr2 < 0 || nx1 + nr2 < 0)) {
+      if (!brightness) brightness = 0.0;
+      if (!direction) direction = 0;
 
-    if (nx1 - nr2 > maxX) {
-      clip = true;
-    }
-    if (ny1 - nr2 > maxY) {
-      clip = true;
-    }
-    if (nx1 + nr2 < 0) {
-      clip = true;
-    }
-    if (nx1 + nr2 < 0) {
-      clip = true;
-    }
-
-    if (clip == false) {
-
-      if (!brightness) {
-        brightness = 0.0;
-      }
-      if (!direction) {
-        direction = 0;
-      }
       let ctxMul = this.multiply._context;
       let ctxAdd = this.additive._context;  // Additive lighting context
       let wait = Math.floor((Math.random() * 8) + 1);
