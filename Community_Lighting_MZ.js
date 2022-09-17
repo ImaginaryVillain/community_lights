@@ -876,6 +876,115 @@ Imported[Community.Lighting.name] = true;
 * - Sets the current screen tint to the color (c)
 * Tint daylight
 * - Sets the tint based on the current hour.
+* -------------------------------------------------------------------------------
+* Plugin Commands (for MZ these use the new plugin interface)
+* -------------------------------------------------------------------------------
+* Light deactivate|activate
+* - Completely disables the lighting effects of this plugin
+*
+* Light on id
+* - Turn on light with matching id number
+*
+* Light off id
+* - Turn off light with matching id number
+*
+* Light color id c
+* - Change the color (c) of lightsource with id (id)
+* - Work even if the associated light is currently off.
+* - Will be in effect until conditional lights are resetted
+* - If c is set to 'defaultcolor' (without the quotes),
+*      it will reset the light back to its initial color.
+*
+* Light switch reset
+* - Reset all conditional lights.
+*
+* Light radius r c b
+* - Change player light radius (r), color (c), and brightness (b)
+*
+* Light radiusgrow r c b t
+* - Same as above, but apply changes over time.
+*   The duration is either (t) frames or 500 frames if (t) isn't specified.
+*
+* Setfire r s
+* - Alters fire settings with radius shift (r) and red/yellow color shift (s)
+*
+* Flashlight on bl bw c bd
+* - turn on flashlight for player with beam length (bl), beam width (hw), color (c),
+*   and beam density (bd)
+*
+* Flashlight off
+* - Turn off the flashlight.  yup.
+*
+* DayNight on|off
+* - Activates or deactivates the day/night cycle. Defaults to on.
+*
+* Daynight speed n
+* - Changes the speed by which hours pass in game in relation to real life seconds
+*
+* Daynight hour h m
+* - Sets the in game time to hh:mm
+*
+* Daynight color h c
+* - Sets the hour (h) to use color (c)
+*
+* Daynight add h m
+* - Adds the specified hours (h) and minutes (m) to the in game clock
+*
+* Daynight subtract h m
+* - Subtracts the specified hours (h) and minutes (m) from the in game clock
+*
+* Daynight show
+* - Shows the current time of day in the upper right corner of the map screen (h:mm)
+*
+* Daynight showseconds
+* - Shows the current time of day in the upper right corner of the map screen (h:mm:ss)
+*
+* Daynight hide
+* - Hides the current time of day mini-window
+*
+* Daynight hoursinday h
+* - Sets the number of hours in a day to [h] (set hour colors  if doing this)
+*
+* Tint set c [s]
+* Tint fade c [s]
+* - Sets or fades the current screen tint to the color (c)
+* - The optional argument speed (s) sets the fade speed (1 = fast, 20 = very slow)
+* - Both commands operate identically.
+*
+* Tint reset [s]
+* Tint daylight [s]
+* - Resets or fades the tint based on the current hour.
+* - The optional argument speed (s) sets the fade speed (1 = fast, 20 = very slow)
+* - Both commands operate identically.
+*
+* TileLight   id ON c r
+* RegionLight id ON c r
+* - Turns on lights for tile tag or region tag (id) using color (c) and radius (r)
+* - Replace ON with OFF to turn them off
+*
+* TileFire, TileGlow, RegionFire, RegionGlow
+* - Same as above, but different lighting effects
+*
+* TileBlock id ON color
+* - Turns on light blocking for tile with tiletag id (id) using color (color)
+*
+* TileBlock id OFF
+* - Turns off light blocking for tile with tiletag id (id)
+*
+* RegionBlock id ON color
+* - Turns on light blocking for tile with region id (id) using color (color)
+*
+* RegionBlock id OFF
+* - Turns off light blocking for tile with region id (id)
+*
+* RegionBlock id ON color shape xoffset yoffset width height
+* - id      id of region
+* - color   color of block (usually #000000)
+* - shape   1=square, 2=oval
+* - xoffset x offset
+* - yoffset y offset
+* - width   width of shape
+* - height  height of shape
 *
 * --------------------------------------------------------------------------
 * Kill Switch and conditional lighting
@@ -907,14 +1016,18 @@ Imported[Community.Lighting.name] = true;
 * Plugin Commands - Battle
 * -------------------------------------------------------------------------------
 *
-* Set Tint [c] [s]
+* TintBattle set [c] [s]
+* TintBattle fade [c] [s]
 * - Sets or fades the battle screen to the color (c)
 * - The optional argument speed (s) sets the fade speed (1 = fast, 20 = very slow)
 * - Automatically set too dark color to '#666666' (dark gray).
+* - Both commands operate identically.
 *
-* Reset Battle Tint [s]
+* TintBattle reset [s]
+* TintBattle daylight [s]
 * - Resets or fades the battle screen to its original color.
 * - The optional argument speed (s) sets the fade speed (1 = fast, 20 = very slow)
+* - Both commands operate identically.
 *
 * --------------------------------------------------------------------------
 * Lights Active Radius
@@ -1536,7 +1649,7 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
     if (result) this[result](command, args);
   };
 
-  (function () { // don't pollute the namespace.
+  if (isRMMZ()) { // RMMZ only command interface
     let mapOnOff = (args) => args.enabled === "true" ? "on" : "off";
 
     let tileType = (args) => (args.tileType === "terrain" ? "tile" : "region") + (args.lightType ? args.lightType : "block");
@@ -1567,7 +1680,7 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
     reg("lightColor",         (a)  => f("light",      ["color",         a.id,            a.color]));
     reg("resetLightSwitches", ( )  => f("light",      ["switch",        "reset"]));
     reg("resetBattleTint",    (a)  => f("tintbattle", ["reset",         a.fadeSpeed]));
-  })();
+  }
 
   /**
    *

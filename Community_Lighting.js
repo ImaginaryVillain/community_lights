@@ -15,7 +15,6 @@ if (typeof require !== "undefined" && typeof module != "undefined") {
   } = require("../rpg_objects");
   var {
     PluginManager,
-    BattleManager,
     ConfigManager,
   } = require("../rpg_managers");
   var { Window_Selectable, Window_Options } = require("../rpg_windows");
@@ -74,7 +73,7 @@ Imported[Community.Lighting.name] = true;
 *
 * @param Daynight Cycle
 * @parent ---General Settings---
-* @desc Should the brightness change over time
+* @desc Should the tint change over time. Must also be enabled in individual maps.
 * @type boolean
 * @default true
 *
@@ -307,10 +306,7 @@ Imported[Community.Lighting.name] = true;
 * --------------------------------------------------------------------------
 * Events
 * --------------------------------------------------------------------------
-* DayNight
-* - Activates day/night cycle.  Put in map note or event note
-*
-* Light radius [cycle] color [day|night] [brightness] [direction] [x] [y] [id]
+* Light radius [cycle] color [onoff] [day|night] [brightness] [direction] [x] [y] [id]
 * - Light
 * - radius      100, 250, etc
 * - cycle       Allows any number of color + duration pairs to follow that will be
@@ -319,6 +315,7 @@ Imported[Community.Lighting.name] = true;
 *               In Terrax Lighting, there was a hard limit of 4, but now you can use
 *               as many as you want. [optional]
 * - color       #ffffff, #ff0000, etc
+* - onoff:      Initial state:  0, 1, off, on (default). Ignored if day|night passed [optional]
 * - day         Causes the light to only come on during the day [optional]
 * - night       Causes the light to only come on during the night [optional]
 * - brightness  B50, B25, etc [optional]
@@ -328,12 +325,14 @@ Imported[Community.Lighting.name] = true;
 *               D11 s.-w. corner, D12 n.-w. corner  [optional]
 * - x           x offset [optional] (0.5: half tile, 1 = full tile, etc)
 * - y           y offset [optional]
-* - id          1, 2, 2345, etc--an id number for plugin commands [optional]
+* - id          1, 2, potato, etc. An id (alphanumeric) for plugin commands [optional]
+*               These should not begin with 'd', 'x' or 'y' otherwise
+*               they will be mistaken for one of the previous optional parameters.
 *
 * Fire ...params
 * - Same as Light params above, but adds a subtle flicker
 *
-* Flashlight [bl] [bw] [c] [onoff] [sdir|angle] [x] [y] [id]
+* Flashlight bl bw [cycle] color [onoff] [day|night] [sdir|angle] [x] [y] [id]
 * - Sets the light as a flashlight with beam length (bl) beam width (bw) color (c),
 *      0|1 (onoff), and 1=up, 2=right, 3=down, 4=left for static direction (sdir)
 * - bl:       Beam length:  Any number, optionally preceded by "L", so 8, L8
@@ -342,17 +341,18 @@ Imported[Community.Lighting.name] = true;
 *             cycled through before repeating from the beginning:
 *             <cl: Flashlight l8 w12 cycle #f00 15 #ff0 15 #0f0 15 on someId d3>
 *             There's no limit to how many colors can be cycled. [optional]
-* - onoff:    Initial state:  0, 1, off, on
+* - color     #ffffff, #ff0000, etc
+* - onoff:    Initial state:  0, 1, off, on (default). Ignored if day|night passed [optional]
+* - day       Sets the event's light to only show during the day [optional]
+* - night     Sets the event's light to only show during night time [optional]
 * - sdir:     Forced direction (optional): 0:auto, 1:up, 2:right, 3:down, 4:left
 *             Can be preceded by "D", so D4.  If omitted, defaults to 0
 * - angle:    Forced direction in degrees (optional): must be preceded by "A". If
-*             omitted, sdir is used.
+*             omitted, sdir is used. [optional]
 * - x         x[offset] Work the same as regular light [optional]
 * - y         y[offset] [optional]
-* - day       Sets the event's light to only show during the day [optional]
-* - night     Sets the event's light to only show during night time [optional]
 * - id        1, 2, potato, etc. An id (alphanumeric) for plugin commands [optional]
-*             Those should not begin with 'a', 'd', 'x' or 'y' otherwise
+*             These should not begin with 'a', 'd', 'x' or 'y' otherwise
 *             they will be mistaken for one of the previous optional parameters.
 *
 * Example note tags:
@@ -452,7 +452,7 @@ Imported[Community.Lighting.name] = true;
 * Tint daylight
 * - Sets the tint based on the current hour.
 * -------------------------------------------------------------------------------
-* Plugin Commands
+* Plugin Commands (for MZ these use the new plugin interface)
 * -------------------------------------------------------------------------------
 * Light deactivate|activate
 * - Completely disables the lighting effects of this plugin
@@ -489,6 +489,9 @@ Imported[Community.Lighting.name] = true;
 *
 * Flashlight off
 * - Turn off the flashlight.  yup.
+*
+* DayNight on|off
+* - Activates or deactivates the day/night cycle. Defaults to on.
 *
 * Daynight speed n
 * - Changes the speed by which hours pass in game in relation to real life seconds
@@ -619,6 +622,7 @@ Number.prototype.is           = function (...a) { return a.includes(Number(this)
 Number.prototype.inRange      = function (min, max) { return this >= min && this <= max; };
 String.prototype.equalsIC     = function (...a) { return a.map(s => s.toLowerCase()).includes(this.toLowerCase()); };
 String.prototype.startsWithIC = function (s) { return this.toLowerCase().startsWith(s.toLowerCase()); };
+Math.minmax                   = function (minOrMax, ...a) { return minOrMax ? Math.min(...a) : Math.max(...a); }; // min if positive
 
 let isRMMZ = () => Utils.RPGMAKER_NAME === "MZ";
 let isRMMV = () => Utils.RPGMAKER_NAME === "MV";
@@ -635,13 +639,159 @@ function orBoolean(...a) {
 function orNullish(...a) { for (let i = 0; i < a.length; i++) if (a[i] != null) return a[i]; }
 function orNaN(...a)     { for (let i = 0; i < a.length; i++) if (!isNaN(a[i])) return a[i]; }
 
-let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-9A-F]{8}$)/i; // a|A before # for additive lighting
+const isValidColorRegex = /^[Aa]?#[A-F\d]{8}$/i; // a|A before # for additive lighting
+
+class VRGBA { // Class to handle volumetric/additive coloring with rgba colors uniformly
+  constructor(vOrHex, rOrDefault = "#000000ff", g = undefined, b = undefined, a = 0xff) {
+    if (vOrHex != null && vOrHex.constructor === VRGBA) { // passed another VRGBA instance
+      Object.assign(this, vOrHex);
+    } else if (typeof vOrHex === "boolean") { // Passed v, r, g, b, a
+      [this.v, this.r, this.g, this.b, this.a] = [vOrHex, +rOrDefault || 0, +g || 0, +b || 0, +a || 0xff];
+    } else if (vOrHex == null || typeof vOrHex === "string") { // passed a hex String or nullish
+      vOrHex = this.validateHex(vOrHex, rOrDefault);
+      this.v = vOrHex.startsWithIC("a#");
+      const shift = this.v ? 1 : 0; // shift for volumetric/additive prefix
+      this.r = parseInt(vOrHex.slice(1 + shift, 3 + shift), 16); // red
+      this.g = parseInt(vOrHex.slice(3 + shift, 5 + shift), 16); // green
+      this.b = parseInt(vOrHex.slice(5 + shift, 7 + shift), 16); // blue
+      this.a = parseInt(vOrHex.slice(7 + shift, 9 + shift), 16); // alpha
+    } else {
+      throw Error(`${Community.Lighting.name} - VRGBA constructor given incorrect parameters!`);
+    }
+  }
+
+  set(setters) { for (let k in setters) if (this[k] != null) this[k] = setters[k]; }
+
+  equals(that) { // fastest non-exactness comparison -- only checks v, r, g, b, a properties
+    if (that && this.v == that.v && this.r == that.r && this.g == that.g && this.b == that.b && this.a == that.a)
+      return true;
+    return false;
+  }
+
+  magnitude() { return this.r + this.g + this.b; }
+
+  validateHex(hex, alt) {
+    hex = this.normalizeHex(hex);
+    if (!hex) return this.validateHex(alt, "#000000ff");
+    else if (!isValidColorRegex.test(hex)) {
+      console.log(`${Community.Lighting.name} - Invalid Color: ` + hex);
+      return this.validateHex(alt, "#000000ff");
+    }
+    return hex;
+  }
+
+  normalizeHex(hex) {
+    if (typeof hex !== "string") return undefined;                 // short circuit
+    let h = hex.toLowerCase().trim();
+    const s = hex.startsWithIC("a#") ? 1 : 0;                        // shift
+    if (h.length == 4 + s) h += "f";                               // normalize #RGB format
+    if (h.length == 5 + s) h = h.replace(/(^a?#)|(.)/g, "$1$2$2"); // normalize #RGBA
+    if (h.length == 7 + s) h += "ff";                              // normalize #RRGGBB format
+    return h;                                                      // return RRGGBBAA
+  }
+
+  toHex(setWebSafe = false, setters = undefined) {
+    let temp = new VRGBA(this); // create temporary copy
+    for (let k in setters) if (temp[k]) temp[k] = setters[k]; // assign temporary setters
+    if (temp.r.inRange(0, 255) && temp.g.inRange(0, 255) && temp.b.inRange(0, 255) && temp.a.inRange(0, 255)) {
+      let rHex = (temp.r < 16 ? "0" : "") + Math.floor(temp.r).toString(16); // clamp to whole numbers
+      let gHex = (temp.g < 16 ? "0" : "") + Math.floor(temp.g).toString(16);
+      let bHex = (temp.b < 16 ? "0" : "") + Math.floor(temp.b).toString(16);
+      let aHex = (temp.a < 16 ? "0" : "") + Math.floor(temp.a).toString(16);
+      return (temp.v && !setWebSafe ? "a" : "") + "#" + rHex + gHex + bHex + aHex;
+    }
+    return null; // The hex color code doesn't exist
+  }
+
+  toWebHex(setters) { return this.toHex(true, setters); }
+}
+
+/**
+ *
+ * @param {Number} r
+ * @param {Number} g
+ * @param {Number} b
+ * @param {Number} a
+ * @returns {String}
+ */
+  function rgba(r, g, b, a) {
+    return "rgba(" + r + "," + g + "," + b + "," + a + ")";
+}
 
 (function ($$) {
   let isOn = (x) => x.toLowerCase() === "on";
   let isOff = (x) => x.toLowerCase() === "off";
   let isActivate = (x) => x.toLowerCase() === "activate";
   let isDeactivate = (x) => x.toLowerCase() === "deactivate";
+
+  /**
+   * Gets the value at the  specified index of the $gameTemp object.
+   * @param {String} index
+   * @returns {any}
+   */
+  let get = (index) => $gameTemp[index];
+
+  /**
+   * Sets the value at the specified index of the $gameTemp object.
+   * @param {String} index
+   * @param {any}    value
+   */
+  let set = (index, value) => $gameTemp[index] = value;
+
+  /**
+   * Tests the value at the specified index of the $gameTemp object for equality with the
+   * passed in value and sets it. Returns true if the values match, or false otherwise.
+   * @param {String} index
+   * @param {any}    value
+   * @returns {Boolean}
+   */
+  let testAndSet = (index, value) => {
+    if ($gameTemp[index] && ($gameTemp[index] == value ||
+       ($gameTemp[index].equal && $gameTemp[index].equal(value))))
+        return false;
+    return ($gameTemp[index] = value, true);
+  };
+
+  /**
+   * Computes and returns the next tint color based off of the current tint, target tint, and speed.
+   * @param {VRGBA} current
+   * @param {VRGBA} target
+   * @param {Number} speed
+   * @returns {VRGBA}
+   */
+  class PIXI_Container_Extender extends PIXI.Container {
+    computeNextTint(current, target, speed) {
+      if (current.equals(target)) return target; // Already equal so short-circuit
+
+      // only compute new delta on target or speed change
+      let delta = get('_tintDelta');
+      if (!delta || testAndSet('_OldTintTarget', target) || testAndSet('_OldTintSpeed', speed)) {
+        // tint delta based off of remainder of time in hour if not battle, daynight cycle, & tint enabled OR 60
+        let useMinutesRemaining = !$gameParty.inBattle() && daynightCycleEnabled && daynightTintEnabled;
+        let minutes = 60 - (useMinutesRemaining ? $$.minutes() : 0);
+        // Get deltas for each color.
+        delta = new VRGBA(target.v, // divide by zero is +inf or -inf so deltas work for speed = 0
+          (target.r - current.r) / (minutes * speed),
+          (target.g - current.g) / (minutes * speed),
+          (target.b - current.b) / (minutes * speed),
+          (target.a - current.a) / (minutes * speed));
+
+        set('_tintDelta', delta); // set new tint.
+      }
+
+      // Compute next color step
+      let out = new VRGBA(delta.v, current.r + delta.r, current.g + delta.g, current.b + delta.b, current.a + delta.a);
+
+      // Clamp to target
+      if ((out.r > current.r && out.r > target.r) || (out.r < current.r && out.r < target.r)) out.r = target.r;
+      if ((out.g > current.g && out.g > target.g) || (out.g < current.g && out.g < target.g)) out.g = target.g;
+      if ((out.b > current.b && out.b > target.b) || (out.b < current.b && out.b < target.b)) out.b = target.b;
+      if ((out.a > current.a && out.a > target.a) || (out.a < current.a && out.a < target.a)) out.a = target.a;
+
+      return out;
+    }
+  }
+  PIXI.Container.prototype = PIXI_Container_Extender.prototype;
 
   // Map community light directions to polar angles (360 degrees)
   const CLDirectionMap = {
@@ -696,9 +846,9 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
       this.lightType  = LightType[lightType];
       this.id         = +id || 0;
       this.enabled    = isOn(onoff);
-      this.color      = $$.validateColor(color, "#ffffff");
+      this.color      = new VRGBA(color);
       this.radius     = +radius || 0;
-      this.brightness = brightness && (brightness.substr(1, brightness.length) / 100).clamp(0, 1) || $$.defaultBrightness || 0;
+      this.brightness = brightness && (brightness.slice(1, brightness.length) / 100).clamp(0, 1) || $$.defaultBrightness || 0;
     }
   }
 
@@ -707,7 +857,7 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
       this.tileType    = TileType[tileType];
       this.id          = +id || 0;
       this.enabled     = isOn(onoff);
-      this.color       = $$.validateColor(color, "#ffffff");
+      this.color       = new VRGBA(color);
       this.shape       = +shape || 0;
       this.xOffset     = +xOffset || 0;
       this.yOffset     = +yOffset || 0;
@@ -747,7 +897,8 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
   let dayNightSaveNight = Number(parameters["Save Night Switch"]) || 0;
   let dayNightNoAutoshadow = orBoolean(parameters["No Autoshadow During Night"], false);
   let hideAutoShadow = false;
-  let brightnessOverTime = orBoolean(parameters['Daynight Cycle'], true);
+  let daynightCycleEnabled = orBoolean(parameters['Daynight Cycle'], true);
+  let daynightTintEnabled = false;
   let dayNightList = (function (dayNight, nightHours) {
     let result = [];
     try {
@@ -755,11 +906,11 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
       nightHours = nightHours.split(",").map(x => x = +x);
       result = [];
       for (let i = 0; i < dayNight.length; i++)
-        result[i] = { "color": dayNight[i], "isNight": nightHours.contains(i) };
+        result[i] = { "color": new VRGBA(dayNight[i]), "isNight": nightHours.contains(i) };
     }
     catch (e) {
       console.log(`${Community.Lighting.name} - Night Hours and/or DayNight Colors contain invalid JSON data - cannot parse.`);
-      result = new Array(24).fill(undefined).map(() => ({ "color": "#000000", "isNight": false }));
+      result = new Array(24).fill(undefined).map(() => ({ "color": new VRGBA(), "isNight": false }));
     }
     return result;
   })(parameters["DayNight Colors"], parameters["Night Hours"]);
@@ -783,15 +934,9 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
   let battleMaxX = maxX;
   let battleMaxY = maxY;
   if (isRMMZ()) battleMaxY += 24; // Plus 24 for RMMZ Spriteset_Battle.prototype.battleFieldOffsetY
-  let tint_oldseconds = 0;
-  let tint_timer = 0;
-  let oldseconds = 0;
   let event_reload_counter = 0;
-  let tileglow = 0;
-  let glow_oldseconds = 0;
-  let glow_dir = 1;
   let notetag_reg = RegExp("<" + noteTagKey + ":[ ]*([^>]+)>", "i");
-  let radialColor2 = useSmootherLights == true ? "#00000000" : "#000000";
+  let radialColor2 = new VRGBA(useSmootherLights ? "#00000000" : "#000000");
   $$.getFirstComment = function () {
     let result = null;
     let page = this.page();
@@ -830,12 +975,6 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
     if (pageNote) result = $$.getCLTag(pageNote);
     if (!result) result = $$.getCLTag(note);
     return result || "";
-  };
-  $$.validateColor = function (color, defaultColor = "#ffffff") {
-    let isValid = /^[Aa]?#(?:[A-Fa-f0-9]{3}){1,2}$/.test(color); // a|A before # for additive lighting
-    if (!isValid) console.log("Community_Lighting_MZ - Invalid Color: " + color);
-    let result = isValid ? color : defaultColor;
-    return result.length < 7 ? result[0] + result[1] + result[1] + result[2] + result[2] + result[3] + result[3] : result;
   };
   $$.getDayNightList = function () {
     return dayNightList;
@@ -909,7 +1048,7 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
         if (!isNaN(+x) && this._clRadius === undefined) this._clRadius = +x;
         else if (x.equalsIC("cycle") && this._clColor === undefined) this._clCycle = [];
         else if (this._clCycle && !needsCycleDuration && (x[0].equalsIC("#") || x.slice(0, 2).equalsIC("a#"))) {
-          this._clCycle.push({ "color": $$.validateColor(x), "duration": 1 });
+          this._clCycle.push({ "color": new VRGBA(x), "duration": 1 });
           needsCycleDuration = true;
         }
         else if (this._clCycle && needsCycleDuration && !isNaN(+x)) {
@@ -917,14 +1056,16 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
           needsCycleDuration = false;
         }
         else if ((x[0].equalsIC("#") || x.slice(0, 2).equalsIC("a#")) &&
-                  this._clColor === undefined) this._clColor = $$.validateColor(x);
-        else if (x[0].equalsIC("b") && this._clBrightness === undefined) {
-          this._clBrightness = Number(+(x.substr(1, x.length)) / 100).clamp(0, 1);
-        }
+                  this._clColor === undefined) this._clColor = new VRGBA(x);
+        else if (isOn(x) && this._clOnOff === undefined) this._clOnOff = true;
+        else if (isOff(x) && this._clOnOff === undefined) this._clOnOff = false;
         else if (x.equalsIC("night", "day") && this._clSwitch === undefined) this._clSwitch = x;
-        else if (x[0].equalsIC("d") && this._clDirection === undefined) this._clDirection = +(x.substr(1, x.length));
-        else if (x[0].equalsIC("x") && this._clXOffset === undefined) this._clXOffset = +(x.substr(1, x.length));
-        else if (x[0].equalsIC("y") && this._clYOffset === undefined) this._clYOffset = +(x.substr(1, x.length));
+        else if (x[0].equalsIC("b") && this._clBrightness === undefined) {
+          this._clBrightness = Number(+(x.slice(1, x.length)) / 100).clamp(0, 1);
+        }
+        else if (x[0].equalsIC("d") && this._clDirection === undefined) this._clDirection = +(x.slice(1, x.length));
+        else if (x[0].equalsIC("x") && this._clXOffset === undefined) this._clXOffset = +(x.slice(1, x.length));
+        else if (x[0].equalsIC("y") && this._clYOffset === undefined) this._clYOffset = +(x.slice(1, x.length));
         else if (x.length > 0 && this._clId === undefined) this._clId = x;
       }
     }
@@ -938,11 +1079,11 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
       for (let x of tagData) {
         if (!isNaN(+x) && this._clBeamLength === undefined) this._clBeamLength = +x;
         else if (!isNaN(+x) && this._clBeamWidth === undefined) this._clBeamWidth = +x;
-        else if (x[0].equalsIC("l") && this._clBeamLength === undefined) this._clBeamLength = this._clBeamLength = +(x.substr(1, x.length));
-        else if (x[0].equalsIC("w") && this._clBeamWidth === undefined) this._clBeamWidth = this._clBeamWidth = +(x.substr(1, x.length));
+        else if (x[0].equalsIC("l") && this._clBeamLength === undefined) this._clBeamLength = this._clBeamLength = +(x.slice(1, x.length));
+        else if (x[0].equalsIC("w") && this._clBeamWidth === undefined) this._clBeamWidth = this._clBeamWidth = +(x.slice(1, x.length));
         else if (x.equalsIC("cycle") && this._clColor === undefined) this._clCycle = [];
         else if (this._clCycle && !needsCycleDuration && (x[0].equalsIC("#") || x.slice(0, 2).equalsIC("a#"))) {
-          this._clCycle.push({ "color": $$.validateColor(x), "duration": 1 });
+          this._clCycle.push({ "color": new VRGBA(x), "duration": 1 });
           needsCycleDuration = true;
         }
         else if (this._clCycle && needsCycleDuration && !isNaN(+x)) {
@@ -950,27 +1091,26 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
           needsCycleDuration = false;
         }
         else if ((x[0].equalsIC("#") || x.slice(0, 2).equalsIC("a#")) &&
-                  this._clBeamColor === undefined) this._clColor = $$.validateColor(x);
-        else if (!isNaN(+x) && this._clOnOff === undefined) this._clOnOff = +x;
-        else if (!isNaN(+x) && this._clFlashlightDirection === undefined) this._clFlashlightDirection = +x;
-        else if (isOn(x) && this._clOnOff === undefined) this._clOnOff = 1;
-        else if (isOff(x) && this._clOnOff === undefined) this._clOnOff = 0;
+                  this._clBeamColor === undefined) this._clColor = new VRGBA(x);
+        else if (isOn(x) && this._clOnOff === undefined) this._clOnOff = true;
+        else if (isOff(x) && this._clOnOff === undefined) this._clOnOff = false;
         else if (x.equalsIC("night", "day") && this._clSwitch === undefined) this._clSwitch = x;
-        else if (x[0].equalsIC("d") && this._clFlashlightDirection === undefined) this._clFlashlightDirection = CLDirectionMap[+(x.substr(1, x.length))];
-        else if (x[0].equalsIC("a") && this._clFlashlightDirection === undefined) this._clFlashlightDirection = Math.PI/180*+(x.substr(1, x.length));
-        else if (x[0].equalsIC("x") && this._clXOffset === undefined) this._clXOffset = +(x.substr(1, x.length));
-        else if (x[0].equalsIC("y") && this._clYOffset === undefined) this._clYOffset = +(x.substr(1, x.length));
+        else if (!isNaN(+x) && this._clFlashlightDirection === undefined) this._clFlashlightDirection = +x;
+        else if (x[0].equalsIC("d") && this._clFlashlightDirection === undefined) this._clFlashlightDirection = CLDirectionMap[+(x.slice(1, x.length))];
+        else if (x[0].equalsIC("a") && this._clFlashlightDirection === undefined) this._clFlashlightDirection = Math.PI/180*+(x.slice(1, x.length));
+        else if (x[0].equalsIC("x") && this._clXOffset === undefined) this._clXOffset = +(x.slice(1, x.length));
+        else if (x[0].equalsIC("y") && this._clYOffset === undefined) this._clYOffset = +(x.slice(1, x.length));
         else if (x.length > 0 && this._clId === undefined) this._clId = x;
       }
     }
     this._clRadius = this._clRadius || 0;
-    this._clColor = this._clColor || "#000000";
+    this._clColor = new VRGBA(this._clColor);
     this._clBrightness = this._clBrightness || 0;
     this._clDirection = this._clDirection || 0;
     this._clId = this._clId || 0;
     this._clBeamWidth = this._clBeamWidth || 0;
     this._clBeamLength = this._clBeamLength || 0;
-    this._clOnOff = this._clOnOff || 0;
+    this._clOnOff = orBoolean(this._clOnOff, true);
     this._clFlashlightDirection = this._clFlashlightDirection || undefined; // Must be undefined.
     this._clXOffset = this._clXOffset || 0;
     this._clYOffset = this._clYOffset || 0;
@@ -988,7 +1128,7 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
   };
   Game_Event.prototype.getLightColor = function () {
     if (this._clType === undefined) this.initLightData();
-    return this._clColor;
+    return new VRGBA(this._clColor);
   };
   Game_Event.prototype.getLightBrightness = function () {
     if (this._clType === undefined) this.initLightData();
@@ -1023,16 +1163,9 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
     return this._clYOffset;
   };
   Game_Event.prototype.getLightEnabled = function () {
-    let type = this.getLightType();
-    let result = false;
-    if (this._clSwitch === undefined) {
-      if (type.is(LightType.Flashlight) && this._clOnOff === 1) result = true;
-      else result = true;
-    } else {
-      result = (this._clSwitch.equalsIC("night") && $$.isNight()) ||
-               (this._clSwitch.equalsIC("day") && !$$.isNight());
-    }
-    return result;
+    if (!this._clSwitch) return this._clOnOff;
+    return (this._clSwitch.equalsIC("night") &&  $$.isNight()) ||
+           (this._clSwitch.equalsIC("day")   && !$$.isNight());
   };
   Game_Event.prototype.getLightCycle = function () {
     if (this._clType === undefined) this.initLightData();
@@ -1046,7 +1179,7 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
         this._clCycleIndex++;
         if (this._clCycleIndex >= cycleList.length) this._clCycleIndex = 0;
         if (this._clCycleIndex < cycleList.length) {
-          this._clColor = cycleList[this._clCycleIndex].color;
+          this._clColor = new VRGBA(cycleList[this._clCycleIndex].color);
           this._clCycleTimer = cycleList[this._clCycleIndex].duration;
         }
       }
@@ -1061,13 +1194,10 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
    */
   Game_Interpreter.prototype.pluginCommand = function (command, args) {
     _Game_Interpreter_pluginCommand.call(this, command, args);
-    if (typeof command !== 'undefined') {
-      this.communityLighting_Commands(command, args);
-    }
+    if (typeof command !== 'undefined') this.communityLighting_Commands(command, args);
   };
 
   let _Game_Player_clearTransferInfo = Game_Player.prototype.clearTransferInfo;
-
   Game_Player.prototype.clearTransferInfo = function () {
     _Game_Player_clearTransferInfo.call(this);
     if (reset_each_map) {
@@ -1091,10 +1221,41 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
       script: 'scriptF', reload: 'reload', tintbattle: 'tintbattle'
     };
     const result = allCommands[command];
-    if (result) {
-      this[result](command, args);
-    }
+    if (result) this[result](command, args);
   };
+
+  if (isRMMZ()) { // RMMZ only command interface
+    let mapOnOff = (args) => args.enabled === "true" ? "on" : "off";
+
+    let tileType = (args) => (args.tileType === "terrain" ? "tile" : "region") + (args.lightType ? args.lightType : "block");
+    let tintType = (    ) => $gameParty.inBattle() ? "tintbattle" : "tint";
+
+    let tintMode = (args) => args.color ? "set" : "reset";
+    let mathMode = (args) => args.mode === "set" ? "hour" : args.mode; // set, add, or subtract.
+    let showMode = (args) => args.enabled.equalsIC("true") ? (args.showSeconds.equalsIC("true") ? "showseconds" : "show") : "hide";
+    let radMode  = (args) => +args.fadeSpeed ? "radiusgrow" : "radius";
+
+    let reg = PluginManager.registerCommand.bind(PluginManager, $$.name); // registar bound with first parameter.
+    let f = (cmd, args) => $gameMap._interpreter.communityLighting_Commands(cmd, args.filter(_ => _ !== "")); //command wrapper.
+
+    reg("masterSwitch",       (a)  => f("script",     [mapOnOff(a)]));
+    reg("tileBlock",          (a)  => f(tileType(a),  [a.id,            mapOnOff(a),     a.color,        a.shape,          a.xOffset, a.yOffset, a.blockWidth, a.blockHeight]));
+    reg("tileLight",          (a)  => f(tileType(a),  [a.id,            mapOnOff(a),     a.color,        a.radius,         a.brightness]));
+    reg("setTint",            (a)  => f(tintType(),   [tintMode(a),     a.color,         a.fadeSpeed]));
+    reg("daynightEnable",     (a)  => f("daynight",   [mapOnOff(a)]));
+    reg("setTimeSpeed",       (a)  => f("dayNight",   ["speed",         a.speed]));
+    reg("setTime",            (a)  => f("dayNight",   [mathMode(a),     a.hours,         a.minutes]));
+    reg("setHoursInDay",      (a)  => f("dayNight",   ["hoursinday",    a.hours]));
+    reg("showTime",           (a)  => f("dayNight",   [showMode(a)]));
+    reg("setHourColor",       (a)  => f("dayNight",   ["color", a.hour, a.color]));
+    reg("flashlight",         (a)  => f("flashLight", [mapOnOff(a),     a.beamLength,    a.beamWidth,    a.color,          a.density]));
+    reg("setFire",            (a)  => f("setFire",    [a.radiusShift,   a.redYellowShift]));
+    reg("playerLightRadius",  (a)  => f("light",      [radMode(a),      a.radius,        a.color,        "B"+a.brightness, a.fadeSpeed]));
+    reg("activateById",       (a)  => f("light",      [mapOnOff(a),     a.id]));
+    reg("lightColor",         (a)  => f("light",      ["color",         a.id,            a.color]));
+    reg("resetLightSwitches", ( )  => f("light",      ["switch",        "reset"]));
+    reg("resetBattleTint",    (a)  => f("tintbattle", ["reset",         a.fadeSpeed]));
+  }
 
   /**
    *
@@ -1133,27 +1294,28 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
    * @param {String} command
    * @param {String[]} args
    */
-  Game_Interpreter.prototype.tint = function (command, args) {
-    $$.tint(args);
-  };
+  Game_Interpreter.prototype.tint = (command, args) => $$.tint(args);
 
   /**
    *
    * @param {String} command
    * @param {String[]} args
    */
-  Game_Interpreter.prototype.dayNight = function (command, args) {
-    $$.DayNight(args);
-  };
+  Game_Interpreter.prototype.tintbattle = (command, args) => $$.tintbattle(args);
+
+  /**
+   *
+   * @param {String} command
+   * @param {String[]} args
+   */
+  Game_Interpreter.prototype.dayNight = (command, args) => $$.DayNight(args);
 
   /**
      *
      * @param {String} command
      * @param {String[]} args
      */
-  Game_Interpreter.prototype.flashLight = function (command, args) {
-    $$.flashlight(args);
-  };
+  Game_Interpreter.prototype.flashLight = (command, args) => $$.flashlight(args);
 
   /**
    *
@@ -1214,48 +1376,12 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
     }
   };
 
-  Game_Interpreter.prototype.tintbattle = function (command, args) {
-    if ($gameParty.inBattle()) {
-      let cmd = args[0].trim();
-      if (cmd.equalsIC("set", 'fade')) {
-        $gameTemp._BattleTintFade = $gameTemp._BattleTint;
-        $gameTemp._BattleTintTimer = 0;
-        $gameTemp._BattleTint = this.determineBattleTint(args[1]);
-        $gameTemp._BattleTintSpeed = +args[2] || 0;
-      }
-      else if (cmd.equalsIC('reset', 'daylight')) {
-        $gameTemp._BattleTintTimer = 0;
-        $gameTemp._BattleTint = $gameTemp._MapTint;
-        $gameTemp._BattleTintSpeed = +args[1] || 0;
-      }
-    }
-  };
-
-  Game_Interpreter.prototype.determineBattleTint = function (tintColor) {
-    if (!tintColor || tintColor.length < 7) {
-      return '#666666'; // Not an hex color string
-    }
-    let redhex = tintColor.substring(1, 3);
-    let greenhex = tintColor.substring(3, 5);
-    let bluehex = tintColor.substring(5);
-    let red = parseInt(redhex, 16);
-    let green = parseInt(greenhex, 16);
-    let blue = parseInt(bluehex, 16);
-    let color = red + green + blue;
-    if (color < 300 && red < 100 && green < 100 && blue < 100) { // Check for NaN values or too dark colors
-      return '#666666'; // The player have to see something
-    }
-    return tintColor;
-  };
-
   Spriteset_Map.prototype.createLightmask = function () {
     this._lightmask = new Lightmask();
     this.addChild(this._lightmask);
   };
 
-  function Lightmask() {
-    this.initialize.apply(this, arguments);
-  }
+  function Lightmask() { this.initialize.apply(this, arguments); }
 
   Lightmask.prototype = Object.create(PIXI.Container.prototype);
   Lightmask.prototype.constructor = Lightmask;
@@ -1270,14 +1396,10 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
 
   //Updates the Lightmask for each frame.
 
-  Lightmask.prototype.update = function () {
-    this._updateMask();
-  };
+  Lightmask.prototype.update = function () { this._updateMask(); };
 
   //@method _createBitmaps
-  Lightmask.prototype._createBitmaps = function () {
-    this._maskBitmaps = new Mask_Bitmaps(maxX + lightMaskPadding, maxY);
-  };
+  Lightmask.prototype._createBitmaps = function () { this._maskBitmaps = new Mask_Bitmaps(maxX + lightMaskPadding, maxY); };
 
   let _Game_Map_prototype_setupEvents = Game_Map.prototype.setupEvents;
   Game_Map.prototype.setupEvents = function () {
@@ -1304,19 +1426,13 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
     }
 
     // reload mapevents if event_data has changed (deleted or spawned events/saves)
-    if (event_eventcount != $gameMap.events().length) {
-      $$.ReloadMapEvents();
-    }
+    if (event_eventcount != $gameMap.events().length) $$.ReloadMapEvents();
 
-    // remove old sprites
-    for (let i = 0, len = this._sprites.length; i < len; i++) { // remove all old sprites
-      this._removeSprite();
-    }
+    // remove all old sprites
+    for (let i = 0, len = this._sprites.length; i < len; i++) this._removeSprite();
 
-    if (map_id <= 0) return;                               // No lighting on map 0
-    if (options_lighting_on !== true) return;              // Plugin deactivated in the option
-    if ($gameVariables.GetScriptActive() !== true) return; // Plugin deactivated by plugin command
-
+    // No lighting on maps less than 1 || Plugin deactivated in options || Plugin deactivated by plugin command
+    if (map_id <= 0 || !options_lighting_on || !$gameVariables.GetScriptActive()) return;
 
     // reload map events every 200 cycles just in case or when a refresh is requested
     event_reload_counter++;
@@ -1325,10 +1441,12 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
       $$.ReloadMapEvents();
     }
 
-    if (light_event_required && eventObjId.length <= 0) return; // If no lightsources on this map, no lighting if light_event_required set to true.
+    // If no lightsources on this map, no lighting if light_event_required set to true.
+    if (light_event_required && eventObjId.length <= 0) return;
 
     this._addSprite(-lightMaskPadding, 0, this._maskBitmaps.multiply, PIXI.BLEND_MODES.MULTIPLY);
     this._addSprite(-lightMaskPadding, 0, this._maskBitmaps.additive, PIXI.BLEND_MODES.ADD);
+
     // ******** GROW OR SHRINK GLOBE PLAYER *********
     let firstrun = $gameVariables.GetFirstRun();
     if (firstrun === true) {
@@ -1338,31 +1456,14 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
     } else {
       player_radius = $gameVariables.GetRadius();
     }
-    let lightgrow_value = player_radius;
+
+    // compute radius lightgrow.
     let lightgrow_target = $gameVariables.GetRadiusTarget();
-    let lightgrow_speed = $gameVariables.GetRadiusSpeed();
-
-    if (lightgrow_value < lightgrow_target) {
-      lightgrow_value = lightgrow_value + lightgrow_speed;
-      if (lightgrow_value > lightgrow_target) {
-        //other wise it can keep fliping back and forth between > and <
-        lightgrow_value = lightgrow_target;
-      }
-      player_radius = lightgrow_value;
-    }
-    if (lightgrow_value > lightgrow_target) {
-      lightgrow_value = lightgrow_value - lightgrow_speed;
-      if (lightgrow_value < lightgrow_target) {
-        //other wise it can keep fliping back and forth between > and <
-        lightgrow_value = lightgrow_target;
-      }
-      player_radius = lightgrow_value;
-    }
-
+    let lightgrow_speed = (player_radius < lightgrow_target ? 1 : -1) * $gameVariables.GetRadiusSpeed();
+    player_radius = Math.minmax(lightgrow_speed > 0, player_radius + lightgrow_speed, lightgrow_target); // compute and clamp
     $gameVariables.SetRadius(player_radius);
 
     // ****** PLAYER LIGHTGLOBE ********
-
     let ctxMul = this._maskBitmaps.multiply.context;
     let ctxAdd = this._maskBitmaps.additive.context;
     this._maskBitmaps.multiply.fillRect(0, 0, maxX + lightMaskPadding, maxY, '#000000');
@@ -1407,24 +1508,11 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
       y1 = y1 - flashlightYoffset;
       if (iplayer_radius < 100) {
         // dim the light a bit at lower lightradius for a less focused effect.
-        let add = playercolor[0].equalsIC('a') ? 'a' : ''; // additive lighting
-        let c = hex2rgba(playercolor);
-        c.g = c.g - 50;
-        c.r = c.r - 50;
-        c.b = c.b - 50;
-        if (c.g < 0) {
-          c.g = 0;
-        }
-        if (c.r < 0) {
-          c.r = 0;
-        }
-        if (c.b < 0) {
-          c.b = 0;
-        }
-        if (c.a < 0) {
-          c.a = 0;
-        }
-        let newcolor = add + rgba2hex(c.r, c.g, c.b, c.a);
+        let c = playercolor;
+        c.r = Math.max(0, c.r - 50);
+        c.g = Math.max(0, c.g - 50);
+        c.b = Math.max(0, c.b - 50);
+        let newcolor = c;
 
         this._maskBitmaps.radialgradientFillRect(x1, y1, 0, iplayer_radius, newcolor, radialColor2, playerflicker, playerbrightness);
       } else {
@@ -1433,42 +1521,37 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
 
     }
 
-
     // *********************************** DAY NIGHT CYCLE TIMER **************************
-
-    let daynightspeed = $gameVariables.GetDaynightSpeed();
-
-    if (daynightspeed > 0 && daynightspeed < 5000 && brightnessOverTime) {
-
-      let datenow = new Date();
-      let seconds = Math.floor(datenow.getTime() / 10);
-      if (seconds > oldseconds) {
+    if (daynightCycleEnabled) { //
+      let daynightspeed = $gameVariables.GetDaynightSpeed();
+      if (daynightspeed > 0 && daynightspeed < 5000) {
 
         let daynighttimer = $gameVariables.GetDaynightTimer();     // timer = minutes * speed
         let daynightcycle = $gameVariables.GetDaynightCycle();     // cycle = hours
         let daynighthoursinday = $gameVariables.GetDaynightHoursinDay();   // 24
 
-        oldseconds = seconds;
-        daynighttimer = daynighttimer + 1;
-        let daynightminutes = Math.floor(daynighttimer / daynightspeed);
-        let daynighttimeover = daynighttimer - (daynightspeed * daynightminutes);
-        let daynightseconds = Math.floor(daynighttimeover / daynightspeed * 60);
+        if (testAndSet('_daynightTimeout', Math.floor((new Date()).getTime() / 10))) {
+          daynighttimer = daynighttimer + 1;
+          let daynightminutes = Math.floor(daynighttimer / daynightspeed);
+          let daynighttimeover = daynighttimer - (daynightspeed * daynightminutes);
+          let daynightseconds = Math.floor(daynighttimeover / daynightspeed * 60);
 
-        if (daynighttimer >= (daynightspeed * 60)) {
-          daynightcycle = daynightcycle + 1;
-          if (daynightcycle >= daynighthoursinday) daynightcycle = 0;
-          daynighttimer = 0;
+          if (daynighttimer >= (daynightspeed * 60)) {
+            daynightcycle = daynightcycle + 1;
+            if (daynightcycle >= daynighthoursinday) daynightcycle = 0;
+            daynighttimer = 0;
+          }
+          $$.saveTime(daynightcycle, daynightminutes, daynightseconds);
+          $gameVariables.SetDaynightTimer(daynighttimer);     // timer = minutes * speed
+          $gameVariables.SetDaynightCycle(daynightcycle);     // cycle = hours
         }
-        $$.saveTime(daynightcycle, daynightminutes, daynightseconds);
-        $gameVariables.SetDaynightTimer(daynighttimer);     // timer = minutes * speed
-        $gameVariables.SetDaynightCycle(daynightcycle);     // cycle = hours
+
+        // Set target to next hour tint if enabled
+        if (daynightTintEnabled) $gameVariables.SetTintTarget($gameVariables.GetTintByTime(1), daynightspeed);
       }
     }
 
     // ********** OTHER LIGHTSOURCES **************
-
-
-
     for (let i = 0, len = eventObjId.length; i < len; i++) {
       let evid = event_id[i];
       let cur = $gameMap.events()[eventObjId[i]];
@@ -1502,17 +1585,15 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
 
           let brightness = cur.getLightBrightness();
           let direction = cur.getLightDirection();
+          let state = cur.getLightEnabled(); // checks for on, off, day, and night
           // conditional lighting
           let lightid = cur.getLightId();
-          let state = cur.getLightEnabled();
           if (lightid) {
-            state = false;
-
             let lightarray = $gameVariables.GetLightArray();
             if (lightarray[lightid]) {
-              let tcolorvalue;
-              [state, tcolorvalue] = lightarray[lightid];
-              if (tcolorvalue != 'defaultcolor') colorvalue = tcolorvalue;
+              let [tstate, tcolorvalue] = lightarray[lightid];
+              if (tstate != null) state = tstate;
+              if (tcolorvalue != null) colorvalue = tcolorvalue; // no color so use default
             }
 
             // Set kill switch to ON if the conditional light is deactivated,
@@ -1546,31 +1627,24 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
 
               let tldir = cur.getLightFlashlightDirection();
               if (!isNaN(tldir)) ldir = tldir;
-              this._maskBitmaps.radialgradientFlashlight(lx1, ly1, colorvalue, '#000000', ldir, flashlength, flashwidth);
+              this._maskBitmaps.radialgradientFlashlight(lx1, ly1, colorvalue, new VRGBA(), ldir, flashlength, flashwidth);
             } else if(lightType.is(LightType.Light, LightType.Fire)) {
-              this._maskBitmaps.radialgradientFillRect(lx1, ly1, 0, light_radius, colorvalue, '#000000', objectflicker, brightness, direction);
+              this._maskBitmaps.radialgradientFillRect(lx1, ly1, 0, light_radius, colorvalue, new VRGBA(), objectflicker, brightness, direction);
             }
           }
         }
       }
     }
 
-
     // *************************** TILE TAG *********************
     //glow/colorfade
-    let glowdatenow = new Date();
-    let glowseconds = Math.floor(glowdatenow.getTime() / 100);
-
-    if (glowseconds > glow_oldseconds) {
-      glow_oldseconds = glowseconds;
-      tileglow = tileglow + glow_dir;
-
-      if (tileglow > 120) {
-        glow_dir = -1;
-      }
-      if (tileglow < 1) {
-        glow_dir = 1;
-      }
+    if (testAndSet('_glowTimeout', Math.floor((new Date()).getTime() / 100))) {
+      let glowAmount    = orNaN(get('_glowAmount'), 0);
+      let glowDirection = orNaN(get('_glowDirection'), 1);
+      glowAmount += glowDirection;
+      if (glowAmount > 120) set('_glowDirection', -1);
+      if (glowAmount < 1)   set('_glowDirection', 1);
+      set('_glowAmount', glowAmount);
     }
 
     light_tiles = $gameVariables.GetLightTiles();
@@ -1584,24 +1658,15 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
       let objectflicker = tile.lightType.is(LightType.Fire);
       let tile_color = tile.color;
       if (tile.lightType.is(LightType.Glow)) {
-        let add = tile.color[0].equalsIC('a') ? 'a' : ''; // additive lighting
-        let c = hex2rgba(tile.color);
-        c.r = Math.floor(c.r + (60 - tileglow));
-        c.g = Math.floor(c.g + (60 - tileglow));
-        c.b = Math.floor(c.b + (60 - tileglow));
-        c.a = Math.floor(c.a + (60 - tileglow));
-
-        if (c.r < 0) c.r = 0;
-        if (c.g < 0) c.g = 0;
-        if (c.b < 0) c.b = 0;
-        if (c.a < 0) c.a = 0;
-        if (c.r > 255) c.r = 255;
-        if (c.g > 255) c.g = 255;
-        if (c.b > 255) c.b = 255;
-        if (c.a > 255) c.a = 255;
-        tile_color = add + rgba2hex(c.r, c.g, c.b, c.a);
+        let c = new VRGBA(tile.color);
+        let glowAmount = get('_glowAmount');
+        c.r = Math.floor(c.r + (60 - glowAmount)).clamp(0, 255);
+        c.g = Math.floor(c.g + (60 - glowAmount)).clamp(0, 255);
+        c.b = Math.floor(c.b + (60 - glowAmount)).clamp(0, 255);
+        c.a = Math.floor(c.a + (60 - glowAmount)).clamp(0, 255);
+        tile_color = c;
       }
-      this._maskBitmaps.radialgradientFillRect(x1, y1, 0, tile.radius, tile_color, '#000000', objectflicker, tile.brightness);
+      this._maskBitmaps.radialgradientFillRect(x1, y1, 0, tile.radius, tile_color, new VRGBA(), objectflicker, tile.brightness);
     });
 
     // Tile blocks
@@ -1639,102 +1704,12 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
     });
     ctxMul.globalCompositeOperation = 'lighter';
 
-
-    // *********************************** DAY NIGHT CYCLE FILTER **************************
-    if ($$.daynightset) {
-
-      let daynighttimer = $gameVariables.GetDaynightTimer();     // timer = minutes * speed
-      let daynightcycle = $gameVariables.GetDaynightCycle();     // cycle = hours
-      let daynighthoursinday = $gameVariables.GetDaynightHoursinDay();   // 24
-      let daynightcolors = $gameVariables.GetDaynightColorArray();
-      let color1 = daynightcolors[daynightcycle].color;
-      let add = color1[0].equalsIC('a') ? 'a' : ''; // additive lighting
-      let c = hex2rgba(color1);
-      if (daynightspeed > 0) {
-        let nextcolor = daynightcycle + 1;
-        if (nextcolor >= daynighthoursinday) {
-          nextcolor = 0;
-        }
-        let color2 = daynightcolors[nextcolor].color;
-        let c2 = hex2rgba(color2);
-
-        let stepR = (c2.r - c.r) / (60 * daynightspeed);
-        let stepG = (c2.g - c.g) / (60 * daynightspeed);
-        let stepB = (c2.b - c.b) / (60 * daynightspeed);
-        let stepA = (c2.a - c.a) / (60 * daynightspeed);
-
-        c.r = Math.floor(c.r + (stepR * daynighttimer));
-        c.g = Math.floor(c.g + (stepG * daynighttimer));
-        c.b = Math.floor(c.b + (stepB * daynighttimer));
-        c.a = Math.floor(c.a + (stepA * daynighttimer));
-      }
-      color1 = rgba2hex(c.r, c.g, c.b, c.a);
-
-      this._maskBitmaps.FillRect(-lightMaskPadding, 0, maxX + lightMaskPadding, maxY, add+color1);
-    }
-    // *********************************** TINT **************************
-    else {
-      let tint_value = $gameVariables.GetTint();
-      let tint_target = $gameVariables.GetTintTarget();
-      let tint_speed = $gameVariables.GetTintSpeed();
-      let tcolor = tint_value;
-      if (tint_value != tint_target) {
-        let tintdatenow = new Date();
-        let tintseconds = Math.floor(tintdatenow.getTime() / 10);
-        if (tintseconds > tint_oldseconds) {
-          tint_oldseconds = tintseconds;
-          tint_timer++;
-        }
-
-        let add = tint_target[0].equalsIC('a') ? 'a' : ''; // additive lighting
-        let c = hex2rgba(tint_value);
-        let c2 = hex2rgba(tint_target);
-
-        let stepR = (c2.r - c.r) / (60 * tint_speed);
-        let stepG = (c2.g - c.g) / (60 * tint_speed);
-        let stepB = (c2.b - c.b) / (60 * tint_speed);
-        let stepA = (c2.a - c.a) / (60 * tint_speed);
-
-        let r3 = Math.floor(c.r + (stepR * tint_timer));
-        let g3 = Math.floor(c.g + (stepG * tint_timer));
-        let b3 = Math.floor(c.b + (stepB * tint_timer));
-        let a3 = Math.floor(c.a + (stepA * tint_timer));
-        if (r3 < 0) r3 = 0;
-        if (g3 < 0) g3 = 0;
-        if (b3 < 0) b3 = 0;
-        if (a3 < 0) a3 = 0;
-        if (r3 > 255) r3 = 255;
-        if (g3 > 255) g3 = 255;
-        if (b3 > 255) b3 = 255;
-        if (a3 > 255) a3 = 255;
-        let reddone = false;
-        let greendone = false;
-        let bluedone = false;
-        let alphadone = false;
-
-        //Greater than
-        if (stepR >= 0 && r3 >= c2.r) reddone = true;
-        if (stepG >= 0 && g3 >= c2.g) greendone = true;
-        if (stepB >= 0 && b3 >= c2.b) bluedone = true;
-        if (stepA >= 0 && a3 >= c2.a) alphadone = true;
-
-        // Less than
-        if (stepR <= 0 && r3 <= c2.r) reddone = true;
-        if (stepG <= 0 && g3 <= c2.g) greendone = true;
-        if (stepB <= 0 && b3 <= c2.b) bluedone = true;
-        if (stepA <= 0 && a3 <= c2.a) alphadone = true;
-
-        if (reddone == true && bluedone == true && greendone == true && alphadone == true) {
-          $gameVariables.SetTint(tint_target);
-        }
-
-        let hex = add + rgba2hex(r3, g3, b3, a3);
-        tcolor = hex;
-      } else {
-        tint_timer = 0;
-      }
-      this._maskBitmaps.FillRect(-lightMaskPadding, 0, maxX + lightMaskPadding, maxY, tcolor);
-    }
+    // Compute tint for next frame
+    let tintValue = $gameVariables.GetTint();
+    let [tintTarget, tintSpeed] = $gameVariables.GetTintTarget();
+    tintValue = this.computeNextTint(tintValue, tintTarget, tintSpeed);
+    $gameVariables.SetTint(tintValue);
+    this._maskBitmaps.FillRect(-lightMaskPadding, 0, maxX + lightMaskPadding, maxY, tintValue);
 
     // reset drawmode to normal
     ctxMul.globalCompositeOperation = 'source-over';
@@ -1764,34 +1739,59 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
    * @method _removeSprite
    * @private
    */
-  Lightmask.prototype._removeSprite = function () {
-    this.removeChild(this._sprites.pop());
+  Lightmask.prototype._removeSprite = function () { this.removeChild(this._sprites.pop()); };
+
+  // *******************  ADD COLOR STOPS ***********************************
+  /**
+  * @param {Number} brightness
+  * @param {VRGBA} c1
+  * @param {VRGBA} c2
+   */
+  CanvasGradient.prototype.addTransparentColorStops = function (brightness, c1, c2) {
+    if (brightness) {
+      if (!useSmootherLights) {
+        let alpha = Math.floor(brightness * 100 * 2.55).toString(16);
+        if (alpha.length < 2) alpha = "0" + alpha;
+        this.addColorStop(0, '#FFFFFF' + alpha);
+      }
+    }
+
+    if (useSmootherLights) {
+      for (let distanceFromCenter = 0; distanceFromCenter < 1; distanceFromCenter += 0.1) {
+        let newRed   = c1.r - (distanceFromCenter * 100 * 2.55);
+        let newGreen = c1.g - (distanceFromCenter * 100 * 2.55);
+        let newBlue  = c1.b - (distanceFromCenter * 100 * 2.55);
+        let newAlpha = 1 - distanceFromCenter;
+        if (brightness > 0) newAlpha = Math.max(0, brightness - distanceFromCenter);
+        this.addColorStop(distanceFromCenter, rgba(~~newRed, ~~newGreen, ~~newBlue, newAlpha));
+      }
+    } else {
+      this.addColorStop(brightness, c1.toWebHex());
+    }
+
+    this.addColorStop(1, c2.toWebHex());
   };
 
-
   // *******************  NORMAL BOX SHAPE ***********************************
-
   /**
    *
    * @param {Number} x1
    * @param {Number} y1
    * @param {Number} x2
    * @param {Number} y2
-   * @param {String} c
+   * @param {VRGBA} c
    */
   Mask_Bitmaps.prototype.FillRect = function (x1, y1, x2, y2, c) {
     x1 = x1 + lightMaskPadding;
-
-    let bAdd = c[0].equalsIC('a') ? (c = c.slice(1), true) : (false);
-
+    let hex = c.toWebHex();
     let ctxMul = this.multiply._context;
     //ctxMul.save(); // unnecessary significant performance hit
-    ctxMul.fillStyle = c;
+    ctxMul.fillStyle = hex;
     ctxMul.fillRect(x1, y1, x2, y2);
     if (isRMMV()) this.multiply._setDirty(); // doesn't exist in RMMZ
-    if (bAdd) {
+    if (c.v) {
       let ctxAdd = this.additive._context; // Additive lighting context
-      ctxAdd.fillStyle = c;
+      ctxAdd.fillStyle = hex;
       ctxAdd.fillRect(x1, y1, x2, y2);
       if (isRMMV()) this.additive._setDirty(); // doesn't exist in RMMZ
     }
@@ -1804,23 +1804,21 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
    * @param {Number} centerY
    * @param {Number} xradius
    * @param {Number} yradius
-   * @param {String} c
+   * @param {VRGBA} c
    */
   Mask_Bitmaps.prototype.FillEllipse = function (centerX, centerY, xradius, yradius, c) {
     centerX = centerX + lightMaskPadding;
-
-    let bAdd = c[0].equalsIC('a') ? (c = c.slice(1), true) : (false);
-
+    let hex = c.toWebHex();
     let ctxMul = this.multiply._context;
     //ctxMul.save(); // unnecessary significant performance hit
-    ctxMul.fillStyle = c;
+    ctxMul.fillStyle = hex;
     ctxMul.beginPath();
     ctxMul.ellipse(centerX, centerY, xradius, yradius, 0, 0, 2 * Math.PI);
     ctxMul.fill();
     if (isRMMV()) this.multiply._setDirty(); // doesn't exist in RMMZ
-    if (bAdd) {
+    if (c.v) {
       let ctxAdd = this.additive._context; // Additive lighting context
-      ctxAdd.fillStyle = c;
+      ctxAdd.fillStyle = hex;
       ctxAdd.beginPath();
       ctxAdd.ellipse(centerX, centerY, xradius, yradius, 0, 0, 2 * Math.PI);
       ctxAdd.fill();
@@ -1829,132 +1827,20 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
     //ctxMul.restore();
   };
 
-  /**
-   *
-   * @param {Number} r
-   * @param {Number} g
-   * @param {Number} b
-   * @param {Number} a
-   * @returns {String}
-   */
-  function rgba(r, g, b, a) {
-    return "rgba(" + r + "," + g + "," + b + "," + a + ")";
-  }
-
-
-
-  /**
-   * Function to convert the
-   * RGB code to Hex color code
-   * @param {Number} R
-   * @param {Number} G
-   * @param {Number} B
-   * @param {Number} A
-   * @returns {String}
-   */
-  function rgba2hex(R, G, B, A = 255) {
-    if ((R >= 0 && R <= 255) &&
-        (G >= 0 && G <= 255) &&
-        (B >= 0 && B <= 255) &&
-        (A >= 0 && A <= 255)) {
-
-      let hexCode = "#";
-      let redHex = R.toString(16);
-      if (redHex.length < 2) {
-        redHex = "0" + redHex;
-      }
-
-      let greenHex = G.toString(16);
-      if (greenHex.length < 2) {
-        greenHex = "0" + greenHex;
-      }
-
-      let blueHex = B.toString(16);
-      if (blueHex.length < 2) {
-        blueHex = "0" + blueHex;
-      }
-
-      let alphaHex = A.toString(16);
-      if (alphaHex.length < 2) {
-        alphaHex = "0" + alphaHex;
-      }
-
-      hexCode += redHex;
-      hexCode += greenHex;
-      hexCode += blueHex;
-      hexCode += alphaHex;
-
-      return hexCode;
-    }
-
-    // The hex color code doesn't exist
-    else {
-      return "-1";
-    }
-
-  }
-
-  /**
-  * @param {Number} brightness
-  * @param {String} c1
-  * @param {String} c2
-  */
-  CanvasGradient.prototype.addTransparentColorStops = function (brightness, c1, c2) {
-
-    if (brightness) {
-      if (!useSmootherLights) {
-        let alpha = Math.floor(brightness * 100 * 2.55).toString(16);
-        if (alpha.length < 2) {
-          alpha = "0" + alpha;
-        }
-        this.addColorStop(0, '#FFFFFF' + alpha);
-      }
-    }
-
-    if (useSmootherLights) {
-      for (let distanceFromCenter = 0; distanceFromCenter < 1; distanceFromCenter += 0.1) {
-        let c = hex2rgba(c1);
-        let newRed   = c.r - (distanceFromCenter * 100 * 2.55);
-        let newGreen = c.g - (distanceFromCenter * 100 * 2.55);
-        let newBlue  = c.b - (distanceFromCenter * 100 * 2.55);
-        let newAlpha = 1 - distanceFromCenter;
-        if (brightness > 0) {
-          newAlpha = Math.max(0, brightness - distanceFromCenter);
-        }
-        this.addColorStop(distanceFromCenter, rgba(~~newRed, ~~newGreen, ~~newBlue, newAlpha));
-      }
-    } else {
-      this.addColorStop(brightness, c1);
-    }
-
-    this.addColorStop(1, c2);
-  };
   // *******************  NORMAL LIGHT SHAPE ***********************************
-  // Fill gradient circle
-
   /**
   *
   * @param {Number} x1
   * @param {Number} y1
   * @param {Number}  r1
   * @param {Number} r2
-  * @param {String} c1
-  * @param {String} c2
+  * @param {VRGBA} c1
+  * @param {VRGBA} c2
   * @param {Boolean} flicker
   * @param {Number} brightness
   * @param {Number} direction
   */
   Mask_Bitmaps.prototype.radialgradientFillRect = function (x1, y1, r1, r2, c1, c2, flicker, brightness, direction) {
-
-    let bAdd = c1[0].equalsIC('a') ? (c1 = c1.slice(1), true) : (false);
-    let isValidColor = isValidColorRegex.test(c1.trim());
-    if (!isValidColor) {
-      c1 = '#000000';
-    }
-    let isValidColor2 = isValidColorRegex.test(c2.trim());
-    if (!isValidColor2) {
-      c2 = '#000000';
-    }
 
     x1 = x1 + lightMaskPadding;
 
@@ -1963,29 +1849,11 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
     let ny1 = Number(y1);
     let nr2 = Number(r2);
 
-    let clip = false;
+    // if not clipped
+    if (!(nx1 - nr2 > maxX || ny1 - nr2 > maxY || nx1 + nr2 < 0 || nx1 + nr2 < 0)) {
+      if (!brightness) brightness = 0.0;
+      if (!direction) direction = 0;
 
-    if (nx1 - nr2 > maxX) {
-      clip = true;
-    }
-    if (ny1 - nr2 > maxY) {
-      clip = true;
-    }
-    if (nx1 + nr2 < 0) {
-      clip = true;
-    }
-    if (nx1 + nr2 < 0) {
-      clip = true;
-    }
-
-    if (clip == false) {
-
-      if (!brightness) {
-        brightness = 0.0;
-      }
-      if (!direction) {
-        direction = 0;
-      }
       let ctxMul = this.multiply._context;
       let ctxAdd = this.additive._context;  // Additive lighting context
       let wait = Math.floor((Math.random() * 8) + 1);
@@ -1995,15 +1863,7 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
         let gradrnd = Math.floor((Math.random() * flickerradiusshift) + 1);
         let colorrnd = Math.floor((Math.random() * flickercolorshift) - (flickercolorshift / 2));
 
-        let c = hex2rgba(c1);
-        c.g = c.g + colorrnd;
-        if (c.g < 0) {
-          c.g = 0;
-        }
-        if (c.g > 255) {
-          c.g = 255;
-        }
-        c1 = rgba2hex(c.r, c.g, c.b, c.a);
+        c1.g = (c1.g + colorrnd).clamp(0, 255);
         r2 = r2 - gradrnd;
         if (r2 < 0) r2 = 0;
       }
@@ -2054,32 +1914,30 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
       }
 
       ctxMul.fillRect(xS1, yS1, xE1, yE1);
-      if (bAdd) ctxAdd.fillRect(xS1, yS1, xE1, yE1);
+      if (c1.v) ctxAdd.fillRect(xS1, yS1, xE1, yE1);
       if (direction > 8) {
         ctxMul.fillRect(xS2, yS2, xE2, yE2);
-        if (bAdd) ctxAdd.fillRect(xS2, yS2, xE2, yE2);
+        if (c1.v) ctxAdd.fillRect(xS2, yS2, xE2, yE2);
       }
 
       //ctxMul.restore();
       if (isRMMV()) {
         this.multiply._setDirty(); // doesn't exist in RMMZ
-        if (bAdd) this.additive._setDirty(); // doesn't exist in RMMZ
+        if (c1.v) this.additive._setDirty(); // doesn't exist in RMMZ
       }
     }
   };
 
 
   // ********************************** FLASHLIGHT *************************************
-  // Fill gradient Cone
-
   /**
    *
    * @param {Number} x1
    * @param {Number} y1
    * @param {Number} r1
    * @param {Number} r2
-   * @param {String} c1
-   * @param {String} c2
+   * @param {VRGBA} c1
+   * @param {VRGBA} c2
    * @param {Number} direction
    * @param {Number} flashlength
    * @param {Number} flashwidth
@@ -2088,32 +1946,18 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
     x1 = x1 + lightMaskPadding;
     x1 = x1 - flashlightXoffset;
     y1 = y1 - flashlightYoffset;
-
-    let bAdd = c1[0].equalsIC('a') ? (c1 = c1.slice(1), true) : (false);
-    let isValidColor = isValidColorRegex.test(c1.trim());
-    if (!isValidColor) {
-      c1 = '#000000';
-    }
-    let isValidColor2 = isValidColorRegex.test(c2.trim());
-    if (!isValidColor2) {
-      c2 = '#000000';
-    }
-
     let ctxMul = this.multiply._context;
     let ctxAdd = this.additive._context; // Additive lighting context
 
     //ctxMul.save(); // unnecessary significant performance hit
 
-    // grab flashlight color
-    let c = hex2rgba(c1);
-
     // small dim glove around player
     // there's no additive light globe for flashlights because it looks bad
     let r1 = 1; let r2 = 40;
     let grad = ctxMul.createRadialGradient(x1, y1, r1, x1, y1, r2);
-    let s = 0x99 / Math.max(0x99 * c.r, 0x99 * c.g, 0x99 * c.b); // scale factor: max should be 0x99
-    grad.addColorStop(0, rgba2hex(s * c.r, s * c.g, s * c.b, 0xFF));
-    grad.addColorStop(1, c2);
+    let s = 0x99 / Math.max(0x99 * c1.r, 0x99 * c1.g, 0x99 * c1.b); // scale factor: max should be 0x99
+    grad.addColorStop(0, c1.toWebHex({ v: false, r: s * c1.r, g: s * c1.g, b: s * c1.b }));
+    grad.addColorStop(1, c2.toWebHex());
     ctxMul.fillStyle = grad;
     ctxMul.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
 
@@ -2167,8 +2011,8 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
       let yRightCtrlPoint = yRightBeamStart + endCtrlPointDistance * Math.sin(rightBeamAngle);
 
       // Grab web colors for beam
-      let outerHex = rgba2hex(c.r, c.g, c.b, Math.round(0.65 * c.a));
-      let innerHex = rgba2hex(c.r, c.g, c.b, Math.round(0.1  * c.a));
+      let outerHex = c1.toWebHex({ a: Math.round(0.65 * c1.a) });
+      let innerHex = c1.toWebHex({ a: Math.round(0.1  * c1.a) });
 
       // Draw outer beam as a shadow
       ctxMul.fillStyle = "#000000"; // Clear fillstyle for drawing beam
@@ -2181,7 +2025,7 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
       ctxMul.bezierCurveTo(xLeftCtrlPoint, yLeftCtrlPoint, xRightCtrlPoint, yRightCtrlPoint, xRightBeamEnd, yRightBeamEnd);
       ctxMul.lineTo(xRightBeamStart, yRightBeamStart);
       ctxMul.fill();
-      if (bAdd) {
+      if (c1.v) {
         ctxAdd.fillStyle = "#000000"; // Clear fillstyle for drawing beam
         ctxAdd.shadowColor = outerHex;
         ctxAdd.shadowBlur = 20;
@@ -2204,7 +2048,7 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
       ctxMul.bezierCurveTo(xLeftCtrlPoint, yLeftCtrlPoint, xRightCtrlPoint, yRightCtrlPoint, xRightBeamEnd, yRightBeamEnd);
       ctxMul.lineTo(xRightBeamStart, yRightBeamStart);
       ctxMul.fill();
-      if (bAdd) {
+      if (c1.v) {
         // Draw inner beam as a shadow
         ctxAdd.shadowColor = innerHex;
         ctxAdd.shadowBlur = 1;
@@ -2226,7 +2070,7 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
       grad.addTransparentColorStops(0, c1, c2);
       ctxMul.shadowColor = "#000000"; // Clear shadow style outside of check as ctxMul state changes always occur
       ctxMul.shadowBlur = 0;
-      if (!bAdd) {
+      if (!c1.v) {
         ctxMul.fillStyle = grad;
         ctxMul.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
         ctxMul.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
@@ -2252,91 +2096,47 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
         ctxMul.fillStyle = grad;
         ctxAdd.fillStyle = grad;
         ctxMul.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
-        if (bAdd) ctxAdd.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
+        if (c1.v) ctxAdd.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
       }
       ctxMul.fillStyle = grad;
       ctxAdd.fillStyle = grad;
       ctxMul.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
-      if (bAdd) ctxAdd.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
+      if (c1.v) ctxAdd.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
     }
 
     //ctxMul.restore();
     if (isRMMV()) {
       this.multiply._setDirty(); // doesn't exist in RMMZ
-      if (bAdd) this.additive._setDirty(); // doesn't exist in RMMZ
+      if (c1.v) this.additive._setDirty(); // doesn't exist in RMMZ
     }
-  };
-
-
-  /**
-   *
-   * @param {String} hex
-   * @returns {{r:number,g:number,b:number,a:number}}
-   */
-  function hex2rgba(hex) {
-    let regex = new RegExp(/^[Aa]?#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})?$/i);
-    let result = regex.exec(hex);
-    result = result ? {
-      r: parseInt(result[1], 16),
-      g: parseInt(result[2], 16),
-      b: parseInt(result[3], 16),
-      a: result[4] == null ? 255 : parseInt(result[4], 16)
-    } : null;
-    return result;
-  }
-
-  // ALIASED Begin battle: prepare battle lighting
-
-  let Community_Lighting_BattleManager_setup = BattleManager.setup;
-  BattleManager.setup = function (troopId, canEscape, canLose) {
-    $gameTemp._MapTint = '#FFFFFF';                                          // By default, no darkness during battle
-    if (!DataManager.isBattleTest() && !DataManager.isEventTest() && $gameMap.mapId() >= 0) { // If we went there from a map...
-      if ($gameVariables.GetScriptActive() === true) {                                        // If the script is active...
-        if (options_lighting_on && lightInBattle) {                                           // If configuration autorise using lighting effects
-          if (eventObjId.length > 0) {                                                        // If there is lightsource on this map...
-            $gameTemp._MapTint = $gameVariables.GetTint();                                    // ... Use the tint of the map.
-          }
-        }
-        // Add daylight tint?
-      }
-    }
-    Community_Lighting_BattleManager_setup.call(this, troopId, canEscape, canLose);
   };
 
   // ALIASED Scene_Battle initialization: create the light mask.
-
   let Community_Lighting_Spriteset_Battle_createLowerLayer = Spriteset_Battle.prototype.createLowerLayer;
   Spriteset_Battle.prototype.createLowerLayer = function () {
     Community_Lighting_Spriteset_Battle_createLowerLayer.call(this);
-    if (battleMaskPosition.equalsIC('Above')) {
-      this.createBattleLightmask();
-    }
+    if (battleMaskPosition.equalsIC('Above')) this.createBattleLightmask();
   };
-
   let Community_Lighting_Spriteset_Battle_createBattleField = Spriteset_Battle.prototype.createBattleField;
   Spriteset_Battle.prototype.createBattleField = function () {
     Community_Lighting_Spriteset_Battle_createBattleField.call(this);
-    if (battleMaskPosition.equalsIC('Between')) {
-      this.createBattleLightmask();
-    }
+    if (battleMaskPosition.equalsIC('Between')) this.createBattleLightmask();
   };
 
   Spriteset_Battle.prototype.createBattleLightmask = function () {
-    if ($gameVariables.GetScriptActive()) {             // If the script is active
-      if (lightInBattle) {                              // If is active during battles.
-        this._battleLightmask = new BattleLightmask();  // ... Create the light mask.
-        if (battleMaskPosition.equalsIC('Above')) {
-          this.addChild(this._battleLightmask);
-        } else if (battleMaskPosition.equalsIC('Between')) {
-          this._battleField.addChild(this._battleLightmask);
-        }
+    // If the script is active and configuration specifies light
+    // to be active during battle, then create the light mask.
+    if ($gameVariables.GetScriptActive() && lightInBattle) {
+      this._battleLightmask = new BattleLightmask();
+      if (battleMaskPosition.equalsIC('Above')) {
+        this.addChild(this._battleLightmask);
+      } else if (battleMaskPosition.equalsIC('Between')) {
+        this._battleField.addChild(this._battleLightmask);
       }
     }
   };
 
-  function BattleLightmask() {
-    this.initialize.apply(this, arguments);
-  }
+  function BattleLightmask() { this.initialize.apply(this, arguments); }
 
   BattleLightmask.prototype = Object.create(PIXI.Container.prototype);
   BattleLightmask.prototype.constructor = BattleLightmask;
@@ -2352,22 +2152,25 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
     this._addSprite(-lightMaskPadding, 0, this._maskBitmaps.multiply, PIXI.BLEND_MODES.MULTIPLY);
     this._addSprite(-lightMaskPadding, 0, this._maskBitmaps.additive, PIXI.BLEND_MODES.ADD);
 
-    this._maskBitmaps.multiply.fillRect(0, 0, maxX + lightMaskPadding, maxY, '#000000');
-    this._maskBitmaps.additive.clearRect(0, 0, maxX + lightMaskPadding, maxY);
+    this._maskBitmaps.multiply.fillRect(0, 0, battleMaxX + lightMaskPadding, battleMaxY, '#000000');
+    this._maskBitmaps.additive.clearRect(0, 0, battleMaxX + lightMaskPadding, battleMaxY);
 
-    let redhex = $gameTemp._MapTint.substring(1, 3);
-    let greenhex = $gameTemp._MapTint.substring(3, 5);
-    let bluehex = $gameTemp._MapTint.substring(5);
-    let red = parseInt(redhex, 16);
-    let green = parseInt(greenhex, 16);
-    let blue = parseInt(bluehex, 16);
-    let color = red + green + blue;
-    if (color < 200 && red < 66 && green < 66 && blue < 66) {
-      $gameTemp._MapTint = '#666666'; // Prevent the battle scene from being too dark.
-    }
-    $gameTemp._BattleTint = $$.daynightset ? $gameVariables.GetTintByTime() : $gameTemp._MapTint;
-    this._maskBitmaps.FillRect(-lightMaskPadding, 0, battleMaxX + lightMaskPadding, battleMaxY, $gameTemp._BattleTint);
-    $gameTemp._BattleTintSpeed = 0;
+    // if we came from a map, script is active, configuration authorizes using lighting effects,
+    // and there is lightsource on this map, then use the tint of the map, otherwise use full brightness
+    let c = (!DataManager.isBattleTest() && !DataManager.isEventTest() && $gameMap.mapId() >= 0 &&
+             $gameVariables.GetScriptActive() && options_lighting_on && lightInBattle) ?
+            $gameVariables.GetTint() : new VRGBA("#ffffff");
+
+    // Prevent the battle scene from being too dark
+    if (c.magnitude() < 0x66 * 3 && c.r < 0x66 && c.g < 0x66 && c.b < 0x66)
+      c.set({ v: false, r: 0x66, g: 0x66, b: 0x66, a: 0xff });
+
+    // Set initial tint for battle
+    c = $$.daynightset ? $gameVariables.GetTintByTime() : c;
+    set('_BattleTintTarget', c); set('_BattleTint', c);
+    this._maskBitmaps.FillRect(-lightMaskPadding, 0, battleMaxX + lightMaskPadding, battleMaxY, c);
+    this._maskBitmaps.multiply._baseTexture.update(); // Required to update battle texture in RMMZ optional for RMMV
+    this._maskBitmaps.additive._baseTexture.update(); // Required to update battle texture in RMMZ optional for RMMV
   };
 
   //@method _createBitmaps
@@ -2377,72 +2180,23 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
   };
 
   BattleLightmask.prototype.update = function () {
-    this._maskBitmaps.multiply.fillRect(0, 0, maxX + lightMaskPadding, maxY, '#000000');
-    this._maskBitmaps.additive.clearRect(0, 0, maxX + lightMaskPadding, maxY);
+    this._maskBitmaps.multiply.fillRect(0, 0, battleMaxX + lightMaskPadding, battleMaxY, '#000000');
+    this._maskBitmaps.additive.clearRect(0, 0, battleMaxX + lightMaskPadding, battleMaxY);
 
-    let color1 = $gameTemp._BattleTint;
-    if ($gameTemp._BattleTintSpeed > 0) {
+    // Grab tint information
+    let tintValue  = get('_BattleTint');
+    let tintTarget = get('_BattleTintTarget');
+    let tintSpeed  = get('_BattleTintSpeed');
 
-      $gameTemp._BattleTintTimer += 1;
+    // Prevent the battle scene from being too dark
+    let c = tintTarget; // reference
+    if (c.magnitude() < 0x66 * 3 && c.r < 0x66 && c.g < 0x66 && c.b < 0x66)
+      c.set({ v: false, r: 0x66, g: 0x66, b: 0x66, a: 0xff });
 
-      let add = $gameTemp._BattleTintFade[0].equalsIC('a') ? 'a' : ''; // additive lighting
-      let c = hex2rgba($gameTemp._BattleTintFade);
-      let c2 = hex2rgba($gameTemp._BattleTint);
-
-      let stepR = (c2.r - c.r) / (60 * $gameTemp._BattleTintSpeed);
-      let stepG = (c2.g - c.g) / (60 * $gameTemp._BattleTintSpeed);
-      let stepB = (c2.b - c.b) / (60 * $gameTemp._BattleTintSpeed);
-      let stepA = (c2.a - c.a) / (60 * $gameTemp._BattleTintSpeed);
-
-      let r3 = Math.floor(c.r + (stepR * $gameTemp._BattleTintTimer));
-      let g3 = Math.floor(c.g + (stepG * $gameTemp._BattleTintTimer));
-      let b3 = Math.floor(c.b + (stepB * $gameTemp._BattleTintTimer));
-      let a3 = Math.floor(c.a + (stepA * $gameTemp._BattleTintTimer));
-      if (r3 < 0) { r3 = 0; }
-      if (g3 < 0) { g3 = 0; }
-      if (b3 < 0) { b3 = 0; }
-      if (a3 < 0) { a3 = 0; }
-      if (r3 > 255) { r3 = 255; }
-      if (g3 > 255) { g3 = 255; }
-      if (b3 > 255) { b3 = 255; }
-      if (a3 > 255) { a3 = 255; }
-      let reddone = false;
-      let greendone = false;
-      let bluedone = false;
-      let alphadone = false;
-      if (stepR >= 0 && r3 >= c2.r) {
-        reddone = true;
-      }
-      if (stepR <= 0 && r3 <= c2.r) {
-        reddone = true;
-      }
-      if (stepG >= 0 && g3 >= c2.g) {
-        greendone = true;
-      }
-      if (stepG <= 0 && g3 <= c2.g) {
-        greendone = true;
-      }
-      if (stepB >= 0 && b3 >= c2.b) {
-        bluedone = true;
-      }
-      if (stepB <= 0 && b3 <= c2.b) {
-        bluedone = true;
-      }
-      if (stepA >= 0 && a3 >= c2.a) {
-        alphadone = true;
-      }
-      if (stepA <= 0 && a3 <= c2.a) {
-        alphadone = true;
-      }
-      if (reddone == true && bluedone == true && greendone == true && alphadone) {
-        $gameTemp._BattleTintFade = $gameTemp._BattleTint;
-        $gameTemp._BattleTintSpeed = 0;
-        $gameTemp._BattleTintTimer = 0;
-      }
-      color1 = add + rgba2hex(r3, g3, b3, a3);
-      $gameTemp._BattleTintFade = color1;
-    }
-    this._maskBitmaps.FillRect(-lightMaskPadding, 0, battleMaxX + lightMaskPadding, battleMaxY, color1);
+    // Compute tint for next frame
+    tintValue = this.computeNextTint(tintValue, tintTarget, tintSpeed);
+    set('_BattleTint', tintValue);
+    this._maskBitmaps.FillRect(-lightMaskPadding, 0, battleMaxX + lightMaskPadding, battleMaxY, tintValue);
     this._maskBitmaps.multiply._baseTexture.update(); // Required to update battle texture in RMMZ optional for RMMV
     this._maskBitmaps.additive._baseTexture.update(); // Required to update battle texture in RMMZ optional for RMMV
   };
@@ -2471,12 +2225,9 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
    * @method _removeSprite
    * @private
    */
-  BattleLightmask.prototype._removeSprite = function () {
-    this.removeChild(this._sprites.pop());
-  };
+  BattleLightmask.prototype._removeSprite = function () { this.removeChild(this._sprites.pop()); };
 
   // ALIASED Move event location => reload map.
-
   let Alias_Game_Interpreter_command203 = Game_Interpreter.prototype.command203;
   Game_Interpreter.prototype.command203 = function (params) { // API change in RMMZ
     Alias_Game_Interpreter_command203.call(this, params); // extra parameter is ignored by RMMV
@@ -2486,7 +2237,6 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
 
 
   // ALIASED FROM RPG OBJECTS TO ADD LIGHTING TO CONFIG MENU
-
   ConfigManager.cLighting = true;
 
   Object.defineProperty(ConfigManager, 'cLighting', {
@@ -2547,12 +2297,10 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
             event_stacknumber.push(i);
 
           }
-          // else if (note_command == "daynight") daynightset = true;
         }
       }
     }
     // *********************************** DAY NIGHT Setting **************************
-    $$.daynightset = false;
     let mapNote = $dataMap.note ? $dataMap.note.split("\n") : [];
     mapNote.forEach((note) => {
       /**
@@ -2562,7 +2310,7 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
       if (mapnote) {
         mapnote = mapnote.toLowerCase().trim();
         if ((/^daynight/i).test(mapnote)) {
-          $$.daynightset = true;
+          daynightTintEnabled = true;
           let dnspeed = note.match(/\d+/);
           if (dnspeed) {
             let daynightspeed = +dnspeed[0];
@@ -2600,12 +2348,9 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
           data.map(x => x.trim());
           if (typeof $$.mapBrightness !== "undefined") {
             let color = data[1];
-            let add = color[0].equalsIC('a') ? 'a' : ''; // additive lighting
-            let c = hex2rgba(color);
-            if (c.a == 255) {
-              c.a = $$.mapBrightness;
-            }
-            data[1] = add + rgba2hex(c.r, c.g, c.b, c.a);
+            let c = new VRGBA(color);
+            if (c.a == 255) c.a = $$.mapBrightness;
+            data[1] = c.toHex();
           }
           $$.tint(data);
         }
@@ -2616,15 +2361,12 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
         else if ((/^mapBrightness/i).test(mapnote)) {
           let brightness = note.match(/\d+/);
           if (brightness) {
-            let color = $gameVariables.GetTint();
-            if (color.equalsIC("#000000", "#00000000")) color = "#FFFFFF";
-            let add = color[0].equalsIC('a') ? 'a' : ''; // additive lighting
-            let c = hex2rgba(color);
+            let c = $gameVariables.GetTint();
+            if (!c.r && !c.g && !c.b) { c.r = 255; c.g = 255; c.b = 255; }
             let value = Math.max(0, Math.min(Number(brightness[0], 100)));
-            let alphaNum = Math.floor(value * 2.55);
-            let trueColor = add + rgba2hex(c.r, c.g, c.b, alphaNum);
-            $$.tint(["set", trueColor]);
-            $$.mapBrightness = alphaNum;
+            c.a = Math.floor(value * 2.55);
+            $$.tint(["set", c.toHex()]);
+            $$.mapBrightness = c.a;
           }
         }
       }
@@ -2701,25 +2443,24 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
 
     // *********************** TURN SPECIFIC LIGHT ON *********************
     else if (isOn(args[0])) {
-      let lightid = +args[1];
+      let lightid = args[1];
       let lightarray = $gameVariables.GetLightArray();
-      void (lightarray[lightid] ? lightarray[lightid][0] = true : lightarray[lightid] = [true, 'defaultcolor']);
+      void (lightarray[lightid] ? lightarray[lightid][0] = true : lightarray[lightid] = [true, null]);
     }
 
     // *********************** TURN SPECIFIC LIGHT OFF *********************
     else if (isOff(args[0])) {
-      let lightid = +args[1];
+      let lightid = args[1];
       let lightarray = $gameVariables.GetLightArray();
-      void (lightarray[lightid] ? lightarray[lightid][0] = false : lightarray[lightid] = [false, 'defaultcolor']);
+      void (lightarray[lightid] ? lightarray[lightid][0] = false : lightarray[lightid] = [false, null]);
     }
 
     // *********************** SET COLOR *********************
     else if (args[0].equalsIC('color')) {
-      let newcolor = args[2];
-      if (!newcolor || newcolor.equalsIC('defaultcolor')) newcolor = 'defaultcolor';
-      let lightid = +args[1];
+      let lightid = args[1];
+      let newcolor = args[2] ? new VRGBA(args[2]) : null; // null for default (i.e. no passed color)
       let lightarray = $gameVariables.GetLightArray();
-      void (lightarray[lightid] ? lightarray[lightid][1] = newcolor : lightarray[lightid] = [false, newcolor]);
+      void (lightarray[lightid] ? lightarray[lightid][1] = newcolor : lightarray[lightid] = [null, newcolor]);
     }
 
     // **************************** RESET ALL SWITCHES ***********************
@@ -2737,16 +2478,30 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
     if (cmd.equalsIC('set', 'fade')) {
       let currentColor = args[1];
       let speed = +args[2] || 0;
-      if (speed == 0) $gameVariables.SetTint(args[1]);
-      $gameVariables.SetTintTarget(currentColor);
-      $gameVariables.SetTintSpeed(speed);
+      $gameVariables.SetTintTarget(currentColor, speed);
     }
     else if (cmd.equalsIC("reset", "daylight")) {
       let currentColor = $gameVariables.GetTintByTime();
       let speed = +args[1] || 0;
-      if (speed == 0) $gameVariables.SetTint(currentColor);
-      $gameVariables.SetTintTarget(currentColor);
-      $gameVariables.SetTintSpeed(speed);
+      $gameVariables.SetTintTarget(currentColor, speed);
+    }
+  };
+
+  /**
+   *
+   * @param {String[]} args
+   */
+  $$.tintbattle = function (args) {
+    if ($gameParty.inBattle()) {
+      let cmd = args[0].trim();
+      if (cmd.equalsIC("set", 'fade')) {
+        set('_BattleTintTarget', new VRGBA(args[1], "#666666"));
+        set('_BattleTintSpeed', +args[2] || 0);
+      }
+      else if (cmd.equalsIC('reset', 'daylight')) {
+        set('_BattleTintTarget', $gameVariables.GetTint());
+        set('_BattleTintSpeed', +args[1] || 0);
+      }
     }
   };
 
@@ -2760,11 +2515,6 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
     let daynightcycle = $gameVariables.GetDaynightCycle();     // cycle = hours
     let daynighthoursinday = $gameVariables.GetDaynightHoursinDay();   // 24
     let daynightcolors = $gameVariables.GetDaynightColorArray();
-
-    if (args[0].equalsIC('speed')) {
-      daynightspeed = +args[1] || 5000;
-      $gameVariables.SetDaynightSpeed(daynightspeed);
-    }
 
     function addTime(houradd, minuteadd) {
       let daynightminutes = Math.floor(daynighttimer / daynightspeed);
@@ -2781,7 +2531,21 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
       $gameVariables.SetDaynightCycle(daynightcycle);     // cycle = hours
     }
 
-    if (args[0].equalsIC('add')) {
+    if (args.length == 0 || args[0].equalsIC('on')) {
+      daynightTintEnabled = true;
+    }
+
+    else if (args[0].equalsIC('off')) {
+      $gameVariables.SetTintTarget($gameVariables.GetTint(), 0);
+      daynightTintEnabled = false;
+    }
+
+    else if (args[0].equalsIC('speed')) {
+      daynightspeed = +args[1] || 5000;
+      $gameVariables.SetDaynightSpeed(daynightspeed);
+    }
+
+    else if (args[0].equalsIC('add')) {
       addTime(+args[1], args.length > 2 ? +args[2] : 0);
     }
 
@@ -2806,7 +2570,7 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
       if (daynighthoursinday > daynightcolors.length) {
         let origLength = daynightcolors.length;
         daynightcolors.length = daynighthoursinday; // more efficient than a for loop
-        daynightcolors.fill({ "color": "#ffffff", "isNight": false }, origLength);
+        daynightcolors.fill({ "color": new VRGBA("#ffffff"), "isNight": false }, origLength);
       }
       $gameVariables.SetDaynightColorArray(daynightcolors);
       $gameVariables.SetDaynightHoursinDay(daynighthoursinday);
@@ -2830,8 +2594,7 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
     else if (args[0].equalsIC('color')) {
       let hour = (+args[1] || 0).clamp(0, daynighthoursinday - 1);
       let hourcolor = args[2];
-      let isValidColor = isValidColorRegex.test(hourcolor.trim());
-      if (isValidColor) daynightcolors[hour].color = hourcolor;
+      if (hourcolor) daynightcolors[hour].color = new VRGBA(hourcolor);
       $gameVariables.SetDaynightColorArray(daynightcolors);
     }
   };
@@ -2897,26 +2660,23 @@ Game_Variables.prototype.SetOldMapId = function (value) {
   this._Community_Lighting_OldMapId = value;
 };
 Game_Variables.prototype.SetTint = function (value) {
-  this._Community_Tint_Value = value;
+  this._Community_Tint_Value = new VRGBA(value);
 };
 Game_Variables.prototype.GetTint = function () {
-  return orNullish(this._Community_Tint_Value, '#000000');
+  return new VRGBA(this._Community_Tint_Value);
 };
-Game_Variables.prototype.GetTintByTime = function () {
-  let result = this.GetDaynightColorArray()[this.GetDaynightCycle()];
-  return result ? (result.color || "#000000") : "#000000";
+Game_Variables.prototype.GetTintByTime = function (inc = 0) {
+  let cycle = this.GetDaynightCycle() + inc; // increment from current hour
+  if (cycle >= this.GetDaynightHoursinDay) cycle = 0;
+  let result = this.GetDaynightColorArray()[cycle];
+  return new VRGBA(result ? result.color : undefined);
 };
-Game_Variables.prototype.SetTintTarget = function (value) {
-  this._Community_TintTarget_Value = value;
+Game_Variables.prototype.SetTintTarget = function (newTarget, speed) {
+  this._Community_TintTarget = new VRGBA(newTarget);
+  this._Community_TintSpeed = orNaN(speed, 0);
 };
 Game_Variables.prototype.GetTintTarget = function () {
-  return orNullish(this._Community_TintTarget_Value, '#000000');
-};
-Game_Variables.prototype.SetTintSpeed = function (value) {
-  this._Community_TintSpeed_Value = orNaN(+value);
-};
-Game_Variables.prototype.GetTintSpeed = function () {
-  return orNullish(this._Community_TintSpeed_Value, 60);
+  return [new VRGBA(this._Community_TintTarget), orNaN(this._Community_TintSpeed, 0)];
 };
 Game_Variables.prototype.SetFlashlight = function (value) {
   this._Community_Lighting_Flashlight = value;
@@ -2945,12 +2705,11 @@ Game_Variables.prototype.GetFlashlightWidth = function () {
   let value = +this._Community_Lighting_FlashlightWidth;
   return value || 12; // not undefined, null, NaN, or 0
 };
-Game_Variables.prototype.SetPlayerColor = function (value) { // don't set if invalid.
-  if(isValidColorRegex.test(value)) this._Community_Lighting_PlayerColor = value;
+Game_Variables.prototype.SetPlayerColor = function (value) { // don't set if empty
+  if (value) this._Community_Lighting_PlayerColor = new VRGBA(value);
 };
 Game_Variables.prototype.GetPlayerColor = function () {
-  let value = this._Community_Lighting_PlayerColor;
-  return isValidColorRegex.test(value) ? value : '#FFFFFF';
+  return new VRGBA(this._Community_Lighting_PlayerColor, "#ffffff");
 };
 Game_Variables.prototype.SetPlayerBrightness = function (value) { // don't set if invalid.
   if (value && value[0].equalsIC('b')) { // must exist and be prefixed with b or B
@@ -3000,7 +2759,7 @@ Game_Variables.prototype.GetDaynightColorArray = function () {
       '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF',
       '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF',
       '#FFFFFF', '#FFFFFF', '#AAAAAA', '#666666',
-      '#000000', '#000000', '#000000', '#000000'].map(x => x = { "color": x, "isNight": false });
+      '#000000', '#000000', '#000000', '#000000'].map(x => x = { "color": new VRGBA(x), "isNight": false });
     this._Community_Lighting_DayNightColorArray = result;
   }
   if (!this._Community_Lighting_DayNightColorArray) this.SetDaynightColorArray(result);
@@ -3051,7 +2810,6 @@ Game_Variables.prototype.SetFire = function (value) {
 Game_Variables.prototype.GetFire = function () {
   return orNullish(this._Community_Lighting_Fire, false);
 };
-
 Game_Variables.prototype.SetLightArray = function (value) {
   this._Community_Lighting_LightArray = value;
 };
