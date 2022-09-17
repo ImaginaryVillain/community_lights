@@ -74,7 +74,7 @@ Imported[Community.Lighting.name] = true;
 *
 * @param Daynight Cycle
 * @parent ---General Settings---
-* @desc Should the brightness change over time
+* @desc Should the tint change over time. Must also be enabled in individual maps.
 * @type boolean
 * @default true
 *
@@ -246,6 +246,18 @@ Imported[Community.Lighting.name] = true;
 * @text Plugin On/Off
 * @desc Enable or disable all lighting effects from this plugin
 *
+* @arg enabled
+* @text Enabled
+* @type boolean
+* @on Enable
+* @off Disable
+* @default true
+*
+* @----------------------------
+*
+* @command daynightEnable
+* @text Daynight Tint On/Off
+* @desc Enable or disable daynight cycle tinting for the current map. Warning: this will be overridden by map notes.
 * @arg enabled
 * @text Enabled
 * @type boolean
@@ -719,9 +731,6 @@ Imported[Community.Lighting.name] = true;
 * --------------------------------------------------------------------------
 * Events
 * --------------------------------------------------------------------------
-* DayNight
-* - Activates day/night cycle.  Put in map note or event note
-*
 * Light radius [cycle] color [onoff] [day|night] [brightness] [direction] [x] [y] [id]
 * - Light
 * - radius      100, 250, etc
@@ -741,7 +750,9 @@ Imported[Community.Lighting.name] = true;
 *               D11 s.-w. corner, D12 n.-w. corner  [optional]
 * - x           x offset [optional] (0.5: half tile, 1 = full tile, etc)
 * - y           y offset [optional]
-* - id          1, 2, 2345, etc--an id number for plugin commands [optional]
+* - id          1, 2, potato, etc. An id (alphanumeric) for plugin commands [optional]
+*               These should not begin with 'd', 'x' or 'y' otherwise
+*               they will be mistaken for one of the previous optional parameters.
 *
 * Fire ...params
 * - Same as Light params above, but adds a subtle flicker
@@ -766,7 +777,7 @@ Imported[Community.Lighting.name] = true;
 * - x         x[offset] Work the same as regular light [optional]
 * - y         y[offset] [optional]
 * - id        1, 2, potato, etc. An id (alphanumeric) for plugin commands [optional]
-*             Those should not begin with 'a', 'd', 'x' or 'y' otherwise
+*             These should not begin with 'a', 'd', 'x' or 'y' otherwise
 *             they will be mistaken for one of the previous optional parameters.
 *
 * Example note tags:
@@ -1358,7 +1369,6 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
         }
         else if ((x[0].equalsIC("#") || x.slice(0, 2).equalsIC("a#")) &&
                   this._clColor === undefined) this._clColor = new VRGBA(x);
-        else if (!isNaN(+x) && this._clOnOff === undefined) this._clOnOff = +x ? true : false;
         else if (isOn(x) && this._clOnOff === undefined) this._clOnOff = true;
         else if (isOff(x) && this._clOnOff === undefined) this._clOnOff = false;
         else if (x.equalsIC("night", "day") && this._clSwitch === undefined) this._clSwitch = x;
@@ -1394,7 +1404,6 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
         }
         else if ((x[0].equalsIC("#") || x.slice(0, 2).equalsIC("a#")) &&
                   this._clBeamColor === undefined) this._clColor = new VRGBA(x);
-        else if (!isNaN(+x) && this._clOnOff === undefined) this._clOnOff = +x ? true : false;
         else if (isOn(x) && this._clOnOff === undefined) this._clOnOff = true;
         else if (isOff(x) && this._clOnOff === undefined) this._clOnOff = false;
         else if (x.equalsIC("night", "day") && this._clSwitch === undefined) this._clSwitch = x;
@@ -1501,7 +1510,6 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
   };
 
   let _Game_Player_clearTransferInfo = Game_Player.prototype.clearTransferInfo;
-
   Game_Player.prototype.clearTransferInfo = function () {
     _Game_Player_clearTransferInfo.call(this);
     if (reset_each_map) {
@@ -1529,7 +1537,7 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
   };
 
   (function () { // don't pollute the namespace.
-    let mapOnOff    = (args) => args.enabled === "true" ? "on" : "off";
+    let mapOnOff = (args) => args.enabled === "true" ? "on" : "off";
 
     let tileType = (args) => (args.tileType === "terrain" ? "tile" : "region") + (args.lightType ? args.lightType : "block");
     let tintType = (    ) => $gameParty.inBattle() ? "tintbattle" : "tint";
@@ -1546,6 +1554,7 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
     reg("tileBlock",          (a)  => f(tileType(a),  [a.id,            mapOnOff(a),     a.color,        a.shape,          a.xOffset, a.yOffset, a.blockWidth, a.blockHeight]));
     reg("tileLight",          (a)  => f(tileType(a),  [a.id,            mapOnOff(a),     a.color,        a.radius,         a.brightness]));
     reg("setTint",            (a)  => f(tintType(),   [tintMode(a),     a.color,         a.fadeSpeed]));
+    reg("daynightEnable",     (a)  => f("daynight",   [mapOnOff(a)]));
     reg("setTimeSpeed",       (a)  => f("dayNight",   ["speed",         a.speed]));
     reg("setTime",            (a)  => f("dayNight",   [mathMode(a),     a.hours,         a.minutes]));
     reg("setHoursInDay",      (a)  => f("dayNight",   ["hoursinday",    a.hours]));
@@ -1892,12 +1901,10 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
           // conditional lighting
           let lightid = cur.getLightId();
           if (lightid) {
-            state = false;
-
             let lightarray = $gameVariables.GetLightArray();
             if (lightarray[lightid]) {
-              let tcolorvalue;
-              [state, tcolorvalue] = lightarray[lightid];
+              let [tstate, tcolorvalue] = lightarray[lightid];
+              if (tstate != null) state = tstate;
               if (tcolorvalue != null) colorvalue = tcolorvalue; // no color so use default
             }
 
@@ -2602,12 +2609,10 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
             event_stacknumber.push(i);
 
           }
-          // else if (note_command == "daynight") daynightset = true;
         }
       }
     }
     // *********************************** DAY NIGHT Setting **************************
-    daynightTintEnabled = false;
     let mapNote = $dataMap.note ? $dataMap.note.split("\n") : [];
     mapNote.forEach((note) => {
       /**
@@ -2750,24 +2755,24 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
 
     // *********************** TURN SPECIFIC LIGHT ON *********************
     else if (isOn(args[0])) {
-      let lightid = +args[1];
+      let lightid = args[1];
       let lightarray = $gameVariables.GetLightArray();
       void (lightarray[lightid] ? lightarray[lightid][0] = true : lightarray[lightid] = [true, null]);
     }
 
     // *********************** TURN SPECIFIC LIGHT OFF *********************
     else if (isOff(args[0])) {
-      let lightid = +args[1];
+      let lightid = args[1];
       let lightarray = $gameVariables.GetLightArray();
       void (lightarray[lightid] ? lightarray[lightid][0] = false : lightarray[lightid] = [false, null]);
     }
 
     // *********************** SET COLOR *********************
     else if (args[0].equalsIC('color')) {
-      let lightid = +args[1];
+      let lightid = args[1];
       let newcolor = args[2] ? new VRGBA(args[2]) : null; // null for default (i.e. no passed color)
       let lightarray = $gameVariables.GetLightArray();
-      void (lightarray[lightid] ? lightarray[lightid][1] = newcolor : lightarray[lightid] = [false, newcolor]);
+      void (lightarray[lightid] ? lightarray[lightid][1] = newcolor : lightarray[lightid] = [null, newcolor]);
     }
 
     // **************************** RESET ALL SWITCHES ***********************
@@ -2823,11 +2828,6 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
     let daynighthoursinday = $gameVariables.GetDaynightHoursinDay();   // 24
     let daynightcolors = $gameVariables.GetDaynightColorArray();
 
-    if (args[0].equalsIC('speed')) {
-      daynightspeed = +args[1] || 5000;
-      $gameVariables.SetDaynightSpeed(daynightspeed);
-    }
-
     function addTime(houradd, minuteadd) {
       let daynightminutes = Math.floor(daynighttimer / daynightspeed);
       daynightminutes = daynightminutes + minuteadd + 60*(daynightcycle + houradd);
@@ -2843,7 +2843,21 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
       $gameVariables.SetDaynightCycle(daynightcycle);     // cycle = hours
     }
 
-    if (args[0].equalsIC('add')) {
+    if (args.length == 0 || args[0].equalsIC('on')) {
+      daynightTintEnabled = true;
+    }
+
+    else if (args[0].equalsIC('off')) {
+      $gameVariables.SetTintTarget($gameVariables.GetTint(), 0);
+      daynightTintEnabled = false;
+    }
+
+    else if (args[0].equalsIC('speed')) {
+      daynightspeed = +args[1] || 5000;
+      $gameVariables.SetDaynightSpeed(daynightspeed);
+    }
+
+    else if (args[0].equalsIC('add')) {
       addTime(+args[1], args.length > 2 ? +args[2] : 0);
     }
 
