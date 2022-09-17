@@ -1026,31 +1026,31 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
   let isDeactivate = (x) => x.toLowerCase() === "deactivate";
 
   /**
-   * Gets the specified index of this object.
+   * Gets the value at the  specified index of the $gameTemp object.
    * @param {String} index
    * @returns {any}
    */
-  let get = (index) => this[index];
+  let get = (index) => $gameTemp[index];
 
   /**
-   * Sets the specified index of this object.
+   * Sets the value at the specified index of the $gameTemp object.
    * @param {String} index
    * @param {any}    value
    */
-  let set = (index, value) => this[index] = value;
+  let set = (index, value) => $gameTemp[index] = value;
 
   /**
-   * Tests the specified index of this object for equality with value and sets it if not.
-   * Returns true if the index is set, or false otherwise.
+   * Tests the value at the specified index of the $gameTemp object for equality with the
+   * passed in value and sets it. Returns true if the values match, or false otherwise.
    * @param {String} index
    * @param {any}    value
    * @returns {Boolean}
    */
-  let testAndSet = (index, value) => { // must be arrow function to inherit 'this'
-    if (this[index] && (this[index] == value ||
-       (this[index].equal && this[index].equal(value))))
+  let testAndSet = (index, value) => {
+    if ($gameTemp[index] && ($gameTemp[index] == value ||
+       ($gameTemp[index].equal && $gameTemp[index].equal(value))))
         return false;
-    return (this[index] = value, true);
+    return ($gameTemp[index] = value, true);
   };
 
   /**
@@ -1060,36 +1060,39 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
    * @param {Number} speed
    * @returns {VRGBA}
    */
-  function computeNextTint(current, target, speed) {
-    if (current.equals(target)) return target; // Already equal so short-circuit
+  class PIXI_Container_Extender extends PIXI.Container {
+    computeNextTint(current, target, speed) {
+      if (current.equals(target)) return target; // Already equal so short-circuit
 
-    // only compute new delta on target or speed change
-    let delta = get('_tintDelta');
-    if (!delta || testAndSet('_OldTintTarget', target) || testAndSet('_OldTintSpeed', speed)) {
-      // tint delta based off of remainder of time in hour if not battle, daynight cycle, & tint enabled OR 60
-      let useMinutesRemaining = !$gameParty.inBattle() && daynightCycleEnabled && daynightTintEnabled;
-      let minutes = 60 - ( useMinutesRemaining ? $$.minutes() : 0);
-      // Get deltas for each color.
-      delta = new VRGBA(target.v, // divide by zero is +inf or -inf so deltas work for speed = 0
-        (target.r - current.r) / (minutes * speed),
-        (target.g - current.g) / (minutes * speed),
-        (target.b - current.b) / (minutes * speed),
-        (target.a - current.a) / (minutes * speed));
+      // only compute new delta on target or speed change
+      let delta = get('_tintDelta');
+      if (!delta || testAndSet('_OldTintTarget', target) || testAndSet('_OldTintSpeed', speed)) {
+        // tint delta based off of remainder of time in hour if not battle, daynight cycle, & tint enabled OR 60
+        let useMinutesRemaining = !$gameParty.inBattle() && daynightCycleEnabled && daynightTintEnabled;
+        let minutes = 60 - (useMinutesRemaining ? $$.minutes() : 0);
+        // Get deltas for each color.
+        delta = new VRGBA(target.v, // divide by zero is +inf or -inf so deltas work for speed = 0
+          (target.r - current.r) / (minutes * speed),
+          (target.g - current.g) / (minutes * speed),
+          (target.b - current.b) / (minutes * speed),
+          (target.a - current.a) / (minutes * speed));
 
-      set('_tintDelta', delta); // set new tint.
+        set('_tintDelta', delta); // set new tint.
+      }
+
+      // Compute next color step
+      let out = new VRGBA(delta.v, current.r + delta.r, current.g + delta.g, current.b + delta.b, current.a + delta.a);
+
+      // Clamp to target
+      if ((out.r > current.r && out.r > target.r) || (out.r < current.r && out.r < target.r)) out.r = target.r;
+      if ((out.g > current.g && out.g > target.g) || (out.g < current.g && out.g < target.g)) out.g = target.g;
+      if ((out.b > current.b && out.b > target.b) || (out.b < current.b && out.b < target.b)) out.b = target.b;
+      if ((out.a > current.a && out.a > target.a) || (out.a < current.a && out.a < target.a)) out.a = target.a;
+
+      return out;
     }
-
-    // Compute next color step
-    let out = new VRGBA(delta.v, current.r + delta.r, current.g + delta.g, current.b + delta.b, current.a + delta.a);
-
-    // Clamp to target
-    if ((out.r > current.r && out.r > target.r) || (out.r < current.r && out.r < target.r)) out.r = target.r;
-    if ((out.g > current.g && out.g > target.g) || (out.g < current.g && out.g < target.g)) out.g = target.g;
-    if ((out.b > current.b && out.b > target.b) || (out.b < current.b && out.b < target.b)) out.b = target.b;
-    if ((out.a > current.a && out.a > target.a) || (out.a < current.a && out.a < target.a)) out.a = target.a;
-
-    return out;
   }
+  PIXI.Container.prototype = PIXI_Container_Extender.prototype;
 
   // Map community light directions to polar angles (360 degrees)
   const CLDirectionMap = {
@@ -2009,7 +2012,7 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
     // Compute tint for next frame
     let tintValue = $gameVariables.GetTint();
     let [tintTarget, tintSpeed] = $gameVariables.GetTintTarget();
-    tintValue = computeNextTint(tintValue, tintTarget, tintSpeed);
+    tintValue = this.computeNextTint(tintValue, tintTarget, tintSpeed);
     $gameVariables.SetTint(tintValue);
     this._maskBitmaps.FillRect(-lightMaskPadding, 0, maxX + lightMaskPadding, maxY, tintValue);
 
@@ -2468,8 +2471,9 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
       c.set({ v: false, r: 0x66, g: 0x66, b: 0x66, a: 0xff });
 
     // Set initial tint for battle
-    $gameTemp._BattleTintTarget = $gameTemp._BattleTint = $$.daynightset ? $gameVariables.GetTintByTime() : c;
-    this._maskBitmaps.FillRect(-lightMaskPadding, 0, battleMaxX + lightMaskPadding, battleMaxY, $gameTemp._BattleTint);
+    c = $$.daynightset ? $gameVariables.GetTintByTime() : c;
+    set('_BattleTintTarget', c); set('_BattleTint', c);
+    this._maskBitmaps.FillRect(-lightMaskPadding, 0, battleMaxX + lightMaskPadding, battleMaxY, c);
     this._maskBitmaps.multiply._baseTexture.update(); // Required to update battle texture in RMMZ optional for RMMV
     this._maskBitmaps.additive._baseTexture.update(); // Required to update battle texture in RMMZ optional for RMMV
   };
@@ -2484,17 +2488,19 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
     this._maskBitmaps.multiply.fillRect(0, 0, maxX + lightMaskPadding, maxY, '#000000');
     this._maskBitmaps.additive.clearRect(0, 0, maxX + lightMaskPadding, maxY);
 
-    // Compute tint for next frame
-    let tintValue  = $gameTemp._BattleTint;
-    let tintTarget = $gameTemp._BattleTintTarget;
-    let tintSpeed = $gameTemp._BattleTintSpeed;
+    // Grab tint information
+    let tintValue  = get('_BattleTint');
+    let tintTarget = get('_BattleTintTarget');
+    let tintSpeed  = get('_BattleTintSpeed');
 
     // Prevent the battle scene from being too dark
     let c = tintTarget; // reference
     if (c.magnitude() < 0x66 * 3 && c.r < 0x66 && c.g < 0x66 && c.b < 0x66)
       c.set({ v: false, r: 0x66, g: 0x66, b: 0x66, a: 0xff });
-    tintValue = computeNextTint(tintValue, tintTarget, tintSpeed);
-    $gameTemp._BattleTint = tintValue;
+
+    // Compute tint for next frame
+    tintValue = this.computeNextTint(tintValue, tintTarget, tintSpeed);
+    set('_BattleTint', tintValue);
     this._maskBitmaps.FillRect(-lightMaskPadding, 0, battleMaxX + lightMaskPadding, battleMaxY, tintValue);
     this._maskBitmaps.multiply._baseTexture.update(); // Required to update battle texture in RMMZ optional for RMMV
     this._maskBitmaps.additive._baseTexture.update(); // Required to update battle texture in RMMZ optional for RMMV
@@ -2796,12 +2802,12 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
     if ($gameParty.inBattle()) {
       let cmd = args[0].trim();
       if (cmd.equalsIC("set", 'fade')) {
-        $gameTemp._BattleTintTarget = new VRGBA(args[1], "#666666");
-        $gameTemp._BattleTintSpeed = +args[2] || 0;
+        set('_BattleTintTarget', new VRGBA(args[1], "#666666"));
+        set('_BattleTintSpeed', +args[2] || 0);
       }
       else if (cmd.equalsIC('reset', 'daylight')) {
-        $gameTemp._BattleTintTarget = $gameVariables.GetTint();
-        $gameTemp._BattleTintSpeed = +args[1] || 0;
+        set('_BattleTintTarget', $gameVariables.GetTint());
+        set('_BattleTintSpeed', +args[1] || 0);
       }
     }
   };
