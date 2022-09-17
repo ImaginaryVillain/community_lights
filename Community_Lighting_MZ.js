@@ -943,7 +943,7 @@ Imported[Community.Lighting.name] = true;
 * - Hides the current time of day mini-window
 *
 * Daynight hoursinday h
-* - Sets the number of hours in a day to [h] (set hour colors  if doing this)
+* - Sets the number of hours in a day to [h] (set hour colors if doing this)
 *
 * Tint set c [s]
 * Tint fade c [s]
@@ -2941,7 +2941,7 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
     let daynighthoursinday = $gameVariables.GetDaynightHoursinDay();   // 24
     let daynightcolors = $gameVariables.GetDaynightColorArray();
 
-    function addTime(houradd, minuteadd) {
+    function addTime(houradd, minuteadd) { // helper function to add/subtract time
       let daynightminutes = Math.floor(daynighttimer / daynightspeed);
       daynightminutes = daynightminutes + minuteadd + 60*(daynightcycle + houradd);
       daynightcycle = Math.trunc(daynightminutes/60)%daynighthoursinday;
@@ -2956,67 +2956,68 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
       $gameVariables.SetDaynightCycle(daynightcycle);     // cycle = hours
     }
 
-    if (args.length == 0 || args[0].equalsIC('on')) {
+    if (args.length == 0 || args[0].equalsIC('on')) { // enable daynight tint changes
       daynightTintEnabled = true;
     }
 
-    else if (args[0].equalsIC('off')) {
+    else if (args[0].equalsIC('off')) { // disabled daynight tint changes
       $gameVariables.SetTintTarget($gameVariables.GetTint(), 0);
       daynightTintEnabled = false;
     }
 
-    else if (args[0].equalsIC('speed')) {
+    else if (args[0].equalsIC('speed')) { // daynight speed
       daynightspeed = +args[1] || 5000;
       $gameVariables.SetDaynightSpeed(daynightspeed);
     }
 
-    else if (args[0].equalsIC('add')) {
+    else if (args[0].equalsIC('add')) { // add to current time
       addTime(+args[1], args.length > 2 ? +args[2] : 0);
     }
 
-    else if (args[0].equalsIC('subtract')) {
+    else if (args[0].equalsIC('subtract')) { // subtract from current time
       addTime(+args[1]*-1, args.length > 2 ? +args[2]*-1 : 0);
     }
 
-    else if (args[0].equalsIC('hour')) {
+    else if (args[0].equalsIC('hour')) { // set the current time
       daynightcycle = Math.max(+args[1], 0) || 0;
       let daynightminutes = Math.max(+args[2], 0) || 0;
       daynighttimer = daynightminutes * daynightspeed;
 
-      if (daynightcycle >= daynighthoursinday) daynightcycle = daynighthoursinday - 1;
-
+      daynightcycle = Math.min(daynightcycle, daynighthoursinday - 1); // clamp time
       $$.saveTime(daynightcycle, daynightminutes);
       $gameVariables.SetDaynightTimer(daynighttimer);     // timer = minutes * speed
       $gameVariables.SetDaynightCycle(daynightcycle);     // cycle = hours
     }
 
-    else if (args[0].equalsIC('hoursinday')) {
+    else if (args[0].equalsIC('hoursinday')) { // set number of hours in day
       daynighthoursinday = Math.max(orNaN(+args[1], 0), 0);
       if (daynighthoursinday > daynightcolors.length) {
         let origLength = daynightcolors.length;
         daynightcolors.length = daynighthoursinday; // more efficient than a for loop
         daynightcolors.fill({ "color": new VRGBA("#ffffff"), "isNight": false }, origLength);
       }
+      let daynightcycle = Math.min($gameVariables.GetDaynightCycle(), daynighthoursinday - 1); // clamp time
+      $gameVariables.SetDaynightCycle(daynightcycle);
       $gameVariables.SetDaynightColorArray(daynightcolors);
       $gameVariables.SetDaynightHoursinDay(daynighthoursinday);
     }
 
-    else if (args[0].equalsIC('show')) {
+    else if (args[0].equalsIC('show')) { // show clock
       $gameVariables._clShowTimeWindow = true;
       $gameVariables._clShowTimeWindowSeconds = false;
     }
 
-    else if (args[0].equalsIC('showseconds')) {
+    else if (args[0].equalsIC('showseconds')) { // show clock seconds
       $gameVariables._clShowTimeWindow = true;
       $gameVariables._clShowTimeWindowSeconds = true;
     }
 
-    else if (args[0].equalsIC('hide')) {
+    else if (args[0].equalsIC('hide')) { // hide clock
       $gameVariables._clShowTimeWindow = false;
       $gameVariables._clShowTimeWindowSeconds = false;
     }
 
-    else if (args[0].equalsIC('color')) {
+    else if (args[0].equalsIC('color')) { // change hour color
       let hour = (+args[1] || 0).clamp(0, daynighthoursinday - 1);
       let hourcolor = args[2];
       if (hourcolor) daynightcolors[hour].color = new VRGBA(hourcolor);
