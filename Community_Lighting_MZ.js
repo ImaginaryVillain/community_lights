@@ -258,12 +258,22 @@ Imported[Community.Lighting.name] = true;
 * @command daynightEnable
 * @text Daynight Tint On/Off
 * @desc Enable or disable daynight cycle tinting for the current map. Warning: this will be overridden by map notes.
+*
 * @arg enabled
 * @text Enabled
+* @desc If set to "off" then the other command parameters will be ignored
 * @type boolean
-* @on Enable
-* @off Disable
+* @on On
+* @off Off
 * @default true
+*
+* @arg instant
+* @text Instant tint change
+* @desc If set to "off" then the tint will gradually transition to that of the next hour.
+* @type boolean
+* @on On
+* @off Off
+* @default false
 *
 * @----------------------------
 *
@@ -285,8 +295,8 @@ Imported[Community.Lighting.name] = true;
 * @arg enabled
 * @text Active
 * @type boolean
-* @on Enable
-* @off Disable
+* @on On
+* @off Off
 * @default true
 *
 * @----------------------------
@@ -361,7 +371,7 @@ Imported[Community.Lighting.name] = true;
 *
 * @arg enabled
 * @text On/Off
-* @desc If set to "off" then the other plugin parameters will be ignored
+* @desc If set to "off" then the other command parameters will be ignored
 * @type boolean
 * @on On
 * @off Off
@@ -915,8 +925,10 @@ Imported[Community.Lighting.name] = true;
 * Flashlight off
 * - Turn off the flashlight.  yup.
 *
-* DayNight on|off
-* - Activates or deactivates the day/night cycle. Defaults to on.
+* DayNight on|off [instant]
+* - Activates or deactivates the day/night cycle. Specifying 'instant' will set the
+* - tint for the current hour instantly, otherwise it will change gradually to that of
+* - the next hour
 *
 * Daynight speed n
 * - Changes the speed by which hours pass in game in relation to real life seconds
@@ -1204,15 +1216,12 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
         set('_tintDelta', delta); // set new tint.
       }
 
-      // Compute next color step
+      // Compute next color step and clamp to target
       let out = new VRGBA(delta.v, current.r + delta.r, current.g + delta.g, current.b + delta.b, current.a + delta.a);
-
-      // Clamp to target
-      if ((out.r > current.r && out.r > target.r) || (out.r < current.r && out.r < target.r)) out.r = target.r;
-      if ((out.g > current.g && out.g > target.g) || (out.g < current.g && out.g < target.g)) out.g = target.g;
-      if ((out.b > current.b && out.b > target.b) || (out.b < current.b && out.b < target.b)) out.b = target.b;
-      if ((out.a > current.a && out.a > target.a) || (out.a < current.a && out.a < target.a)) out.a = target.a;
-
+      out.r = Math.minmax(out.r > current.r, out.r, target.r);
+      out.g = Math.minmax(out.g > current.g, out.g, target.g);
+      out.b = Math.minmax(out.b > current.b, out.b, target.b);
+      out.a = Math.minmax(out.a > current.a, out.a, target.a);
       return out;
     }
   }
@@ -1241,7 +1250,7 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
 
   const TileType = {
     Terrain: 1, terrain: 1, 1: 1,
-    Region: 2,  region:  2, 2: 2
+    Region:  2, region:  2, 2: 2
   };
 
   const LightType = {
@@ -1651,10 +1660,9 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
 
   if (isRMMZ()) { // RMMZ only command interface
     let mapOnOff = (args) => args.enabled === "true" ? "on" : "off";
-
     let tileType = (args) => (args.tileType === "terrain" ? "tile" : "region") + (args.lightType ? args.lightType : "block");
     let tintType = (    ) => $gameParty.inBattle() ? "tintbattle" : "tint";
-
+    let dayMode =  (args) => args.instant === "true" ? "instant" : "";
     let tintMode = (args) => args.color ? "set" : "reset";
     let mathMode = (args) => args.mode === "set" ? "hour" : args.mode; // set, add, or subtract.
     let showMode = (args) => args.enabled.equalsIC("true") ? (args.showSeconds.equalsIC("true") ? "showseconds" : "show") : "hide";
@@ -1667,7 +1675,7 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
     reg("tileBlock",          (a)  => f(tileType(a),  [a.id,            mapOnOff(a),     a.color,        a.shape,          a.xOffset, a.yOffset, a.blockWidth, a.blockHeight]));
     reg("tileLight",          (a)  => f(tileType(a),  [a.id,            mapOnOff(a),     a.color,        a.radius,         a.brightness]));
     reg("setTint",            (a)  => f(tintType(),   [tintMode(a),     a.color,         a.fadeSpeed]));
-    reg("daynightEnable",     (a)  => f("daynight",   [mapOnOff(a)]));
+    reg("daynightEnable",     (a)  => f("daynight",   [mapOnOff(a),     dayMode(a)]));
     reg("setTimeSpeed",       (a)  => f("dayNight",   ["speed",         a.speed]));
     reg("setTime",            (a)  => f("dayNight",   [mathMode(a),     a.hours,         a.minutes]));
     reg("setHoursInDay",      (a)  => f("dayNight",   ["hoursinday",    a.hours]));
@@ -2735,6 +2743,7 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
       if (mapnote) {
         mapnote = mapnote.toLowerCase().trim();
         if ((/^daynight/i).test(mapnote)) {
+          if (!daynightTintEnabled) $gameVariables.SetTint($gameVariables.GetTintByTime());
           daynightTintEnabled = true;
           let dnspeed = note.match(/\d+/);
           if (dnspeed) {
@@ -2956,8 +2965,11 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
       $gameVariables.SetDaynightCycle(daynightcycle);     // cycle = hours
     }
 
-    if (args.length == 0 || args[0].equalsIC('on')) { // enable daynight tint changes
+    if (args[0].equalsIC('on')) { // enable daynight tint changes
       daynightTintEnabled = true;
+      if (args[1] && args[1].equalsIC("instant")) { // set instantly
+        $gameVariables.SetTint($gameVariables.GetTintByTime());
+      }
     }
 
     else if (args[0].equalsIC('off')) { // disabled daynight tint changes
@@ -3203,7 +3215,6 @@ Game_Variables.prototype.SetDaynightCycle = function (value) {
 };
 Game_Variables.prototype.GetDaynightCycle = function () {
   return orNullish(this._Community_Lighting_DaynightCycle, Number(Community.Lighting.parameters['Daynight Initial Hour']), 0);
-
 };
 Game_Variables.prototype.SetDaynightTimer = function (value) {
   this._Community_Lighting_DaynightTimer = orNaN(+value);
@@ -3217,7 +3228,6 @@ Game_Variables.prototype.SetDaynightHoursinDay = function (value) {
 Game_Variables.prototype.GetDaynightHoursinDay = function () {
   return orNullish(this._Community_Lighting_DaynightHoursinDay, 24);
 };
-
 Game_Variables.prototype.SetFireRadius = function (value) {
   this._Community_Lighting_FireRadius = orNaN(+value);
 };
