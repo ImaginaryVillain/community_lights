@@ -1196,36 +1196,33 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
    * @param {Number} speed
    * @returns {VRGBA}
    */
-  class PIXI_Container_Extender extends PIXI.Container {
-    computeNextTint(current, target, speed) {
-      if (current.equals(target)) return target; // Already equal so short-circuit
+  PIXI.Container.prototype.computeNextTint = function (current, target, speed) {
+    if (current.equals(target)) return target; // Already equal so short-circuit
 
-      // only compute new delta on target or speed change
-      let delta = get('_tintDelta');
-      if (!delta || testAndSet('_OldTintTarget', target) || testAndSet('_OldTintSpeed', speed)) {
-        // tint delta based off of remainder of time in hour if not battle, daynight cycle, & tint enabled OR 60
-        let useMinutesRemaining = !$gameParty.inBattle() && daynightCycleEnabled && daynightTintEnabled;
-        let minutes = 60 - (useMinutesRemaining ? $$.minutes() : 0);
-        // Get deltas for each color.
-        delta = new VRGBA(target.v, // divide by zero is +inf or -inf so deltas work for speed = 0
-          (target.r - current.r) / (minutes * speed),
-          (target.g - current.g) / (minutes * speed),
-          (target.b - current.b) / (minutes * speed),
-          (target.a - current.a) / (minutes * speed));
+    // only compute new delta on target or speed change
+    let delta = get('_tintDelta');
+    if (!delta || testAndSet('_OldTintTarget', target) || testAndSet('_OldTintSpeed', speed)) {
+      // tint delta based off of remainder of time in hour if not battle, daynight cycle, & tint enabled OR 60
+      let useMinutesRemaining = !$gameParty.inBattle() && daynightCycleEnabled && daynightTintEnabled;
+      let minutes = 60 - (useMinutesRemaining ? $$.minutes() : 0);
+      // Get deltas for each color.
+      delta = new VRGBA(target.v, // divide by zero is +inf or -inf so deltas work for speed = 0
+        (target.r - current.r) / (minutes * speed),
+        (target.g - current.g) / (minutes * speed),
+        (target.b - current.b) / (minutes * speed),
+        (target.a - current.a) / (minutes * speed));
 
-        set('_tintDelta', delta); // set new tint.
-      }
-
-      // Compute next color step and clamp to target
-      let out = new VRGBA(delta.v, current.r + delta.r, current.g + delta.g, current.b + delta.b, current.a + delta.a);
-      out.r = Math.minmax(out.r > current.r, out.r, target.r);
-      out.g = Math.minmax(out.g > current.g, out.g, target.g);
-      out.b = Math.minmax(out.b > current.b, out.b, target.b);
-      out.a = Math.minmax(out.a > current.a, out.a, target.a);
-      return out;
+      set('_tintDelta', delta); // set new tint.
     }
-  }
-  PIXI.Container.prototype = PIXI_Container_Extender.prototype;
+
+    // Compute next color step and clamp to target
+    let out = new VRGBA(delta.v, current.r + delta.r, current.g + delta.g, current.b + delta.b, current.a + delta.a);
+    out.r = Math.minmax(out.r > current.r, out.r, target.r);
+    out.g = Math.minmax(out.g > current.g, out.g, target.g);
+    out.b = Math.minmax(out.b > current.b, out.b, target.b);
+    out.a = Math.minmax(out.a > current.a, out.a, target.a);
+    return out;
+  };
 
   // Map community light directions to polar angles (360 degrees)
   const CLDirectionMap = {
