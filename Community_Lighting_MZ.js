@@ -1184,7 +1184,7 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
    */
   let testAndSet = (index, value) => {
     if ($gameTemp[index] && ($gameTemp[index] == value ||
-       ($gameTemp[index].equal && $gameTemp[index].equal(value))))
+       ($gameTemp[index].equals && $gameTemp[index].equals(value))))
         return false;
     return ($gameTemp[index] = value, true);
   };
@@ -1196,7 +1196,7 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
    * @param {Number} speed
    * @returns {VRGBA}
    */
-  PIXI.Container.prototype.computeNextTint = function (current, target, speed) {
+  function computeNextTint(current, target, speed) {
     if (current.equals(target)) return target; // Already equal so short-circuit
 
     // only compute new delta on target or speed change
@@ -1217,10 +1217,10 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
 
     // Compute next color step and clamp to target
     let out = new VRGBA(delta.v, current.r + delta.r, current.g + delta.g, current.b + delta.b, current.a + delta.a);
-    out.r = Math.minmax(out.r > current.r, out.r, target.r);
-    out.g = Math.minmax(out.g > current.g, out.g, target.g);
-    out.b = Math.minmax(out.b > current.b, out.b, target.b);
-    out.a = Math.minmax(out.a > current.a, out.a, target.a);
+    out.r = Math.minmax(delta.r > 0, out.r, target.r);
+    out.g = Math.minmax(delta.g > 0, out.g, target.g);
+    out.b = Math.minmax(delta.b > 0, out.b, target.b);
+    out.a = Math.minmax(delta.a > 0, out.a, target.a);
     return out;
   };
 
@@ -1322,8 +1322,6 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
   let player_radius = Number(parameters['Player radius']) || 0;
   let reset_each_map = orBoolean(parameters['Reset Lights'], false);
   let noteTagKey = parameters["Note Tag Key"] !== "" ? parameters["Note Tag Key"] : false;
-  let dayNightSaveHours = Number(parameters['Save DaynightHours']) || 0;
-  let dayNightSaveMinutes = Number(parameters['Save DaynightMinutes']) || 0;
   let dayNightSaveSeconds = Number(parameters['Save DaynightSeconds']) || 0;
   let dayNightSaveNight = Number(parameters["Save Night Switch"]) || 0;
   let dayNightNoAutoshadow = orBoolean(parameters["No Autoshadow During Night"], false);
@@ -1410,14 +1408,12 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
   $$.getDayNightList = function () {
     return dayNightList;
   };
-  $$.saveTime = function (hh, mm, ss = null) {
-    let dayNightList = $gameVariables.GetDaynightColorArray();
-    if (dayNightSaveHours > 0) $gameVariables.setValue(dayNightSaveHours, hh);
-    if (dayNightSaveMinutes > 0) $gameVariables.setValue(dayNightSaveMinutes, mm);
-    if (dayNightSaveSeconds > 0 && ss !== null) $gameVariables.setValue(dayNightSaveSeconds, ss);
-    if (dayNightSaveNight > 0 && dayNightList[hh] instanceof Object) $gameSwitches.setValue(dayNightSaveNight, dayNightList[hh].isNight);
-    if (dayNightNoAutoshadow && dayNightList[hh] instanceof Object && dayNightList[hh].isNight !== hideAutoShadow) {
-      hideAutoShadow = dayNightList[hh].isNight; // We can not use $$.isNight because DaynightCycle hasn't been updated yet!
+  $$.saveTime = function () {
+    let index = $gameVariables.GetDaynightColorArray()[$$.hours()];
+    if (dayNightSaveSeconds > 0) $gameVariables.setValue(dayNightSaveSeconds, $gameVariables.GetDaynightSeconds());
+    if (dayNightSaveNight > 0 && index instanceof Object) $gameSwitches.setValue(dayNightSaveNight, index.isNight);
+    if (dayNightNoAutoshadow && index instanceof Object && index.isNight !== hideAutoShadow) {
+      hideAutoShadow = index.isNight; // We can not use $$.isNight because DaynightCycle hasn't been updated yet!
       // Update the shadow manually
       if (SceneManager._scene && SceneManager._scene._spriteset && SceneManager._scene._spriteset._tilemap) {
         SceneManager._scene._spriteset._tilemap.refresh();
@@ -1425,20 +1421,12 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
     }
   };
   $$.isNight = function () {
-    let hour = $gameVariables.GetDaynightCycle();
+    let hour = $$.hours();
     return dayNightList[hour] instanceof Object ? dayNightList[hour].isNight : false;
   };
-  $$.hours = function () {
-    return $gameVariables.GetDaynightCycle();
-  };
-  $$.minutes = function () {
-    return Math.floor($gameVariables.GetDaynightTimer() / $gameVariables.GetDaynightSpeed());
-  };
-  $$.seconds = function () {
-    let speed = $gameVariables.GetDaynightSpeed();
-    let value = Math.floor($gameVariables.GetDaynightTimer() - speed * $$.minutes());
-    return Math.floor(value / speed * 60);
-  };
+  $$.hours   = () => Math.floor($gameVariables.GetDaynightSeconds () / (60 * 60));
+  $$.minutes = () => Math.floor($gameVariables.GetDaynightSeconds () / 60) % 60;
+  $$.seconds = () => $gameVariables.GetDaynightSeconds () % 60;
   $$.time = function (showSeconds) {
     let result = $$.hours() + ":" + $$.minutes().padZero(2);
     if (showSeconds) result = result + ":" + $$.seconds().padZero(2);
@@ -1953,31 +1941,20 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
 
     // *********************************** DAY NIGHT CYCLE TIMER **************************
     if (daynightCycleEnabled) { //
-      let daynightspeed = $gameVariables.GetDaynightSpeed();
-      if (daynightspeed > 0 && daynightspeed < 5000) {
-
-        let daynighttimer = $gameVariables.GetDaynightTimer();     // timer = minutes * speed
-        let daynightcycle = $gameVariables.GetDaynightCycle();     // cycle = hours
-        let daynighthoursinday = $gameVariables.GetDaynightHoursinDay();   // 24
-
+      let speed = $gameVariables.GetDaynightSpeed();
+      if (speed > 0 && speed < 5000) {
         if (testAndSet('_daynightTimeout', Math.floor((new Date()).getTime() / 10))) {
-          daynighttimer = daynighttimer + 1;
-          let daynightminutes = Math.floor(daynighttimer / daynightspeed);
-          let daynighttimeover = daynighttimer - (daynightspeed * daynightminutes);
-          let daynightseconds = Math.floor(daynighttimeover / daynightspeed * 60);
-
-          if (daynighttimer >= (daynightspeed * 60)) {
-            daynightcycle = daynightcycle + 1;
-            if (daynightcycle >= daynighthoursinday) daynightcycle = 0;
-            daynighttimer = 0;
-          }
-          $$.saveTime(daynightcycle, daynightminutes, daynightseconds);
-          $gameVariables.SetDaynightTimer(daynighttimer);     // timer = minutes * speed
-          $gameVariables.SetDaynightCycle(daynightcycle);     // cycle = hours
+          let seconds = $gameVariables.GetDaynightSeconds();                   // current time in seconds
+          seconds += Math.floor(60 / speed);                                   // add tick amount in (seconds)
+          let secondsinDay = $gameVariables.GetDaynightHoursinDay() * 60 * 60; // convert to total seconds in day
+          if (seconds >= secondsinDay) seconds = 0;                            // clamp
+          $gameVariables.SetDaynightSeconds(seconds);                          // set
+          $$.saveTime();                                                       // save
         }
 
         // Set target to next hour tint if enabled
-        if (daynightTintEnabled) $gameVariables.SetTintTarget($gameVariables.GetTintByTime(1), daynightspeed);
+        console.log($gameVariables.GetTintByTime(1));
+        if (daynightTintEnabled) $gameVariables.SetTintTarget($gameVariables.GetTintByTime(1), speed);
       }
     }
 
@@ -2137,7 +2114,7 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
     // Compute tint for next frame
     let tintValue = $gameVariables.GetTint();
     let [tintTarget, tintSpeed] = $gameVariables.GetTintTarget();
-    tintValue = this.computeNextTint(tintValue, tintTarget, tintSpeed);
+    tintValue = computeNextTint(tintValue, tintTarget, tintSpeed);
     $gameVariables.SetTint(tintValue);
     this._maskBitmaps.FillRect(-lightMaskPadding, 0, maxX + lightMaskPadding, maxY, tintValue);
 
@@ -2624,7 +2601,7 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
       c.set({ v: false, r: 0x66, g: 0x66, b: 0x66, a: 0xff });
 
     // Compute tint for next frame
-    tintValue = this.computeNextTint(tintValue, tintTarget, tintSpeed);
+    tintValue = computeNextTint(tintValue, tintTarget, tintSpeed);
     set('_BattleTint', tintValue);
     this._maskBitmaps.FillRect(-lightMaskPadding, 0, battleMaxX + lightMaskPadding, battleMaxY, tintValue);
     this._maskBitmaps.multiply._baseTexture.update(); // Required to update battle texture in RMMZ optional for RMMV
@@ -2942,24 +2919,17 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
    */
   $$.DayNight = function (args) {
     let daynightspeed = $gameVariables.GetDaynightSpeed();
-    let daynighttimer = $gameVariables.GetDaynightTimer();     // timer = minutes * speed
-    let daynightcycle = $gameVariables.GetDaynightCycle();     // cycle = hours
+    let daynightseconds = $gameVariables.GetDaynightSeconds ();
     let daynighthoursinday = $gameVariables.GetDaynightHoursinDay();   // 24
     let daynightcolors = $gameVariables.GetDaynightColorArray();
 
-    function addTime(houradd, minuteadd) { // helper function to add/subtract time
-      let daynightminutes = Math.floor(daynighttimer / daynightspeed);
-      daynightminutes = daynightminutes + minuteadd + 60*(daynightcycle + houradd);
-      daynightcycle = Math.trunc(daynightminutes/60)%daynighthoursinday;
-      daynightminutes = daynightminutes%60;
-
-      if (daynightminutes < 0) { daynightminutes += 60; daynightcycle--; }
-      if (daynightcycle < 0) { daynightcycle += daynighthoursinday; }
-      daynighttimer = daynightminutes * daynightspeed;
-
-      $$.saveTime(daynightcycle, daynightminutes);
-      $gameVariables.SetDaynightTimer(daynighttimer);     // timer = minutes * speed
-      $gameVariables.SetDaynightCycle(daynightcycle);     // cycle = hours
+    function addTime(seconds, houradd, minuteadd) { // helper function to add/subtract time
+      seconds += houradd * 60 * 60 + minuteadd * 60;
+      let totalSeconds = daynighthoursinday * 60 * 60;
+      while (seconds > totalSeconds) seconds -= totalSeconds;
+      while (seconds < 0) seconds += totalSeconds;
+      $gameVariables.SetDaynightSeconds(seconds);
+      $$.saveTime();
     }
 
     if (args[0].equalsIC('on')) { // enable daynight tint changes
@@ -2968,36 +2938,23 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
         $gameVariables.SetTint($gameVariables.GetTintByTime());
       }
     }
-
     else if (args[0].equalsIC('off')) { // disabled daynight tint changes
       $gameVariables.SetTintTarget($gameVariables.GetTint(), 0);
       daynightTintEnabled = false;
     }
-
     else if (args[0].equalsIC('speed')) { // daynight speed
       daynightspeed = +args[1] || 5000;
       $gameVariables.SetDaynightSpeed(daynightspeed);
     }
-
     else if (args[0].equalsIC('add')) { // add to current time
-      addTime(+args[1], args.length > 2 ? +args[2] : 0);
+      addTime(daynightseconds, orNaN(+args[1], 0), orNaN(+args[2], 0));
     }
-
     else if (args[0].equalsIC('subtract')) { // subtract from current time
-      addTime(+args[1]*-1, args.length > 2 ? +args[2]*-1 : 0);
+      addTime(daynightseconds, orNaN(-+args[1], 0), orNaN(-+args[2], 0));
     }
-
     else if (args[0].equalsIC('hour')) { // set the current time
-      daynightcycle = Math.max(+args[1], 0) || 0;
-      let daynightminutes = Math.max(+args[2], 0) || 0;
-      daynighttimer = daynightminutes * daynightspeed;
-
-      daynightcycle = Math.min(daynightcycle, daynighthoursinday - 1); // clamp time
-      $$.saveTime(daynightcycle, daynightminutes);
-      $gameVariables.SetDaynightTimer(daynighttimer);     // timer = minutes * speed
-      $gameVariables.SetDaynightCycle(daynightcycle);     // cycle = hours
+      addTime(0, orNaN(+args[1], 0), orNaN(+args[2], 0)); //wraps hours and minutes
     }
-
     else if (args[0].equalsIC('hoursinday')) { // set number of hours in day
       daynighthoursinday = Math.max(orNaN(+args[1], 0), 0);
       if (daynighthoursinday > daynightcolors.length) {
@@ -3005,27 +2962,24 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
         daynightcolors.length = daynighthoursinday; // more efficient than a for loop
         daynightcolors.fill({ "color": new VRGBA("#ffffff"), "isNight": false }, origLength);
       }
-      let daynightcycle = Math.min($gameVariables.GetDaynightCycle(), daynighthoursinday - 1); // clamp time
-      $gameVariables.SetDaynightCycle(daynightcycle);
+      let hours = Math.min($$.hours(), daynighthoursinday - 1); // clamp time
+      let seconds = hours * 360 + $$.minutes() * 60 + $$.seconds();
+      $gameVariables.SetDaynightSeconds(seconds);
       $gameVariables.SetDaynightColorArray(daynightcolors);
       $gameVariables.SetDaynightHoursinDay(daynighthoursinday);
     }
-
     else if (args[0].equalsIC('show')) { // show clock
       $gameVariables._clShowTimeWindow = true;
       $gameVariables._clShowTimeWindowSeconds = false;
     }
-
     else if (args[0].equalsIC('showseconds')) { // show clock seconds
       $gameVariables._clShowTimeWindow = true;
       $gameVariables._clShowTimeWindowSeconds = true;
     }
-
     else if (args[0].equalsIC('hide')) { // hide clock
       $gameVariables._clShowTimeWindow = false;
       $gameVariables._clShowTimeWindowSeconds = false;
     }
-
     else if (args[0].equalsIC('color')) { // change hour color
       let hour = (+args[1] || 0).clamp(0, daynighthoursinday - 1);
       let hourcolor = args[2];
@@ -3101,9 +3055,11 @@ Game_Variables.prototype.GetTint = function () {
   return new VRGBA(this._Community_Tint_Value);
 };
 Game_Variables.prototype.GetTintByTime = function (inc = 0) {
-  let cycle = this.GetDaynightCycle() + inc; // increment from current hour
-  if (cycle >= this.GetDaynightHoursinDay) cycle = 0;
-  let result = this.GetDaynightColorArray()[cycle];
+  let hours = Community.Lighting.hours() + inc; // increment from current hour
+  let hoursinDay = this.GetDaynightHoursinDay();
+  while (hours >= hoursinDay) hours -= hoursinDay;
+  while (hours < 0) hours += hoursinDay;
+  let result = this.GetDaynightColorArray()[hours];
   return new VRGBA(result ? result.color : undefined);
 };
 Game_Variables.prototype.SetTintTarget = function (newTarget, speed) {
@@ -3207,17 +3163,11 @@ Game_Variables.prototype.GetDaynightSpeed = function () {
   if (this._Community_Lighting_DaynightSpeed >= 0) return this._Community_Lighting_DaynightSpeed;
   return orNullish(Number(Community.Lighting.parameters['Daynight Initial Speed']), 10);
 };
-Game_Variables.prototype.SetDaynightCycle = function (value) {
-  this._Community_Lighting_DaynightCycle = orNaN(+value);
+Game_Variables.prototype.SetDaynightSeconds= function (value) {
+  this._Community_Lighting_DaynightSeconds = orNaN(+value);
 };
-Game_Variables.prototype.GetDaynightCycle = function () {
-  return orNullish(this._Community_Lighting_DaynightCycle, Number(Community.Lighting.parameters['Daynight Initial Hour']), 0);
-};
-Game_Variables.prototype.SetDaynightTimer = function (value) {
-  this._Community_Lighting_DaynightTimer = orNaN(+value);
-};
-Game_Variables.prototype.GetDaynightTimer = function () {
-  return orNullish(this._Community_Lighting_DaynightTimer, 0);
+Game_Variables.prototype.GetDaynightSeconds = function () {
+  return orNaN(+this._Community_Lighting_DaynightSeconds, 0);
 };
 Game_Variables.prototype.SetDaynightHoursinDay = function (value) {
   this._Community_Lighting_DaynightHoursinDay = orNaN(+value);
