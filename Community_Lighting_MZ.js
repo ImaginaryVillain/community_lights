@@ -2457,8 +2457,8 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
     this._addSprite(-lightMaskPadding, 0, this._maskBitmaps.multiply, PIXI.BLEND_MODES.MULTIPLY);
     this._addSprite(-lightMaskPadding, 0, this._maskBitmaps.additive, PIXI.BLEND_MODES.ADD);
 
-    this._maskBitmaps.multiply.fillRect(0, 0, maxX + lightMaskPadding, maxY, '#000000');
-    this._maskBitmaps.additive.clearRect(0, 0, maxX + lightMaskPadding, maxY);
+    this._maskBitmaps.multiply.fillRect(0, 0, battleMaxX + lightMaskPadding, battleMaxY, '#000000');
+    this._maskBitmaps.additive.clearRect(0, 0, battleMaxX + lightMaskPadding, battleMaxY);
 
     // if we came from a map, script is active, configuration authorizes using lighting effects,
     // and there is lightsource on this map, then use the tint of the map, otherwise use full brightness
@@ -2485,8 +2485,8 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
   };
 
   BattleLightmask.prototype.update = function () {
-    this._maskBitmaps.multiply.fillRect(0, 0, maxX + lightMaskPadding, maxY, '#000000');
-    this._maskBitmaps.additive.clearRect(0, 0, maxX + lightMaskPadding, maxY);
+    this._maskBitmaps.multiply.fillRect(0, 0, battleMaxX + lightMaskPadding, battleMaxY, '#000000');
+    this._maskBitmaps.additive.clearRect(0, 0, battleMaxX + lightMaskPadding, battleMaxY);
 
     // Grab tint information
     let tintValue  = get('_BattleTint');
