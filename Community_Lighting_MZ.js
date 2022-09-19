@@ -445,6 +445,14 @@ Imported[Community.Lighting.name] = true;
 * @value subtract
 * @default set
 *
+* @arg instant
+* @text Instant tint change
+* @desc If set to "off" then the tint will gradually transition to that of the next hour.
+* @type boolean
+* @on On
+* @off Off
+* @default false
+*
 * @----------------------------
 *
 * @command setHourColor
@@ -462,6 +470,14 @@ Imported[Community.Lighting.name] = true;
 * @type text
 * @default #ffffff
 *
+* @arg instant
+* @text Instant tint change
+* @desc If set to "off" then the tint will gradually transition to that of the next hour.
+* @type boolean
+* @on On
+* @off Off
+* @default false
+*
 * @----------------------------
 *
 * @command setHoursInDay
@@ -473,6 +489,14 @@ Imported[Community.Lighting.name] = true;
 * @type number
 * @min 0
 * @default 24
+*
+* @arg instant
+* @text Instant tint change
+* @desc If set to "off" then the tint will gradually transition to that of the next hour.
+* @type boolean
+* @on On
+* @off Off
+* @default false
 *
 * @----------------------------
 *
@@ -927,23 +951,29 @@ Imported[Community.Lighting.name] = true;
 *
 * DayNight on|off [instant]
 * - Activates or deactivates the day/night cycle. Specifying 'instant' will set the
-* - tint for the current hour instantly, otherwise it will change gradually to that of
-* - the next hour
+*   tint for the current hour instantly, otherwise it will change gradually to that of
+*   the next hour
 *
 * Daynight speed n
 * - Changes the speed by which hours pass in game in relation to real life seconds
 *
-* Daynight hour h m
-* - Sets the in game time to hh:mm
+* Daynight hour h m [instant]
+* - Sets the in game time to hh:mm. Specifying 'instant' will set the
+*   tint for the current hour instantly, otherwise it will change gradually to that of
+*   the next hour
 *
 * Daynight color h c
 * - Sets the hour (h) to use color (c)
 *
-* Daynight add h m
-* - Adds the specified hours (h) and minutes (m) to the in game clock
+* Daynight add h m [instant]
+* - Adds the specified hours (h) and minutes (m) to the in game clock. Specifying 'instant' will set the
+*   tint for the current hour instantly, otherwise it will change gradually to that of
+*   the next hour
 *
-* Daynight subtract h m
-* - Subtracts the specified hours (h) and minutes (m) from the in game clock
+* Daynight subtract h m [instant]
+* - Subtracts the specified hours (h) and minutes (m) from the in game clock. Specifying 'instant' will set the
+*   tint for the current hour instantly, otherwise it will change gradually to that of
+*   the next hour
 *
 * Daynight show
 * - Shows the current time of day in the upper right corner of the map screen (h:mm)
@@ -954,8 +984,10 @@ Imported[Community.Lighting.name] = true;
 * Daynight hide
 * - Hides the current time of day mini-window
 *
-* Daynight hoursinday h
-* - Sets the number of hours in a day to [h] (set hour colors if doing this)
+* Daynight hoursinday h [instant]
+* - Sets the number of hours in a day to [h] (set hour colors if doing this), Specifying 'instant' will set the
+*   tint for the current hour instantly, otherwise it will change gradually to that of
+*   the next hour
 *
 * Tint set c [s]
 * Tint fade c [s]
@@ -1196,33 +1228,31 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
    * @param {Number} speed
    * @returns {VRGBA}
    */
-  function computeNextTint(current, target, speed) {
+  function computeNextTint(current, target, speed, useTicks = false, scale = 1) {
     if (current.equals(target)) return target; // Already equal so short-circuit
 
     // only compute new delta on target or speed change
     let delta = get('_tintDelta');
     if (!delta || testAndSet('_OldTintTarget', target) || testAndSet('_OldTintSpeed', speed)) {
-      // tint delta based off of remainder of time in hour if not battle, daynight cycle, & tint enabled OR 60
-      let useMinutesRemaining = !$gameParty.inBattle() && daynightCycleEnabled && daynightTintEnabled;
-      let minutes = 60 - (useMinutesRemaining ? $$.minutes() : 0);
+       let tickTotal = 60 * speed - (useTicks ? $$.ticks() : 0); // use either thee remaining ticks (of the hour) or total ticks
       // Get deltas for each color.
       delta = new VRGBA(target.v, // divide by zero is +inf or -inf so deltas work for speed = 0
-        (target.r - current.r) / (minutes * speed),
-        (target.g - current.g) / (minutes * speed),
-        (target.b - current.b) / (minutes * speed),
-        (target.a - current.a) / (minutes * speed));
-
-      set('_tintDelta', delta); // set new tint.
+                       (target.r - current.r) / (tickTotal),
+                       (target.g - current.g) / (tickTotal),
+                       (target.b - current.b) / (tickTotal),
+                       (target.a - current.a) / (tickTotal));
+      set('_tintDelta', delta); // set new delta.
     }
 
     // Compute next color step and clamp to target
-    let out = new VRGBA(delta.v, current.r + delta.r, current.g + delta.g, current.b + delta.b, current.a + delta.a);
+    let out = new VRGBA(delta.v, current.r + scale * delta.r, current.g + scale * delta.g,
+                                 current.b + scale * delta.b, current.a + scale * delta.a);
     out.r = Math.minmax(delta.r > 0, out.r, target.r);
     out.g = Math.minmax(delta.g > 0, out.g, target.g);
     out.b = Math.minmax(delta.b > 0, out.b, target.b);
     out.a = Math.minmax(delta.a > 0, out.a, target.a);
     return out;
-  };
+  }
 
   // Map community light directions to polar angles (360 degrees)
   const CLDirectionMap = {
@@ -1426,7 +1456,8 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
   };
   $$.hours   = () => Math.floor($gameVariables.GetDaynightSeconds () / (60 * 60));
   $$.minutes = () => Math.floor($gameVariables.GetDaynightSeconds () / 60) % 60;
-  $$.seconds = () => $gameVariables.GetDaynightSeconds () % 60;
+  $$.seconds = () => $gameVariables.GetDaynightSeconds() % 60;
+  $$.ticks   = () => Math.floor($$.seconds() / $gameVariables.GetDaynightTick() + $$.minutes() * $gameVariables.GetDaynightSpeed());
   $$.time = function (showSeconds) {
     let result = $$.hours() + ":" + $$.minutes().padZero(2);
     if (showSeconds) result = result + ":" + $$.seconds().padZero(2);
@@ -1662,10 +1693,10 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
     reg("setTint",            (a)  => f(tintType(),   [tintMode(a),     a.color,         a.fadeSpeed]));
     reg("daynightEnable",     (a)  => f("daynight",   [mapOnOff(a),     dayMode(a)]));
     reg("setTimeSpeed",       (a)  => f("dayNight",   ["speed",         a.speed]));
-    reg("setTime",            (a)  => f("dayNight",   [mathMode(a),     a.hours,         a.minutes]));
-    reg("setHoursInDay",      (a)  => f("dayNight",   ["hoursinday",    a.hours]));
+    reg("setTime",            (a)  => f("dayNight",   [mathMode(a),     a.hours,         a.minutes,      dayMode(a)]));
+    reg("setHoursInDay",      (a)  => f("dayNight",   ["hoursinday",    a.hours,         dayMode(a)]));
     reg("showTime",           (a)  => f("dayNight",   [showMode(a)]));
-    reg("setHourColor",       (a)  => f("dayNight",   ["color", a.hour, a.color]));
+    reg("setHourColor",       (a)  => f("dayNight",   ["color", a.hour, a.color,         dayMode(a)]));
     reg("flashlight",         (a)  => f("flashLight", [mapOnOff(a),     a.beamLength,    a.beamWidth,    a.color,          a.density]));
     reg("setFire",            (a)  => f("setFire",    [a.radiusShift,   a.redYellowShift]));
     reg("playerLightRadius",  (a)  => f("light",      [radMode(a),      a.radius,        a.color,        "B"+a.brightness, a.fadeSpeed]));
@@ -1945,7 +1976,7 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
       if (speed > 0 && speed < 5000) {
         if (testAndSet('_daynightTimeout', Math.floor((new Date()).getTime() / 10))) {
           let seconds = $gameVariables.GetDaynightSeconds();                   // current time in seconds
-          seconds += Math.floor(60 / speed);                                   // add tick amount in (seconds)
+          seconds += $gameVariables.GetDaynightTick();                         // add tick amount in (seconds)
           let secondsinDay = $gameVariables.GetDaynightHoursinDay() * 60 * 60; // convert to total seconds in day
           if (seconds >= secondsinDay) seconds = 0;                            // clamp
           $gameVariables.SetDaynightSeconds(seconds);                          // set
@@ -1953,7 +1984,6 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
         }
 
         // Set target to next hour tint if enabled
-        console.log($gameVariables.GetTintByTime(1));
         if (daynightTintEnabled) $gameVariables.SetTintTarget($gameVariables.GetTintByTime(1), speed);
       }
     }
@@ -2114,7 +2144,7 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
     // Compute tint for next frame
     let tintValue = $gameVariables.GetTint();
     let [tintTarget, tintSpeed] = $gameVariables.GetTintTarget();
-    tintValue = computeNextTint(tintValue, tintTarget, tintSpeed);
+    tintValue = computeNextTint(tintValue, tintTarget, tintSpeed, daynightCycleEnabled && daynightTintEnabled);
     $gameVariables.SetTint(tintValue);
     this._maskBitmaps.FillRect(-lightMaskPadding, 0, maxX + lightMaskPadding, maxY, tintValue);
 
@@ -2918,75 +2948,50 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
    * @param {String[]} args
    */
   $$.DayNight = function (args) {
-    let daynightspeed = $gameVariables.GetDaynightSpeed();
-    let daynightseconds = $gameVariables.GetDaynightSeconds ();
-    let daynighthoursinday = $gameVariables.GetDaynightHoursinDay();   // 24
-    let daynightcolors = $gameVariables.GetDaynightColorArray();
-
-    function addTime(seconds, houradd, minuteadd) { // helper function to add/subtract time
-      seconds += houradd * 60 * 60 + minuteadd * 60;
-      let totalSeconds = daynighthoursinday * 60 * 60;
-      while (seconds > totalSeconds) seconds -= totalSeconds;
+    let modTime = (hoursInDay, hours, minutes, seconds) => { // helper function to modify (set/add/subtract) time
+      hoursInDay = Math.max(orNaN(+hoursInDay, 24), 1); // minimum of 1, err results in 24
+      hours = orNaN(hours, 0);
+      minutes = orNaN(minutes, 0);
+      seconds = orNaN(seconds, 0);
+      seconds += hours * 60 * 60 + minutes * 60;
+      let totalSeconds = hoursInDay * 60 * 60;
+      while (seconds >= totalSeconds) seconds -= totalSeconds;
       while (seconds < 0) seconds += totalSeconds;
-      $gameVariables.SetDaynightSeconds(seconds);
+      gV.SetDaynightSeconds(seconds);
+      gV.SetDaynightHoursinDay(hoursInDay);
+      maybeInstantTint();
       $$.saveTime();
-    }
+    };
+    let maybeInstantTint = () => { // comput instant tint change
+      set('_tintDelta', null); // clear tint to force recompute regardless of whether instant or not
+      if ('instant'.equalsIC(...args)) {
+        let curTint = $gameVariables.GetTintByTime();
+        let nextTint = $gameVariables.GetTintByTime(1);
+        let speed = $gameVariables.GetDaynightSpeed();
+        curTint = computeNextTint(curTint, nextTint, speed, false, $$.ticks() + 1);
+        $gameVariables.SetTint(curTint);
+        $gameVariables.SetTintTarget(nextTint, speed);
+      }
+    };
+    let isCmd                      = (s)    => a[0].equalsIC(s);
+    let daynightTint               = (b)    => daynightTintEnabled = b;
+    let showTime                   = (w, s) => [gV._clShowTimeWindow, gV._clShowTimeWindowSeconds] = [w, s];
+    let [gV, a]                    = [$gameVariables, args];
+    let [secondsTotal, hoursInDay] = [gV.GetDaynightSeconds(), gV.GetDaynightHoursinDay()];
+    let [hours, minutes, seconds]  = [$$.hours(), $$.minutes(), $$.seconds()];
+    if (isCmd('on'))               void (daynightTint(true), maybeInstantTint());                 // enable daynight tint changes
+    else if (isCmd('off'))         void (daynightTint(false), gV.SetTintTarget(gV.GetTint(), 0)); // disabled daynight tint changes
+    else if (isCmd('speed'))       gV.SetDaynightSpeed(+a[1] || 5000);                            // daynight speed
+    else if (isCmd('add'))         modTime(hoursInDay, +a[1],   +a[2],   secondsTotal, 0);        // add to current time
+    else if (isCmd('subtract'))    modTime(hoursInDay, -+a[1], -+a[2],   secondsTotal, 0);        // subtract from current time
+    else if (isCmd('hour'))        modTime(hoursInDay, +a[1],   +a[2],   0);                      // set the current time
+    else if (isCmd('hoursinday'))  modTime(+a[1],      hours,   minutes, seconds);                // set number of hours in day (must be >0, err = 24)
+    else if (isCmd('show'))        showTime(true, false);                                         // show clock
+    else if (isCmd('showseconds')) showTime(true, true);                                          // show clock seconds
+    else if (isCmd('hide'))        showTime(false, false);                                        // hide clock
+    else if (isCmd('color'))       void (gV.SetTintAtHour(a[1], a[2]), maybeInstantTint());       // change hour color
 
-    if (args[0].equalsIC('on')) { // enable daynight tint changes
-      daynightTintEnabled = true;
-      if (args[1] && args[1].equalsIC("instant")) { // set instantly
-        $gameVariables.SetTint($gameVariables.GetTintByTime());
-      }
-    }
-    else if (args[0].equalsIC('off')) { // disabled daynight tint changes
-      $gameVariables.SetTintTarget($gameVariables.GetTint(), 0);
-      daynightTintEnabled = false;
-    }
-    else if (args[0].equalsIC('speed')) { // daynight speed
-      daynightspeed = +args[1] || 5000;
-      $gameVariables.SetDaynightSpeed(daynightspeed);
-    }
-    else if (args[0].equalsIC('add')) { // add to current time
-      addTime(daynightseconds, orNaN(+args[1], 0), orNaN(+args[2], 0));
-    }
-    else if (args[0].equalsIC('subtract')) { // subtract from current time
-      addTime(daynightseconds, orNaN(-+args[1], 0), orNaN(-+args[2], 0));
-    }
-    else if (args[0].equalsIC('hour')) { // set the current time
-      addTime(0, orNaN(+args[1], 0), orNaN(+args[2], 0)); //wraps hours and minutes
-    }
-    else if (args[0].equalsIC('hoursinday')) { // set number of hours in day
-      daynighthoursinday = Math.max(orNaN(+args[1], 0), 0);
-      if (daynighthoursinday > daynightcolors.length) {
-        let origLength = daynightcolors.length;
-        daynightcolors.length = daynighthoursinday; // more efficient than a for loop
-        daynightcolors.fill({ "color": new VRGBA("#ffffff"), "isNight": false }, origLength);
-      }
-      let hours = Math.min($$.hours(), daynighthoursinday - 1); // clamp time
-      let seconds = hours * 360 + $$.minutes() * 60 + $$.seconds();
-      $gameVariables.SetDaynightSeconds(seconds);
-      $gameVariables.SetDaynightColorArray(daynightcolors);
-      $gameVariables.SetDaynightHoursinDay(daynighthoursinday);
-    }
-    else if (args[0].equalsIC('show')) { // show clock
-      $gameVariables._clShowTimeWindow = true;
-      $gameVariables._clShowTimeWindowSeconds = false;
-    }
-    else if (args[0].equalsIC('showseconds')) { // show clock seconds
-      $gameVariables._clShowTimeWindow = true;
-      $gameVariables._clShowTimeWindowSeconds = true;
-    }
-    else if (args[0].equalsIC('hide')) { // hide clock
-      $gameVariables._clShowTimeWindow = false;
-      $gameVariables._clShowTimeWindowSeconds = false;
-    }
-    else if (args[0].equalsIC('color')) { // change hour color
-      let hour = (+args[1] || 0).clamp(0, daynighthoursinday - 1);
-      let hourcolor = args[2];
-      if (hourcolor) daynightcolors[hour].color = new VRGBA(hourcolor);
-      $gameVariables.SetDaynightColorArray(daynightcolors);
-    }
-  };
+};
 
   let _Tilemap_drawShadow = Tilemap.prototype._drawShadow;
   Tilemap.prototype._drawShadow = function (bitmap, shadowBits, dx, dy) {
@@ -3053,6 +3058,10 @@ Game_Variables.prototype.SetTint = function (value) {
 };
 Game_Variables.prototype.GetTint = function () {
   return new VRGBA(this._Community_Tint_Value);
+};
+Game_Variables.prototype.SetTintAtHour = function (hour, color) {
+  let result = this.GetDaynightColorArray()[Math.min((+hour || 0), 0)];
+  if (color) result.color = new VRGBA(color); // hour color
 };
 Game_Variables.prototype.GetTintByTime = function (inc = 0) {
   let hours = Community.Lighting.hours() + inc; // increment from current hour
@@ -3139,9 +3148,6 @@ Game_Variables.prototype.SetRadiusSpeed = function (value) { // must use AFTER s
 Game_Variables.prototype.GetRadiusSpeed = function () {
   return orNullish(this._Community_Lighting_RadiusSpeed, 0);
 };
-Game_Variables.prototype.SetDaynightColorArray = function (value) {
-  this._Community_Lighting_DayNightColorArray = value;
-};
 Game_Variables.prototype.GetDaynightColorArray = function () {
   let result = this._Community_Lighting_DayNightColorArray || Community.Lighting.getDayNightList();
   if (!result) {
@@ -3153,7 +3159,13 @@ Game_Variables.prototype.GetDaynightColorArray = function () {
       '#000000', '#000000', '#000000', '#000000'].map(x => x = { "color": new VRGBA(x), "isNight": false });
     this._Community_Lighting_DayNightColorArray = result;
   }
-  if (!this._Community_Lighting_DayNightColorArray) this.SetDaynightColorArray(result);
+  let hoursInDay = this.GetDaynightHoursinDay();
+  if (hoursInDay > result.length) { // lazy check bounds before returning and add colors if too small
+    let origLength = result.length;
+    result.length = hoursInDay;     // more efficient than a for loop
+    result.fill({ "color": new VRGBA("#ffffff"), "isNight": false }, origLength);
+  }
+  this._Community_Lighting_DayNightColorArray = result; // assign reference
   return result;
 };
 Game_Variables.prototype.SetDaynightSpeed = function (value) {
@@ -3163,7 +3175,10 @@ Game_Variables.prototype.GetDaynightSpeed = function () {
   if (this._Community_Lighting_DaynightSpeed >= 0) return this._Community_Lighting_DaynightSpeed;
   return orNullish(Number(Community.Lighting.parameters['Daynight Initial Speed']), 10);
 };
-Game_Variables.prototype.SetDaynightSeconds= function (value) {
+Game_Variables.prototype.GetDaynightTick = function () {
+  return Math.floor(60 / this.GetDaynightSpeed());
+};
+Game_Variables.prototype.SetDaynightSeconds = function (value) {
   this._Community_Lighting_DaynightSeconds = orNaN(+value);
 };
 Game_Variables.prototype.GetDaynightSeconds = function () {
@@ -3173,19 +3188,19 @@ Game_Variables.prototype.SetDaynightHoursinDay = function (value) {
   this._Community_Lighting_DaynightHoursinDay = orNaN(+value);
 };
 Game_Variables.prototype.GetDaynightHoursinDay = function () {
-  return orNullish(this._Community_Lighting_DaynightHoursinDay, 24);
+  return orNaN(this._Community_Lighting_DaynightHoursinDay, 24);
 };
 Game_Variables.prototype.SetFireRadius = function (value) {
   this._Community_Lighting_FireRadius = orNaN(+value);
 };
 Game_Variables.prototype.GetFireRadius = function () {
-  return orNullish(this._Community_Lighting_FireRadius, 7);
+  return orNaN(this._Community_Lighting_FireRadius, 7);
 };
 Game_Variables.prototype.SetFireColorshift = function (value) {
   this._Community_Lighting_FireColorshift = orNaN(+value);
 };
 Game_Variables.prototype.GetFireColorshift = function () {
-  return orNullish(this._Community_Lighting_FireColorshift, 10);
+  return orNaN(this._Community_Lighting_FireColorshift, 10);
 };
 Game_Variables.prototype.SetFire = function (value) {
   this._Community_Lighting_Fire = value;
