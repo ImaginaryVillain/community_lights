@@ -542,9 +542,9 @@ Imported[Community.Lighting.name] = true;
 *
 * @----------------------------
 *
-* @command resetBattleTint
-* @text Reset Battle Tint
-* @desc Reset the battle screen to its original color
+* @command resetTint
+* @text Reset Tint
+* @desc Reset the current map tint to the next hour color, or the battle tint to its original color if in battle
 *
 * @arg fadeSpeed
 * @text Fade Speed
@@ -1108,7 +1108,46 @@ function orBoolean(...a) {
 function orNullish(...a) { for (let i = 0; i < a.length; i++) if (a[i] != null) return a[i]; }
 function orNaN(...a)     { for (let i = 0; i < a.length; i++) if (!isNaN(a[i])) return a[i]; }
 
+/**
+ * Gets the value at the  specified index of the $gameTemp object.
+ * @param {String} index
+ * @returns {any}
+ */
+let get = (index) => $gameTemp[index];
+
+/**
+* Sets the value at the specified index of the $gameTemp object.
+* @param {String} index
+* @param {any}    value
+*/
+let set = (index, value) => $gameTemp[index] = value;
+
+/**
+* Tests the value at the specified index of the $gameTemp object for equality with the
+* passed in value and sets it. Returns true if the values match, or false otherwise.
+* @param {String} index
+* @param {any}    value
+* @returns {Boolean}
+*/
+let testAndSet = (index, value) => {
+  if ($gameTemp[index] && ($gameTemp[index] == value ||
+    ($gameTemp[index].equals && $gameTemp[index].equals(value))))
+      return false;
+  return ($gameTemp[index] = value, true);
+};
+
 const isValidColorRegex = /^[Aa]?#[A-F\d]{8}$/i; // a|A before # for additive lighting
+
+/**
+ * @param {Number} r
+ * @param {Number} g
+ * @param {Number} b
+ * @param {Number} a
+ * @returns {String}
+ */
+ function rgba(r, g, b, a) {
+  return "rgba(" + r + "," + g + "," + b + "," + a + ")";
+}
 
 class VRGBA { // Class to handle volumetric/additive coloring with rgba colors uniformly
   constructor(vOrHex, rOrDefault = "#000000ff", g = undefined, b = undefined, a = 0xff) {
@@ -1132,7 +1171,9 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
   set(setters) { for (let k in setters) if (this[k] != null) this[k] = setters[k]; }
 
   equals(that) { // fastest non-exactness comparison -- only checks v, r, g, b, a properties
-    if (that && this.v == that.v && this.r == that.r && this.g == that.g && this.b == that.b && this.a == that.a)
+    let f = (x, y) => Math.abs(x - y) < 1e-3; // custom epsilon
+    let [a, b] = [this, that];
+    if (b && f(a.v, b.v) && f(a.r, b.r) && f(a.g, b.g) && f(a.b, b.b) && f(a.a, b.a))
       return true;
     return false;
   }
@@ -1175,16 +1216,96 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
   toWebHex(setters) { return this.toHex(true, setters); }
 }
 
-/**
- *
- * @param {Number} r
- * @param {Number} g
- * @param {Number} b
- * @param {Number} a
- * @returns {String}
- */
-  function rgba(r, g, b, a) {
-    return "rgba(" + r + "," + g + "," + b + "," + a + ")";
+/** Class representing a color delta for providing color changes over time at different speeds. */
+class Delta {
+  /**
+   * Create color delta based off of the start color, target color, specified speed, and whether to consider the remaining ticks or not for speed purposes.
+   * @param {VRGBA} current
+   * @param {VRGBA} target
+   * @param {Number} speed
+   * @param {Number} useTicksRemaining
+   * @returns {Delta}
+   */
+  constructor(start, target, speed, useTicksRemaining) {
+    this.current = new VRGBA(start);
+    this.target   = new VRGBA(target);
+    this._finished = false; // true when current value == target value
+    speed         = orNaN(speed, 0);
+    let tickTotal = 60 * speed - (useTicksRemaining ? Community.Lighting.ticks() : 0); // use either thee remaining ticks (of the hour) or total ticks
+    this.delta = new VRGBA(this.target.v, // divide by zero is +inf or -inf so deltas work for speed = 0
+                          (this.target.r - this.current.r) / tickTotal, (this.target.g - this.current.g) / tickTotal,
+                          (this.target.b - this.current.b) / tickTotal, (this.target.a - this.current.a) / tickTotal);
+  }
+
+  /**
+   * Create color delta from the start color, target color, and specified speed.
+   * @param {VRGBA} start
+   * @param {VRGBA} target
+   * @param {Number} speed
+   * @returns {Delta}
+   */
+  static createColor(start, target, speed = 0) { return new Delta(start, target, speed, false /* don't use remaining ticks */ ); }
+
+  /**
+   * Create map color delta from the current map tint, target tint, and specified speed.
+   * @param {VRGBA} target
+   * @param {Number} speed
+   * @returns {Delta}
+   */
+  static createTint(target, speed = 0) { return new Delta($gameVariables.GetTint(), target, speed, false /* don't use remaining ticks */); }
+
+  /**
+   * Create battle color delta from the current battle tint, target tint, and specified speed.
+   * @param {VRGBA} target
+   * @param {Number} speed
+   * @returns {Delta}
+   */
+  static createBattleTint(target, speed = 0) { return new Delta(get('_BattleTintTarget').current, target, speed, false /* don't use remaining ticks */); }
+
+  /**
+   * Create a time color delta from the current time and speed. Fade specifies whether to fade from the current color to the target or
+   * to have the start color be the color it would normally be at the given time interval (difference between current hour and next).
+   * @param {Boolean} fade
+   * @returns {Delta}
+   */
+  static createTimeTint(fade = false) {
+    let speed = $gameVariables.GetDaynightSpeed();
+    let target = $gameVariables.GetTintByTime(1);
+    if (fade) { // delta should fade from current color to target
+      return new Delta($gameVariables.GetTint(), target, speed, true /* use remaining ticks for speed computation */);
+    } else {       // start color should be the color it would normally be at the given time
+      let ticks = speed == 0 ? Community.Lighting.minutes() * 60 + Community.Lighting.seconds() : Community.Lighting.ticks();
+      speed     = speed == 0 ? 60 : speed; // speed = 0 needs a reference speed to compute the color at the current time so use 1 tick = 1 second
+      let delta = new Delta($gameVariables.GetTintByTime(), target, speed, false /* don't use remaining ticks */);
+      delta.nextColor(ticks); // get current color based off of ticks elapsed in hour
+      return delta;
+    }
+  }
+
+  /**
+   * Returns the next delta color in between the current color and target color. Scale is used to scale the output color by a factor the scale amount.
+   * @param {VRGBA} scale
+   * @returns {VRGBA}
+   */
+  nextColor(scale = 1) {
+    if (this.finished()) return this.target; // lazy-short-circuit
+    this.current.v = this.delta.v;           // Compute next color step and clamp to target
+    this.current.r = Math.minmax(this.delta.r > 0, this.current.r + scale * this.delta.r, this.target.r);
+    this.current.g = Math.minmax(this.delta.g > 0, this.current.g + scale * this.delta.g, this.target.g);
+    this.current.b = Math.minmax(this.delta.b > 0, this.current.b + scale * this.delta.b, this.target.b);
+    this.current.a = Math.minmax(this.delta.a > 0, this.current.a + scale * this.delta.a, this.target.a);
+    return new VRGBA(this.current); // duplicate so reference can't be messed with
+  }
+
+  /**
+   * Returns whether the current color is equal to the target and if so returns true; otherwise false.
+   * @returns {Boolean}
+   */
+  finished() {
+    if (this._finished) return this._finished; // lazy-short-circuit comparison followed by real comparison
+    if ((this._finished = this.current.equals(this.target))) this.current = this.target; // set cur to refer to target on match
+    return this._finished; // return comparison
+  }
 }
 
 (function ($$) {
@@ -1192,67 +1313,6 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
   let isOff = (x) => x.toLowerCase() === "off";
   let isActivate = (x) => x.toLowerCase() === "activate";
   let isDeactivate = (x) => x.toLowerCase() === "deactivate";
-
-  /**
-   * Gets the value at the  specified index of the $gameTemp object.
-   * @param {String} index
-   * @returns {any}
-   */
-  let get = (index) => $gameTemp[index];
-
-  /**
-   * Sets the value at the specified index of the $gameTemp object.
-   * @param {String} index
-   * @param {any}    value
-   */
-  let set = (index, value) => $gameTemp[index] = value;
-
-  /**
-   * Tests the value at the specified index of the $gameTemp object for equality with the
-   * passed in value and sets it. Returns true if the values match, or false otherwise.
-   * @param {String} index
-   * @param {any}    value
-   * @returns {Boolean}
-   */
-  let testAndSet = (index, value) => {
-    if ($gameTemp[index] && ($gameTemp[index] == value ||
-       ($gameTemp[index].equals && $gameTemp[index].equals(value))))
-        return false;
-    return ($gameTemp[index] = value, true);
-  };
-
-  /**
-   * Computes and returns the next tint color based off of the current tint, target tint, and speed.
-   * @param {VRGBA} current
-   * @param {VRGBA} target
-   * @param {Number} speed
-   * @returns {VRGBA}
-   */
-  function computeNextTint(current, target, speed, useTicks = false, scale = 1) {
-    if (current.equals(target)) return target; // Already equal so short-circuit
-
-    // only compute new delta on target or speed change
-    let delta = get('_tintDelta');
-    if (!delta || testAndSet('_OldTintTarget', target) || testAndSet('_OldTintSpeed', speed)) {
-       let tickTotal = 60 * speed - (useTicks ? $$.ticks() : 0); // use either thee remaining ticks (of the hour) or total ticks
-      // Get deltas for each color.
-      delta = new VRGBA(target.v, // divide by zero is +inf or -inf so deltas work for speed = 0
-                       (target.r - current.r) / (tickTotal),
-                       (target.g - current.g) / (tickTotal),
-                       (target.b - current.b) / (tickTotal),
-                       (target.a - current.a) / (tickTotal));
-      set('_tintDelta', delta); // set new delta.
-    }
-
-    // Compute next color step and clamp to target
-    let out = new VRGBA(delta.v, current.r + scale * delta.r, current.g + scale * delta.g,
-                                 current.b + scale * delta.b, current.a + scale * delta.a);
-    out.r = Math.minmax(delta.r > 0, out.r, target.r);
-    out.g = Math.minmax(delta.g > 0, out.g, target.g);
-    out.b = Math.minmax(delta.b > 0, out.b, target.b);
-    out.a = Math.minmax(delta.a > 0, out.a, target.a);
-    return out;
-  }
 
   // Map community light directions to polar angles (360 degrees)
   const CLDirectionMap = {
@@ -1655,6 +1715,7 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
       $$.defaultBrightness = 0;
       $$.mapBrightness = undefined;
       $gameVariables.SetTint(null);
+      $gameVariables.SetTintTarget(null);
     }
   };
   /**
@@ -1703,7 +1764,7 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
     reg("activateById",       (a)  => f("light",      [mapOnOff(a),     a.id]));
     reg("lightColor",         (a)  => f("light",      ["color",         a.id,            a.color]));
     reg("resetLightSwitches", ( )  => f("light",      ["switch",        "reset"]));
-    reg("resetBattleTint",    (a)  => f("tintbattle", ["reset",         a.fadeSpeed]));
+    reg("resetTint",          (a)  => f(tintType(),   ["reset",         a.fadeSpeed]));
   }
 
   /**
@@ -1981,10 +2042,13 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
           if (seconds >= secondsinDay) seconds = 0;                            // clamp
           $gameVariables.SetDaynightSeconds(seconds);                          // set
           $$.saveTime();                                                       // save
+          // Set target to the next hour tint if enabled and the tint matches the current target
+          if (daynightTintEnabled && $gameVariables.GetTintTarget().finished()) {
+            let delta = Delta.createTimeTint(true /*fade*/);
+            $gameVariables.SetTint(delta.current);
+            $gameVariables.SetTintTarget(delta);
+          }
         }
-
-        // Set target to next hour tint if enabled
-        if (daynightTintEnabled) $gameVariables.SetTintTarget($gameVariables.GetTintByTime(1), speed);
       }
     }
 
@@ -2142,9 +2206,7 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
     ctxMul.globalCompositeOperation = 'lighter';
 
     // Compute tint for next frame
-    let tintValue = $gameVariables.GetTint();
-    let [tintTarget, tintSpeed] = $gameVariables.GetTintTarget();
-    tintValue = computeNextTint(tintValue, tintTarget, tintSpeed, daynightCycleEnabled && daynightTintEnabled);
+    let tintValue = $gameVariables.GetTintTarget().nextColor();
     $gameVariables.SetTint(tintValue);
     this._maskBitmaps.FillRect(-lightMaskPadding, 0, maxX + lightMaskPadding, maxY, tintValue);
 
@@ -2577,7 +2639,6 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
 
   BattleLightmask.prototype = Object.create(PIXI.Container.prototype);
   BattleLightmask.prototype.constructor = BattleLightmask;
-
   BattleLightmask.prototype.initialize = function () {
     PIXI.Container.call(this);
     this._width = Graphics.width;
@@ -2598,20 +2659,21 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
              $gameVariables.GetScriptActive() && options_lighting_on && lightInBattle) ?
             $gameVariables.GetTint() : new VRGBA("#ffffff");
 
+    // Set initial tint for battle
+    c = $$.daynightset ? $gameVariables.GetTintByTime() : c;
+
     // Prevent the battle scene from being too dark
     if (c.magnitude() < 0x66 * 3 && c.r < 0x66 && c.g < 0x66 && c.b < 0x66)
       c.set({ v: false, r: 0x66, g: 0x66, b: 0x66, a: 0xff });
 
-    // Set initial tint for battle
-    c = $$.daynightset ? $gameVariables.GetTintByTime() : c;
-    set('_BattleTintTarget', c); set('_BattleTint', c);
+    set('_BattleTintInitial', c);
+    set('_BattleTintTarget', Delta.createTint(c));
     this._maskBitmaps.FillRect(-lightMaskPadding, 0, battleMaxX + lightMaskPadding, battleMaxY, c);
     this._maskBitmaps.multiply._baseTexture.update(); // Required to update battle texture in RMMZ optional for RMMV
     this._maskBitmaps.additive._baseTexture.update(); // Required to update battle texture in RMMZ optional for RMMV
   };
 
   //@method _createBitmaps
-
   BattleLightmask.prototype._createBitmaps = function () {
     this._maskBitmaps = new Mask_Bitmaps(battleMaxX + lightMaskPadding, battleMaxY);
   };
@@ -2620,20 +2682,15 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
     this._maskBitmaps.multiply.fillRect(0, 0, battleMaxX + lightMaskPadding, battleMaxY, '#000000');
     this._maskBitmaps.additive.clearRect(0, 0, battleMaxX + lightMaskPadding, battleMaxY);
 
-    // Grab tint information
-    let tintValue  = get('_BattleTint');
-    let tintTarget = get('_BattleTintTarget');
-    let tintSpeed  = get('_BattleTintSpeed');
-
     // Prevent the battle scene from being too dark
-    let c = tintTarget; // reference
-    if (c.magnitude() < 0x66 * 3 && c.r < 0x66 && c.g < 0x66 && c.b < 0x66)
+    let c = get('_BattleTintTarget').nextColor(); // reference
+    if (c.magnitude() < 0x66 * 3 && c.r < 0x66 && c.g < 0x66 && c.b < 0x66) {
       c.set({ v: false, r: 0x66, g: 0x66, b: 0x66, a: 0xff });
+      get('_BattleTintTarget').current = c; // reassign if out of bounds. Shouldn't be possible.
+    }
 
     // Compute tint for next frame
-    tintValue = computeNextTint(tintValue, tintTarget, tintSpeed);
-    set('_BattleTint', tintValue);
-    this._maskBitmaps.FillRect(-lightMaskPadding, 0, battleMaxX + lightMaskPadding, battleMaxY, tintValue);
+    this._maskBitmaps.FillRect(-lightMaskPadding, 0, battleMaxX + lightMaskPadding, battleMaxY, c);
     this._maskBitmaps.multiply._baseTexture.update(); // Required to update battle texture in RMMZ optional for RMMV
     this._maskBitmaps.additive._baseTexture.update(); // Required to update battle texture in RMMZ optional for RMMV
   };
@@ -2747,13 +2804,17 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
       if (mapnote) {
         mapnote = mapnote.toLowerCase().trim();
         if ((/^daynight/i).test(mapnote)) {
-          if (!daynightTintEnabled) $gameVariables.SetTint($gameVariables.GetTintByTime());
-          daynightTintEnabled = true;
-          let dnspeed = note.match(/\d+/);
-          if (dnspeed) {
-            let daynightspeed = +dnspeed[0];
-            if (daynightspeed < 1) daynightspeed = 5000;
-            $gameVariables.SetDaynightSpeed(daynightspeed);
+          if (daynightCycleEnabled && !daynightTintEnabled) {
+            daynightTintEnabled = true;
+            let dnspeed = note.match(/\d+/);
+            if (dnspeed) {
+              let daynightspeed = +dnspeed[0];
+              if (daynightspeed < 1) daynightspeed = 5000;
+              $gameVariables.SetDaynightSpeed(daynightspeed);
+            }
+            let delta = Delta.createTimeTint(false /*fade*/);
+            $gameVariables.SetTint(delta.current);
+            $gameVariables.SetTintTarget(delta);
           }
         }
         else if ((/^RegionFire/i).test(mapnote)) {
@@ -2913,15 +2974,12 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
    */
   $$.tint = function (args) {
     let cmd = args[0].trim();
-    if (cmd.equalsIC('set', 'fade')) {
-      let currentColor = args[1];
-      let speed = +args[2] || 0;
-      $gameVariables.SetTintTarget(currentColor, speed);
-    }
+    if (cmd.equalsIC('set', 'fade'))
+      $gameVariables.SetTintTarget(Delta.createTint(args[1], args[2]));
     else if (cmd.equalsIC("reset", "daylight")) {
-      let currentColor = $gameVariables.GetTintByTime();
-      let speed = +args[1] || 0;
-      $gameVariables.SetTintTarget(currentColor, speed);
+      let delta = Delta.createTimeTint((+args[1] || 0) != 0 /*fade*/);
+      $gameVariables.SetTint(delta.current);
+      $gameVariables.SetTintTarget(delta);
     }
   };
 
@@ -2932,13 +2990,10 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
   $$.tintbattle = function (args) {
     if ($gameParty.inBattle()) {
       let cmd = args[0].trim();
-      if (cmd.equalsIC("set", 'fade')) {
-        set('_BattleTintTarget', new VRGBA(args[1], "#666666"));
-        set('_BattleTintSpeed', +args[2] || 0);
-      }
+      if (cmd.equalsIC("set", 'fade'))
+        set('_BattleTintTarget',Delta.createBattleTint(new VRGBA(args[1], "#666666"), args[2]));
       else if (cmd.equalsIC('reset', 'daylight')) {
-        set('_BattleTintTarget', $gameVariables.GetTint());
-        set('_BattleTintSpeed', +args[1] || 0);
+        set('_BattleTintTarget',Delta.createBattleTint(get('_BattleTintInitial'), args[1])); // battle initial color
       }
     }
   };
@@ -2959,38 +3014,38 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
       while (seconds < 0) seconds += totalSeconds;
       gV.SetDaynightSeconds(seconds);
       gV.SetDaynightHoursinDay(hoursInDay);
-      maybeInstantTint();
+      setTimeColorDelta();
       $$.saveTime();
     };
-    let maybeInstantTint = () => { // comput instant tint change
-      set('_tintDelta', null); // clear tint to force recompute regardless of whether instant or not
-      if ('instant'.equalsIC(...args)) {
-        let curTint = $gameVariables.GetTintByTime();
-        let nextTint = $gameVariables.GetTintByTime(1);
-        let speed = $gameVariables.GetDaynightSpeed();
-        curTint = computeNextTint(curTint, nextTint, speed, false, $$.ticks() + 1);
-        $gameVariables.SetTint(curTint);
-        $gameVariables.SetTintTarget(nextTint, speed);
+    let setColorDelta = () => {
+      let delta = Delta.createTint(gV.GetTint());
+      $gameVariables.SetTint(delta.current);
+      $gameVariables.SetTintTarget(delta);
+    };
+    let setTimeColorDelta = () => {
+      if (daynightCycleEnabled && daynightTintEnabled) {
+        let isInstant = 'instant'.equalsIC(...a) || gV.GetDaynightSpeed() == 0;
+        let delta = Delta.createTimeTint(!isInstant /*fade*/); // whether to change tint instantly
+        $gameVariables.SetTint(delta.current);
+        $gameVariables.SetTintTarget(delta);
       }
     };
     let isCmd                      = (s)    => a[0].equalsIC(s);
-    let daynightTint               = (b)    => daynightTintEnabled = b;
     let showTime                   = (w, s) => [gV._clShowTimeWindow, gV._clShowTimeWindowSeconds] = [w, s];
     let [gV, a]                    = [$gameVariables, args];
     let [secondsTotal, hoursInDay] = [gV.GetDaynightSeconds(), gV.GetDaynightHoursinDay()];
     let [hours, minutes, seconds]  = [$$.hours(), $$.minutes(), $$.seconds()];
-    if (isCmd('on'))               void (daynightTint(true), maybeInstantTint());                 // enable daynight tint changes
-    else if (isCmd('off'))         void (daynightTint(false), gV.SetTintTarget(gV.GetTint(), 0)); // disabled daynight tint changes
-    else if (isCmd('speed'))       gV.SetDaynightSpeed(+a[1] || 5000);                            // daynight speed
-    else if (isCmd('add'))         modTime(hoursInDay, +a[1],   +a[2],   secondsTotal, 0);        // add to current time
-    else if (isCmd('subtract'))    modTime(hoursInDay, -+a[1], -+a[2],   secondsTotal, 0);        // subtract from current time
-    else if (isCmd('hour'))        modTime(hoursInDay, +a[1],   +a[2],   0);                      // set the current time
-    else if (isCmd('hoursinday'))  modTime(+a[1],      hours,   minutes, seconds);                // set number of hours in day (must be >0, err = 24)
-    else if (isCmd('show'))        showTime(true, false);                                         // show clock
-    else if (isCmd('showseconds')) showTime(true, true);                                          // show clock seconds
-    else if (isCmd('hide'))        showTime(false, false);                                        // hide clock
-    else if (isCmd('color'))       void (gV.SetTintAtHour(a[1], a[2]), maybeInstantTint());       // change hour color
-
+    if      (isCmd('on'))          void (daynightTintEnabled = true, setTimeColorDelta());      // enable daynight tint changes
+    else if (isCmd('off'))         void (daynightTintEnabled = false, setColorDelta());         // disabled daynight tint changes
+    else if (isCmd('speed'))       void (gV.SetDaynightSpeed(a[1]), setTimeColorDelta());       // daynight speed
+    else if (isCmd('add'))         void modTime(hoursInDay, +a[1],   +a[2],   secondsTotal, 0); // add to current time
+    else if (isCmd('subtract'))    void modTime(hoursInDay, -+a[1], -+a[2],   secondsTotal, 0); // subtract from current time
+    else if (isCmd('hour'))        void modTime(hoursInDay, +a[1],   +a[2],   0);               // set the current time
+    else if (isCmd('hoursinday'))  void modTime(+a[1],      hours,   minutes, seconds);         // set number of hours in day (must be >0, err = 24)
+    else if (isCmd('show'))        void showTime(true, false);                                  // show clock
+    else if (isCmd('showseconds')) void showTime(true, true);                                   // show clock seconds
+    else if (isCmd('hide'))        void showTime(false, false);                                 // hide clock
+    else if (isCmd('color'))       void (gV.SetTintAtHour(a[1], a[2]), setTimeColorDelta());    // change hour color
 };
 
   let _Tilemap_drawShadow = Tilemap.prototype._drawShadow;
@@ -3060,7 +3115,7 @@ Game_Variables.prototype.GetTint = function () {
   return new VRGBA(this._Community_Tint_Value);
 };
 Game_Variables.prototype.SetTintAtHour = function (hour, color) {
-  let result = this.GetDaynightColorArray()[Math.min((+hour || 0), 0)];
+  let result = this.GetDaynightColorArray()[Math.max((+hour || 0), 0)];
   if (color) result.color = new VRGBA(color); // hour color
 };
 Game_Variables.prototype.GetTintByTime = function (inc = 0) {
@@ -3071,12 +3126,12 @@ Game_Variables.prototype.GetTintByTime = function (inc = 0) {
   let result = this.GetDaynightColorArray()[hours];
   return new VRGBA(result ? result.color : undefined);
 };
-Game_Variables.prototype.SetTintTarget = function (newTarget, speed) {
-  this._Community_TintTarget = new VRGBA(newTarget);
-  this._Community_TintSpeed = orNaN(speed, 0);
+Game_Variables.prototype.SetTintTarget = function (delta) {
+  this._Community_TintTarget = delta;
 };
 Game_Variables.prototype.GetTintTarget = function () {
-  return [new VRGBA(this._Community_TintTarget), orNaN(this._Community_TintSpeed, 0)];
+  if (!this._Community_TintTarget) this._Community_TintTarget = new Delta();
+  return this._Community_TintTarget;
 };
 Game_Variables.prototype.SetFlashlight = function (value) {
   this._Community_Lighting_Flashlight = value;
@@ -3169,7 +3224,7 @@ Game_Variables.prototype.GetDaynightColorArray = function () {
   return result;
 };
 Game_Variables.prototype.SetDaynightSpeed = function (value) {
-  this._Community_Lighting_DaynightSpeed = orNaN(+value);
+  this._Community_Lighting_DaynightSpeed = orNaN(+value, 5000);
 };
 Game_Variables.prototype.GetDaynightSpeed = function () {
   if (this._Community_Lighting_DaynightSpeed >= 0) return this._Community_Lighting_DaynightSpeed;
