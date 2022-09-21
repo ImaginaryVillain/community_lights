@@ -1149,14 +1149,29 @@ const isValidColorRegex = /^[Aa]?#[A-F\d]{8}$/i; // a|A before # for additive li
   return "rgba(" + r + "," + g + "," + b + "," + a + ")";
 }
 
-class VRGBA { // Class to handle volumetric/additive coloring with rgba colors uniformly
+/** Class to handle volumetric/additive coloring with rgba colors uniformly.
+ *  Additive coloring prefixes an 'a' on a normal hex color. E.g. a#ccddeeff, a#ccddee, a#cdef, a#cde.
+ */
+class VRGBA {
+  /**
+   * Creates a VRGBA object representing a VRGBA color string. Either v, r, g, b, a values can be passed directly, or
+   * a hex String can be passed with an optional default alternative Hex string.
+   * @param {String|Boolean} vOrHex    - Boolean representing the additive component, or
+   *                                     String representing the hex color.
+   * @param {String|Number} rOrDefault - Number representing the red component, or
+   *                                     String representing a default hex string in case the provided one cannot be parsed.
+   * @param {null|Number} g            - Number representing the green component.
+   * @param {null|Number} b            - Number representing the blue component.
+   * @param {null|Number} a            - Number representing the alpha component.
+   * @returns {VRGBA}
+   */
   constructor(vOrHex, rOrDefault = "#000000ff", g = undefined, b = undefined, a = 0xff) {
     if (vOrHex != null && vOrHex.constructor === VRGBA) { // passed another VRGBA instance
       Object.assign(this, vOrHex);
     } else if (typeof vOrHex === "boolean") { // Passed v, r, g, b, a
       [this.v, this.r, this.g, this.b, this.a] = [vOrHex, +rOrDefault || 0, +g || 0, +b || 0, +a || 0xff];
     } else if (vOrHex == null || typeof vOrHex === "string") { // passed a hex String or nullish
-      vOrHex = this.validateHex(vOrHex, rOrDefault);
+      vOrHex = this.normalizeHex(vOrHex, rOrDefault);
       this.v = vOrHex.startsWithIC("a#");
       const shift = this.v ? 1 : 0; // shift for volumetric/additive prefix
       this.r = parseInt(vOrHex.slice(1 + shift, 3 + shift), 16); // red
@@ -1168,8 +1183,17 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
     }
   }
 
-  set(setters) { for (let k in setters) if (this[k] != null) this[k] = setters[k]; }
+  /**
+   * Sets the v, r, b, g, or a properties to that of the cooresponding properties in the that Object.
+   * @param {VRGBA} that
+   */
+  set(that) { for (let k in that) if (this[k] != null) this[k] = that[k]; }
 
+  /**
+   * Compares this Object to that Object and returns true if the v, r, g, b, and a properties are equal; otherwise false.
+   * @param {VRGBA} that
+   * @returns {Boolean}
+   */
   equals(that) { // fastest non-exactness comparison -- only checks v, r, g, b, a properties
     let f = (x, y) => Math.abs(x - y) < 1e-3; // custom epsilon
     let [a, b] = [this, that];
@@ -1178,31 +1202,44 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
     return false;
   }
 
+  /**
+   * Adds together the r, g, and b properties and returns the result.
+   * @returns {Number}
+   */
   magnitude() { return this.r + this.g + this.b; }
 
-  validateHex(hex, alt) {
-    hex = this.normalizeHex(hex);
-    if (!hex) return this.validateHex(alt, "#000000ff");
-    else if (!isValidColorRegex.test(hex)) {
-      console.log(`${Community.Lighting.name} - Invalid Color: ` + hex);
-      return this.validateHex(alt, "#000000ff");
-    }
-    return hex;
-  }
-
-  normalizeHex(hex) {
-    if (typeof hex !== "string") return undefined;                 // short circuit
+  /**
+   * Attempts to normalize the provided hex String. If invalid, it then tries to normalize the provided altHex String. If invalid, a default
+   * value of "#000000ff" is returned. If either provided String is valid, it will be returned as an 'a#rrggbbaa' formatted color hex String.
+   * @param {String} hex
+   * @param {String} alt
+   * @returns {String}
+   */
+  normalizeHex(hex, altHex) {
+    if (typeof hex !== "string") return this.normalizeHex(altHex, "#000000ff");
     let h = hex.toLowerCase().trim();
-    const s = hex.startsWithIC("a#") ? 1 : 0;                        // shift
+    const s = hex.startsWithIC("a#") ? 1 : 0;                      // shift
     if (h.length == 4 + s) h += "f";                               // normalize #RGB format
     if (h.length == 5 + s) h = h.replace(/(^a?#)|(.)/g, "$1$2$2"); // normalize #RGBA
     if (h.length == 7 + s) h += "ff";                              // normalize #RRGGBB format
+    if (!isValidColorRegex.test(h)) {
+      console.log(`${Community.Lighting.name} - Invalid Color: ` + hex);
+      return this.normalizeHex(altHex, "#000000ff");
+    }
     return h;                                                      // return RRGGBBAA
   }
 
-  toHex(setWebSafe = false, setters = undefined) {
+  /**
+   * Converts the VRGBA Object into an 'a#rrggbbaa' formatted color hex string where the first 'a' tells whether the hex is additive or not.
+   * The setWebSafe parameter is used to to strip the additive property (v) so that the resulting color can be used with Canvas APIs. An
+   * override Object can be provided to override the existing v, r, g, b, or a properties in the output.
+   * @param {Boolean} setWebSafe
+   * @param {VRGBA} override
+   * @returns {String}
+   */
+  toHex(setWebSafe = false, override = undefined) {
     let temp = new VRGBA(this); // create temporary copy
-    for (let k in setters) if (temp[k]) temp[k] = setters[k]; // assign temporary setters
+    for (let k in override) if (temp[k]) temp[k] = override[k]; // assign temporary setters
     if (temp.r.inRange(0, 255) && temp.g.inRange(0, 255) && temp.b.inRange(0, 255) && temp.a.inRange(0, 255)) {
       let rHex = (temp.r < 16 ? "0" : "") + Math.floor(temp.r).toString(16); // clamp to whole numbers
       let gHex = (temp.g < 16 ? "0" : "") + Math.floor(temp.g).toString(16);
@@ -1213,7 +1250,14 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
     return null; // The hex color code doesn't exist
   }
 
-  toWebHex(setters) { return this.toHex(true, setters); }
+  /**
+   * Converts the VRGBA Object into a websafe '#rrggbbaa' formatted color hex string where the v property is stripped.
+   * An override Object can be provided to override the existing r, g, b, or a properties in the output.
+   * @param {Boolean} setWebSafe
+   * @param {VRGBA} override
+   * @returns {String}
+   */
+  toWebHex(override) { return this.toHex(true, override); }
 }
 
 /** Class representing a color delta for providing color changes over time at different speeds. */
