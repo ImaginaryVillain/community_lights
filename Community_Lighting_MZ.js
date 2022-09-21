@@ -1108,34 +1108,6 @@ function orBoolean(...a) {
 function orNullish(...a) { for (let i = 0; i < a.length; i++) if (a[i] != null) return a[i]; }
 function orNaN(...a)     { for (let i = 0; i < a.length; i++) if (!isNaN(a[i])) return a[i]; }
 
-/**
- * Gets the value at the  specified index of the $gameTemp object.
- * @param {String} index
- * @returns {any}
- */
-let get = (index) => $gameTemp[index];
-
-/**
-* Sets the value at the specified index of the $gameTemp object.
-* @param {String} index
-* @param {any}    value
-*/
-let set = (index, value) => $gameTemp[index] = value;
-
-/**
-* Tests the value at the specified index of the $gameTemp object for equality with the
-* passed in value and sets it. Returns true if the values match, or false otherwise.
-* @param {String} index
-* @param {any}    value
-* @returns {Boolean}
-*/
-let testAndSet = (index, value) => {
-  if ($gameTemp[index] && ($gameTemp[index] == value ||
-    ($gameTemp[index].equals && $gameTemp[index].equals(value))))
-      return false;
-  return ($gameTemp[index] = value, true);
-};
-
 const isValidColorRegex = /^[Aa]?#[A-F\d]{8}$/i; // a|A before # for additive lighting
 
 /**
@@ -1304,7 +1276,7 @@ class Delta {
    * @param {Number} speed
    * @returns {Delta}
    */
-  static createBattleTint(target, speed = 0) { return new Delta(get('_BattleTintTarget').current, target, speed, false /* don't use remaining ticks */); }
+  static createBattleTint(target, speed = 0) { return new Delta($gameTemp._BattleTintTarget.current, target, speed, false /* don't use remaining ticks */); }
 
   /**
    * Create a time color delta from the current time and speed. Fade specifies whether to fade from the current color to the target or
@@ -1567,6 +1539,21 @@ class Delta {
     if (showSeconds) result = result + ":" + $$.seconds().padZero(2);
     return result;
   };
+
+  /**
+  * Tests the value at the specified index of the $gameTemp object for equality with the
+  * passed in value and sets it. Returns true if the values match, or false otherwise.
+  * @param {String} index
+  * @param {any}    value
+  * @returns {Boolean}
+  */
+  Game_Temp.prototype.testAndSet = function(index, value) {
+    if (this[index] && (this[index] == value ||
+      (this[index].equals && this[index].equals(value))))
+        return false;
+    return (this[index] = value, true);
+  };
+
   // Event note tag caching
   Game_Event.prototype.resetLightData = function () {
     this._clType = undefined;
@@ -2079,7 +2066,7 @@ class Delta {
     if (daynightCycleEnabled) { //
       let speed = $gameVariables.GetDaynightSpeed();
       if (speed > 0 && speed < 5000) {
-        if (testAndSet('_daynightTimeout', Math.floor((new Date()).getTime() / 10))) {
+        if ($gameTemp.testAndSet('_daynightTimeout', Math.floor((new Date()).getTime() / 10))) {
           let seconds = $gameVariables.GetDaynightSeconds();                   // current time in seconds
           seconds += $gameVariables.GetDaynightTick();                         // add tick amount in (seconds)
           let secondsinDay = $gameVariables.GetDaynightHoursinDay() * 60 * 60; // convert to total seconds in day
@@ -2183,13 +2170,11 @@ class Delta {
 
     // *************************** TILE TAG *********************
     //glow/colorfade
-    if (testAndSet('_glowTimeout', Math.floor((new Date()).getTime() / 100))) {
-      let glowAmount    = orNaN(get('_glowAmount'), 0);
-      let glowDirection = orNaN(get('_glowDirection'), 1);
-      glowAmount += glowDirection;
-      if (glowAmount > 120) set('_glowDirection', -1);
-      if (glowAmount < 1)   set('_glowDirection', 1);
-      set('_glowAmount', glowAmount);
+    if ($gameTemp.testAndSet('_glowTimeout', Math.floor((new Date()).getTime() / 100))) {
+      $gameTemp._glowDirection = orNaN($gameTemp._glowDirection, 1);
+      $gameTemp._glowAmount    = orNaN($gameTemp._glowAmount, 0) + $gameTemp._glowDirection;
+      if ($gameTemp._glowAmount > 120) $gameTemp._glowDirection = -1;
+      if ($gameTemp._glowAmount < 1)   $gameTemp._glowDirection = 1;
     }
 
     light_tiles = $gameVariables.GetLightTiles();
@@ -2204,11 +2189,10 @@ class Delta {
       let tile_color = tile.color;
       if (tile.lightType.is(LightType.Glow)) {
         let c = new VRGBA(tile.color);
-        let glowAmount = get('_glowAmount');
-        c.r = Math.floor(c.r + (60 - glowAmount)).clamp(0, 255);
-        c.g = Math.floor(c.g + (60 - glowAmount)).clamp(0, 255);
-        c.b = Math.floor(c.b + (60 - glowAmount)).clamp(0, 255);
-        c.a = Math.floor(c.a + (60 - glowAmount)).clamp(0, 255);
+        c.r = Math.floor(c.r + (60 - $gameTemp._glowAmount)).clamp(0, 255);
+        c.g = Math.floor(c.g + (60 - $gameTemp._glowAmount)).clamp(0, 255);
+        c.b = Math.floor(c.b + (60 - $gameTemp._glowAmount)).clamp(0, 255);
+        c.a = Math.floor(c.a + (60 - $gameTemp._glowAmount)).clamp(0, 255);
         tile_color = c;
       }
       this._maskBitmaps.radialgradientFillRect(x1, y1, 0, tile.radius, tile_color, new VRGBA(), objectflicker, tile.brightness);
@@ -2710,8 +2694,8 @@ class Delta {
     if (c.magnitude() < 0x66 * 3 && c.r < 0x66 && c.g < 0x66 && c.b < 0x66)
       c.set({ v: false, r: 0x66, g: 0x66, b: 0x66, a: 0xff });
 
-    set('_BattleTintInitial', c);
-    set('_BattleTintTarget', Delta.createTint(c));
+    $gameTemp._BattleTintInitial = c;
+    $gameTemp._BattleTintTarget = Delta.createTint(c);
     this._maskBitmaps.FillRect(-lightMaskPadding, 0, battleMaxX + lightMaskPadding, battleMaxY, c);
     this._maskBitmaps.multiply._baseTexture.update(); // Required to update battle texture in RMMZ optional for RMMV
     this._maskBitmaps.additive._baseTexture.update(); // Required to update battle texture in RMMZ optional for RMMV
@@ -2727,10 +2711,10 @@ class Delta {
     this._maskBitmaps.additive.clearRect(0, 0, battleMaxX + lightMaskPadding, battleMaxY);
 
     // Prevent the battle scene from being too dark
-    let c = get('_BattleTintTarget').nextColor(); // reference
+    let c = $gameTemp._BattleTintTarget.nextColor(); // reference
     if (c.magnitude() < 0x66 * 3 && c.r < 0x66 && c.g < 0x66 && c.b < 0x66) {
       c.set({ v: false, r: 0x66, g: 0x66, b: 0x66, a: 0xff });
-      get('_BattleTintTarget').current = c; // reassign if out of bounds. Shouldn't be possible.
+      $gameTemp._BattleTintTarget.current = c; // reassign if out of bounds. Shouldn't be possible.
     }
 
     // Compute tint for next frame
@@ -3035,9 +3019,9 @@ class Delta {
     if ($gameParty.inBattle()) {
       let cmd = args[0].trim();
       if (cmd.equalsIC("set", 'fade'))
-        set('_BattleTintTarget',Delta.createBattleTint(new VRGBA(args[1], "#666666"), args[2]));
+        $gameTemp._BattleTintTarget = Delta.createBattleTint(new VRGBA(args[1], "#666666"), args[2]);
       else if (cmd.equalsIC('reset', 'daylight')) {
-        set('_BattleTintTarget',Delta.createBattleTint(get('_BattleTintInitial'), args[1])); // battle initial color
+        $gameTemp._BattleTintTarget = Delta.createBattleTint($gameTemp._BattleTintInitial, args[1]); // battle initial color
       }
     }
   };
