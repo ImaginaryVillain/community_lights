@@ -765,12 +765,15 @@ Imported[Community.Lighting.name] = true;
 * --------------------------------------------------------------------------
 * Events
 * --------------------------------------------------------------------------
-* Light radius [cycle] color [onoff] [day|night] [brightness] [direction] [x] [y] [id]
+* Light radius color [onoff] [day|night] [brightness] [direction] [x] [y] [id]
+* Light radius cycle <color onDuration [fadeDuration [growRadius]]>... [onoff] [day|night] [brightness] [direction] [x] [y] [id]
 * - Light
 * - radius      100, 250, etc
-* - cycle       Allows any number of color + duration pairs to follow that will be
-*               cycled through before repeating from the beginning:
-*               <cl: light 100 cycle #f00 15 #0f0 15 #00f 15 ...etc>
+* - cycle       Allows any number of color, onDuration, fadeDuration, growRadius tuples to follow
+*               that will be cycled through before repeating from the beginning:
+*               <cl: light 100 cycle #f00 15 15 15 #0f0 15 15 15 #00f 15 15 15 ...etc>
+*               fadeDuration and growRadius are optional argument used to transition between colors
+*               and radius sizes over the provided cycle interval.
 *               In Terrax Lighting, there was a hard limit of 4, but now you can use
 *               as many as you want. [optional]
 * - color       #ffffff, #ff0000, etc
@@ -791,14 +794,17 @@ Imported[Community.Lighting.name] = true;
 * Fire ...params
 * - Same as Light params above, but adds a subtle flicker
 *
-* Flashlight bl bw [cycle] color [onoff] [day|night] [sdir|angle] [x] [y] [id]
+* Flashlight bl bw color [onoff] [day|night] [sdir|angle] [x] [y] [id]
+* Flashlight bl bw cycle <color onDuration [fadeDuration]>... [onoff] [day|night] [sdir|angle] [x] [y] [id]
 * - Sets the light as a flashlight with beam length (bl) beam width (bw) color (c),
 *      0|1 (onoff), and 1=up, 2=right, 3=down, 4=left for static direction (sdir)
 * - bl:       Beam length:  Any number, optionally preceded by "L", so 8, L8
 * - bw:       Beam width:  Any number, optionally preceded by "W", so 12, W12
-* - cycle     Allows any number of color + duration pairs to follow that will be
-*             cycled through before repeating from the beginning:
+* - cycle     Allows any number of color, onDuration, fadeDuration, growRadius tuples to follow
+*             that will be cycled through before repeating from the beginning:
 *             <cl: Flashlight l8 w12 cycle #f00 15 #ff0 15 #0f0 15 on someId d3>
+*             fadeDuration is an optional argument used to transition between colors
+*             over the provided cycle interval.
 *             There's no limit to how many colors can be cycled. [optional]
 * - color     #ffffff, #ff0000, etc
 * - onoff:    Initial state:  0, 1, off, on (default). Ignored if day|night passed [optional]
@@ -821,6 +827,13 @@ Imported[Community.Lighting.name] = true;
 *
 * <cl: light 300 cycle #ff0000 15 #ffff00 15 #00ff00 15 #00ffff 15 #0000ff 15>
 * Creates a cycling light that rotates every 15 frames.  Great for parties!
+*
+* <cl: light 300 cycle #ff0000 30 60 #ffff00 30 60 #00ff00 30 60 #00ffff 30 60 #0000ff 30 60>
+* Creates a cycling light that stays on for 30 frames and transitions to the next color over 60 frames.
+*
+* <cl: light 300 cycle #ff0000 30 60 250 #ffff00 30 60 300 #00ff00 30 60 250 #00ffff 30 60 300>
+* Creates a cycling light that grows and shrink between radius sizes of 250 and 300, stays on for 30 frames,
+* and transitions to the next color and size over 60 frames.
 *
 * <cl: fire 150 #ff8800 b15 night>
 * Creates a fire that only lights up at night.
