@@ -1126,30 +1126,31 @@ const isValidColorRegex = /^[Aa]?#[A-F\d]{8}$/i; // a|A before # for additive li
  */
 class VRGBA {
   /**
-   * Creates a VRGBA object representing a VRGBA color string. Either v, r, g, b, a values can be passed directly, or
-   * a hex String can be passed with an optional default alternative Hex string.
-   * @param {String|Boolean} vOrHex    - Boolean representing the additive component, or
-   *                                     String representing the hex color.
-   * @param {String|Number} rOrDefault - Number representing the red component, or
-   *                                     String representing a default hex string in case the provided one cannot be parsed.
-   * @param {null|Number} g            - Number representing the green component.
-   * @param {null|Number} b            - Number representing the blue component.
-   * @param {null|Number} a            - Number representing the alpha component.
+   * Creates a VRGBA object representing a VRGBA color string. Either v, r, g, b, a values can be passed directly, or a hex String
+   * can be passed with an optional default alternative Hex string, or another VRGBA object can be passed to create a clone.
+   * @param {String|Boolean|VRGBA} vOrHexOrVRGBA - Boolean representing the additive component, or
+   *                                               String representing the hex color, or
+   *                                               other VRGBA object to clone.
+   * @param {String|Number} rOrDefault           - Number representing the red component, or
+   *                                               String representing a default hex string in case the provided one cannot be parsed.
+   * @param {null|Number} g                      - Number representing the green component.
+   * @param {null|Number} b                      - Number representing the blue component.
+   * @param {null|Number} a                      - Number representing the alpha component.
    * @returns {VRGBA}
    */
-  constructor(vOrHex, rOrDefault = "#000000ff", g = undefined, b = undefined, a = 0xff) {
-    if (vOrHex != null && vOrHex.constructor === VRGBA) { // passed another VRGBA instance
-      Object.assign(this, vOrHex);
-    } else if (typeof vOrHex === "boolean") { // Passed v, r, g, b, a
-      [this.v, this.r, this.g, this.b, this.a] = [vOrHex, +rOrDefault || 0, +g || 0, +b || 0, +a || 0xff];
-    } else if (vOrHex == null || typeof vOrHex === "string") { // passed a hex String or nullish
-      vOrHex = this.normalizeHex(vOrHex, rOrDefault);
-      this.v = vOrHex.startsWithIC("a#");
-      const shift = this.v ? 1 : 0; // shift for volumetric/additive prefix
-      this.r = parseInt(vOrHex.slice(1 + shift, 3 + shift), 16); // red
-      this.g = parseInt(vOrHex.slice(3 + shift, 5 + shift), 16); // green
-      this.b = parseInt(vOrHex.slice(5 + shift, 7 + shift), 16); // blue
-      this.a = parseInt(vOrHex.slice(7 + shift, 9 + shift), 16); // alpha
+  constructor(vOrHexOrVRGBA, rOrDefault = "#000000ff", g = undefined, b = undefined, a = 0xff) {
+    if (vOrHexOrVRGBA != null && vOrHexOrVRGBA.constructor === VRGBA)                                             // passed another VRGBA instance
+      Object.assign(this, vOrHexOrVRGBA);                                                                         //  - clone
+    else if (typeof vOrHexOrVRGBA === "boolean")                                                                  // Passed v, r, g, b, a
+      [this.v, this.r, this.g, this.b, this.a] = [vOrHexOrVRGBA, +rOrDefault || 0, +g || 0, +b || 0, +a || 0xff]; //  - assign
+    else if (vOrHexOrVRGBA == null || typeof vOrHexOrVRGBA === "string") {                                        // passed a hex String or nullish
+      vOrHexOrVRGBA = this.normalizeHex(vOrHexOrVRGBA, rOrDefault);                                               //  - parse hex
+      this.v = vOrHexOrVRGBA.startsWithIC("a#");                                                                  //  - assign v
+      const shift = this.v ? 1 : 0;                                                                               //  - shift for volumetric/additive prefix
+      this.r = parseInt(vOrHexOrVRGBA.slice(1 + shift, 3 + shift), 16);                                           //  - assign red
+      this.g = parseInt(vOrHexOrVRGBA.slice(3 + shift, 5 + shift), 16);                                           //  - assign green
+      this.b = parseInt(vOrHexOrVRGBA.slice(5 + shift, 7 + shift), 16);                                           //  - assign blue
+      this.a = parseInt(vOrHexOrVRGBA.slice(7 + shift, 9 + shift), 16);                                           //  - assign alpha
     } else {
       throw Error(`${Community.Lighting.name} - VRGBA constructor given incorrect parameters!`);
     }
@@ -1235,23 +1236,32 @@ class VRGBA {
 /** Class representing a color delta for providing color changes over time at different speeds. */
 class Delta {
   /**
-   * Create color delta based off of the start color, target color, specified durations, and whether to consider the remaining ticks or not for speed purposes.
-   * @param {VRGBA} current
+   * Create color delta based off of the start color, target color, durations, and whether to consider the remaining ticks or not for speed purposes.
+   * @param {VRGBA|Delta} startOrDelta
    * @param {VRGBA} target
    * @param {Number} fadeDuration
    * @param {Number} onDuration
    * @param {Number} useTicksRemaining
    * @returns {Delta}
    */
-  constructor(start, target, fadeDuration, onDuration, useTicksRemaining) {
-    this.current    = new VRGBA(start);
-    this.target     = new VRGBA(target);
-    this.onDuration = orNaN(onDuration, 0);
-    this.lazyEquals = false; // true when current value == target value
-    fadeDuration    = orNaN(fadeDuration, 0) - (useTicksRemaining ? Community.Lighting.ticks() : 0); // use either the remaining ticks (of the hour) or total fade duration
-    this.delta      = new VRGBA(this.target.v, // divide by zero is +inf or -inf so deltas work for speed = 0
-                               (this.target.r - this.current.r) / fadeDuration, (this.target.g - this.current.g) / fadeDuration,
-                               (this.target.b - this.current.b) / fadeDuration, (this.target.a - this.current.a) / fadeDuration);
+  constructor(startOrDelta, target, fadeDuration, onDuration, useTicksRemaining) {
+    if (startOrDelta != null && startOrDelta.constructor === Delta) { // passed another Delta instance
+      this.current    = new VRGBA(startOrDelta.current);              // - deep clone
+      this.target     = new VRGBA(startOrDelta.target);               // - deep clone
+      this.onDuration = startOrDelta.onDuration;                      // - clone
+      this.lazyEquals = startOrDelta.lazyEquals;                      // - clone
+      this.delta      = new VRGBA(startOrDelta.delta);                // - deep clone
+    } else {                                                          // passed normal parameters
+      this.current    = new VRGBA(startOrDelta);                      // -
+      this.target     = new VRGBA(target);                            // -
+      this.onDuration = orNaN(onDuration, 0);                         // - parse onDuration
+      this.lazyEquals = false;                                        // - true when current value == target value
+      fadeDuration    = orNaN(fadeDuration, 0);                       // - use either the remaining time (of the hour) or total fade duration
+      fadeDuration    -= (useTicksRemaining ? Community.Lighting.ticks() : 0);
+      this.delta      = new VRGBA(this.target.v,                      // - divide by zero is +inf or -inf so deltas work for speed = 0
+                                 (this.target.r - this.current.r) / fadeDuration, (this.target.g - this.current.g) / fadeDuration,
+                                 (this.target.b - this.current.b) / fadeDuration, (this.target.a - this.current.a) / fadeDuration);
+    }
   }
 
   /**
@@ -1580,7 +1590,6 @@ class Delta {
     this._clBeamLength  = undefined;
     this._clBeamWidth   = undefined;
     this._clOnOff       = undefined;
-    this._clCycleIndex  = undefined;
     this.initLightData();
   };
   Game_Event.prototype.initLightData = function () {
@@ -1593,17 +1602,17 @@ class Delta {
       let isEquals     = (x, ...a) => { for (let i of a) if (x.equalsIC(i)) return true; return false; };
       let isPrefix     = (x, ...a) => { for (let i of a) if (x.slice(0, i.length).equalsIC(i)) return true; return false; };
       let isUndef      = (x)       => x === undefined;
-      let cycleLast    = ()        => this._clCycle[this._clCycle.length - 1]; // get last element of cycle array
+      let cycleLast    = ()        => colorCycle[colorCycle.length - 1]; // get last element of cycle array
       let cycleIndex = -1;
-      let p;
+      let colorCycle, p;
       tagData.forEach((e, i) => {
         if      (!isFL() && !isNaN(+e)                  && isUndef(this._clRadius))     this._clRadius           = +e;
         else if (isFL()  && !isNaN(+e)                  && isUndef(this._clBeamLength)) this._clBeamLength       = +e;
         else if (isFL()  && !isNaN(+e)                  && isUndef(this._clBeamWidth))  this._clBeamWidth        = +e;
         else if (isFL()  && isPrefix(e, "l")            && isUndef(this._clBeamLength)) this._clBeamLength       = +(e.slice(1));
         else if (isFL()  && isPrefix(e, "w")            && isUndef(this._clBeamWidth))  this._clBeamWidth        = +(e.slice(1));
-        else if (           isEquals(e, "cycle")        && isUndef(this._clColor))      this._clCycle            = [];
-        else if (           isPrefix(e, "#", "a#")      && this._clCycle)             { this._clCycle.push({ "color": new VRGBA(e) }); cycleIndex = i; }
+        else if (           isEquals(e, "cycle")        && isUndef(this._clColor))      colorCycle               = [];
+        else if (           isPrefix(e, "#", "a#")      && colorCycle)                { colorCycle.push({ "color": new VRGBA(e) }); cycleIndex = i; }
         else if (           !isNaN(+e)                  && cycleIndex + 1 == i)         cycleLast().onDuration   = +e;
         else if (           !isNaN(+p) && !isNaN(+e)    && cycleIndex + 2 == i)         cycleLast().fadeDuration = +e; // check previous
         else if (           isPrefix(e, "#", "a#")      && isUndef(this._clColor))      this._clColor            = new VRGBA(e);
@@ -1620,6 +1629,19 @@ class Delta {
         else if (           e.length > 0                && isUndef(this._clId))         this._clId               = e;
         p = e;
       }, this);
+
+      if (colorCycle && colorCycle.length) {                       // check if tag included color cycling
+        this._clCycle = [];                                        // only define if colorCycle exists
+        colorCycle.forEach((e, i, a) => {                          // preprocess color cycle deltas
+          let n = a[++i < colorCycle.length ? i : 0];              // get next element
+          let fadeDuration = orNullish(e.fadeDuration, 0);         // grab fade duration for this color since we are fading from it
+          let onDuration = orNullish(n.onDuration, 1);             // grab on duration for the next color since we are fading to it
+          let thisColor = orNullish(e.color, colorCycle[0].color); // grab this color
+          let nextColor = orNullish(n.color, colorCycle[0].color); // grab next color
+          console.log("hmm", thisColor, nextColor);
+          this._clCycle.push(Delta.createColor(thisColor, nextColor, fadeDuration, onDuration)); // create and push delta
+        }, this);
+      }
     }
     this._clRadius     = this._clRadius || 0;
     this._clColor      = this._clColor || new VRGBA(this._clColor);
@@ -1632,7 +1654,6 @@ class Delta {
     this._clXOffset    = this._clXOffset || 0;
     this._clYOffset    = this._clYOffset || 0;
     this._clCycle      = this._clCycle || null;
-    this._clCycleIndex = 0;
   };
   Game_Event.prototype.getLightType = function () {
     if (this._clType === undefined) this.initLightData();
@@ -1684,23 +1705,15 @@ class Delta {
     return this._clCycle;
   };
   Game_Event.prototype.incrementLightCycle = function () {
-    if (this._clCycle) {
-      if (this._clCycleDelta == null || this._clCycleDelta.finished()) {
-        let cycleList = this.getLightCycle();
-        if (cycleList.length) {
-          if (++this._clCycleIndex >= cycleList.length) this._clCycleIndex = 0;        // bounds check for this cycle
-          let nextCycleIndex = this._clCycleIndex + 1;
-          if (nextCycleIndex >= cycleList.length) nextCycleIndex = 0;                  // bounds check for next color
-          let fadeDuration = orNullish(cycleList[this._clCycleIndex].fadeDuration, 0); // grab fade duration for this color since we are fading from it
-          let onDuration   = orNullish(cycleList[nextCycleIndex].onDuration, 1);       // grab on duration for the next color since we are fading to it
-          this._clColor    = orNullish(cycleList[this._clCycleIndex].color, cycleList[0].color);      //grab this color
-          let nextColor    = orNullish(cycleList[nextCycleIndex].color, cycleList[0].color);          //grab next color
-          this._clCycleDelta = Delta.createColor(this._clColor, nextColor, fadeDuration, onDuration); // create delta
-          this._clColor = this._clCycleDelta.nextColor();                                             // assign color for this frame
-          this._clCycleDelta.finished();                                                              // if the color is 'done' this decrements the on duration
-        }
-      } else {
-        this._clColor = this._clCycleDelta.nextColor();
+    let cycleList = this.getLightCycle();
+    if (cycleList) {
+      if (this._clCycleDelta != null && !this._clCycleDelta.finished())
+        this._clColor = this._clCycleDelta.nextColor(); // assign color for this frame
+      else {
+        let delta = cycleList.shift();                  // pop delta from front
+        this._clCycleDelta = new Delta(delta);          // duplicate delta
+        cycleList.push(delta);                          // push delta on back
+        this._clColor = this._clCycleDelta.nextColor(); // assign color for this frame
       }
     }
   };
@@ -1979,8 +1992,10 @@ class Delta {
     // compute radius lightgrow.
     let lightgrow_target = $gameVariables.GetRadiusTarget();
     let lightgrow_speed = (player_radius < lightgrow_target ? 1 : -1) * $gameVariables.GetRadiusSpeed();
-    player_radius = Math.minmax(lightgrow_speed > 0, player_radius + lightgrow_speed, lightgrow_target); // compute and clamp
-    $gameVariables.SetRadius(player_radius);
+    if (lightgrow_speed != 0 && player_radius != lightgrow_target) {
+      player_radius = Math.minmax(lightgrow_speed > 0, player_radius + lightgrow_speed, lightgrow_target); // compute and clamp
+      $gameVariables.SetRadius(player_radius);
+    }
 
     // ****** PLAYER LIGHTGLOBE ********
     let ctxMul = this._maskBitmaps.multiply.context;
