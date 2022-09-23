@@ -1233,107 +1233,137 @@ class VRGBA {
   toWebHex(override) { return this.toHex(true, override); }
 }
 
-/** Class representing a color delta for providing color changes over time at different speeds. */
+/** Class representing a color delta for providing color and radius changes over time at different speeds. */
 class Delta {
   /**
-   * Create color delta based off of the start color, target color, durations, and whether to consider the remaining ticks or not for speed purposes.
-   * @param {VRGBA|Delta} startOrDelta
-   * @param {VRGBA} target
+   * Create color delta from the start color & radius, target color & radius, fade & on durations, and
+   * whether to consider the remaining ticks or not for speed purposes.
+   * @param {VRGBA|Delta} startColorOrDelta
+   * @param {VRGBA} targetColor
+   * @param {Number} startRadius
+   * @param {Number} targetRadius
    * @param {Number} fadeDuration
    * @param {Number} onDuration
    * @param {Number} useTicksRemaining
    * @returns {Delta}
    */
-  constructor(startOrDelta, target, fadeDuration, onDuration, useTicksRemaining) {
-    if (startOrDelta != null && startOrDelta.constructor === Delta) { // passed another Delta instance
-      this.current    = new VRGBA(startOrDelta.current);              // - deep clone
-      this.target     = new VRGBA(startOrDelta.target);               // - deep clone
-      this.onDuration = startOrDelta.onDuration;                      // - clone
-      this.lazyEquals = startOrDelta.lazyEquals;                      // - clone
-      this.delta      = new VRGBA(startOrDelta.delta);                // - deep clone
-    } else {                                                          // passed normal parameters
-      this.current    = new VRGBA(startOrDelta);                      // -
-      this.target     = new VRGBA(target);                            // -
-      this.onDuration = orNaN(onDuration, 0);                         // - parse onDuration
-      this.lazyEquals = false;                                        // - true when current value == target value
-      fadeDuration    = orNaN(fadeDuration, 0);                       // - use either the remaining time (of the hour) or total fade duration
-      fadeDuration    -= (useTicksRemaining ? Community.Lighting.ticks() : 0);
-      this.delta      = new VRGBA(this.target.v,                      // - divide by zero is +inf or -inf so deltas work for speed = 0
-                                 (this.target.r - this.current.r) / fadeDuration, (this.target.g - this.current.g) / fadeDuration,
-                                 (this.target.b - this.current.b) / fadeDuration, (this.target.a - this.current.a) / fadeDuration);
+  constructor(startColorOrDelta, targetColor, startRadius, targetRadius, fadeDuration, onDuration, useTicksRemaining) {
+    if (startColorOrDelta != null &&
+        startColorOrDelta.constructor === Delta) {        // passed another Delta instance - clone
+      let delta = startColorOrDelta;                      // - rename
+      this.currentColor  = new VRGBA(delta.currentColor); // - deep copy
+      this.targetColor   = new VRGBA(delta.targetColor);  // - deep copy
+      this.currentRadius = delta.currentRadius;           // - copy
+      this.targetRadius  = delta.targetRadius;            // - copy
+      this.onDuration    = delta.onDuration;              // - copy
+      this.lazyEquals    = delta.lazyEquals;              // - copy
+      this.deltaColor    = new VRGBA(delta.deltaColor);   // - deep copy
+      this.deltaRadius   = delta.deltaRadius;             // - copy
+    } else {                                              // passed normal parameters - build delta
+      let startColor     = startColorOrDelta;             // - rename
+      this.currentColor  = new VRGBA(startColor);         // - deep copy
+      this.targetColor   = new VRGBA(targetColor);        // - deep copy
+      this.currentRadius = startRadius;                   // - copy
+      this.targetRadius  = targetRadius;                  // - copy
+      this.onDuration    = orNaN(onDuration, 0);          // - parse onDuration
+      this.lazyEquals    = false;                         // - true when current value == target value
+      fadeDuration       = orNaN(fadeDuration, 0);        // - use either the remaining time (of the hour) or total fade duration
+      fadeDuration      -= (useTicksRemaining ? Community.Lighting.ticks() : 0);
+      this.deltaColor    = new VRGBA(this.targetColor.v,  // - divide by zero is +inf or -inf so deltas work for speed = 0
+                                    (this.targetColor.r - this.currentColor.r) / fadeDuration, (this.targetColor.g - this.currentColor.g) / fadeDuration,
+                                    (this.targetColor.b - this.currentColor.b) / fadeDuration, (this.targetColor.a - this.currentColor.a) / fadeDuration);
+      this.deltaRadius   = (targetRadius - startRadius) / fadeDuration; // compute radius delta
     }
   }
 
   /**
-   * Create color delta from the start color, target color, and specified durations.
-   * @param {VRGBA} start
-   * @param {VRGBA} target
+   * Create light delta from the start color & radius, target color & radius, and fade & on durations.
+   * @param {VRGBA} startColor
+   * @param {VRGBA} targetColor
+   * @param {Number} startRadius
+   * @param {Number} targetRadius
    * @param {Number} fadeDuration
    * @param {Number} onDuration
    * @returns {Delta}
    */
-  static createColor(start, target, fadeDuration = 0, onDuration = 0) {
-    return new Delta(start, target, fadeDuration, onDuration, false /* don't use remaining ticks */);
+  static createLight(startColor, targetColor, startRadius, targetRadius, fadeDuration, onDuration) {
+    return new Delta(startColor, targetColor, startRadius, targetRadius, fadeDuration, onDuration, false /* don't use remaining ticks */);
   }
 
   /**
    * Create map color delta from the current map tint, target tint, and fade duration.
-   * @param {VRGBA} target
+   * @param {VRGBA} targetTint
    * @param {Number} fadeDuration
    * @returns {Delta}
    */
-  static createTint(target, fadeDuration = 0) { return new Delta($gameVariables.GetTint(), target, fadeDuration, 0, false /* don't use remaining ticks */); }
+  static createTint(targetTint, fadeDuration = 0) { return new Delta($gameVariables.GetTint(), targetTint, null, null, fadeDuration, 0, false); }
 
   /**
    * Create battle color delta from the current battle tint, target tint, and fade duration.
-   * @param {VRGBA} target
+   * @param {VRGBA} targetTint
    * @param {Number} fadeDuration
    * @returns {Delta}
    */
-  static createBattleTint(target, fadeDuration = 0) { return new Delta($gameTemp._BattleTintTarget.current, target, fadeDuration, 0, false /* don't use remaining ticks */); }
+  static createBattleTint(targetTint, fadeDuration = 0) { return new Delta($gameTemp._BattleTintTarget.currentColor, targetTint, null, null, fadeDuration, 0, false); }
 
   /**
-   * Create a time color delta from the current time and speed. useCurrentTint specifies whether to fade from the current color to the target or
-   * to have the start color be the color it would normally be at the given time interval (difference between current hour and next).
+   * Create a time color delta from the current time and speed. useCurrentTint specifies whether to
+   * fade from the current color to the target or to have the start color be the color it would
+   * normally be at the given time interval (difference between current hour and next).
    * @param {Boolean} useCurrentTint
    * @returns {Delta}
    */
   static createTimeTint(useCurrentTint = true) {
     let fadeDuration = 60 * $gameVariables.GetDaynightSpeed();
     if (useCurrentTint) { // delta should fade from current color to target
-      return new Delta($gameVariables.GetTint(), $gameVariables.GetTintByTime(1), fadeDuration, 0 /*on duration*/, true /* use remaining ticks for speed computation */);
+      return new Delta($gameVariables.GetTint(), $gameVariables.GetTintByTime(1), null, null, fadeDuration, 0 /*on duration*/, true /* use remaining ticks for speed computation */);
     } else {              // start color should be the color it would normally be at the given time
       let ticks    = fadeDuration == 0 ? Community.Lighting.minutes() * 60 + Community.Lighting.seconds() : Community.Lighting.ticks();
       fadeDuration = fadeDuration == 0 ? 60 * 60 : fadeDuration; // speed = 0 needs a reference speed to compute the color at the current time so use 1 tick = 1 second
-      let delta = new Delta($gameVariables.GetTintByTime(), $gameVariables.GetTintByTime(1), fadeDuration, 0 /*on duration*/, false /* don't use remaining ticks */);
-      delta.nextColor(ticks); // get current color based off of ticks elapsed in hour
+      let delta = new Delta($gameVariables.GetTintByTime(), $gameVariables.GetTintByTime(1), null, null, fadeDuration, 0 /*on duration*/, false);
+      delta.next(ticks); // get current color based off of ticks elapsed in hour
       return delta;
     }
   }
 
   /**
-   * Returns the next delta color in between the current color and target color. Scale is used to scale the delta increment by a factor of the scale amount.
+   * Computes the next delta color and radius in between the current color & radius and target color & radius.
+   * Scale is used to scale the delta increment by a factor of the scale amount.
    * @param {VRGBA} scale
-   * @returns {VRGBA}
+   * @returns {this}
    */
-  nextColor(scale = 1) {
-    if (this.equals()) return (this.onDuration = Math.max(this.onDuration - 1, 0), this.target); // subtract onDuration and lazy-short-circuit
-    this.current.v = this.delta.v;  // Compute next color step and clamp to target
-    this.current.r = Math.minmax(this.delta.r > 0, this.current.r + scale * this.delta.r, this.target.r);
-    this.current.g = Math.minmax(this.delta.g > 0, this.current.g + scale * this.delta.g, this.target.g);
-    this.current.b = Math.minmax(this.delta.b > 0, this.current.b + scale * this.delta.b, this.target.b);
-    this.current.a = Math.minmax(this.delta.a > 0, this.current.a + scale * this.delta.a, this.target.a);
+  next(scale = 1) {
+    if (this.equals()) return (this.onDuration = Math.max(this.onDuration - 1, 0), this); // subtract onDuration and lazy-short-circuit
+    this.currentColor.v = this.deltaColor.v;  // Compute next color step and clamp to targetColor
+    this.currentColor.r = Math.minmax(this.deltaColor.r > 0, this.currentColor.r + scale * this.deltaColor.r, this.targetColor.r);
+    this.currentColor.g = Math.minmax(this.deltaColor.g > 0, this.currentColor.g + scale * this.deltaColor.g, this.targetColor.g);
+    this.currentColor.b = Math.minmax(this.deltaColor.b > 0, this.currentColor.b + scale * this.deltaColor.b, this.targetColor.b);
+    this.currentColor.a = Math.minmax(this.deltaColor.a > 0, this.currentColor.a + scale * this.deltaColor.a, this.targetColor.a);
+    this.currentRadius  = Math.minmax(this.deltaRadius > 0, this.currentRadius   + scale * this.deltaRadius,  this.targetRadius);
     if (this.equals()) this.onDuration = Math.max(this.onDuration - 1, 0); // check if done and if so subtract onDuration
-    return new VRGBA(this.current); // duplicate so reference can't be messed with
+    return this;
   }
 
   /**
-   * Returns true if the current color is equal to the target; otherwise false.
+   * Returns the current delta color.
+   * @returns {Number}
+   **/
+  getColor() { return new VRGBA(this.currentColor); } // duplicate color so reference can't be messed with
+
+  /**
+   * Returns the current delta radius.
+   * @returns {Number}
+   **/
+  getRadius() { return this.currentRadius; }
+
+  /**
+   * Returns true if the current color is equal to the target color; otherwise false.
    * @returns {Boolean}
    */
   equals() {
     if (this.lazyEquals) return true; // lazy-short-circuit comparison followed by real comparison
-    if ((this.lazyEquals = this.current.equals(this.target))) return (this.current = this.target, true); // set cur to refer to target on match
+    if ((this.lazyEquals = this.currentColor.equals(this.targetColor)))
+      return (this.currentColor = this.targetColor, this.currentRadius = this.targetRadius, true); // set cur to refer to target on match
     return false;
   }
 
@@ -1615,6 +1645,7 @@ class Delta {
         else if (           isPrefix(e, "#", "a#")      && colorCycle)                { colorCycle.push({ "color": new VRGBA(e) }); cycleIndex = i; }
         else if (           !isNaN(+e)                  && cycleIndex + 1 == i)         cycleLast().onDuration   = +e;
         else if (           !isNaN(+p) && !isNaN(+e)    && cycleIndex + 2 == i)         cycleLast().fadeDuration = +e; // check previous
+        else if (           !isNaN(+p) && !isNaN(+e)    && cycleIndex + 3 == i)         cycleLast().radiusGrow   = +e; // check previous
         else if (           isPrefix(e, "#", "a#")      && isUndef(this._clColor))      this._clColor            = new VRGBA(e);
         else if (           isOn(e)                     && isUndef(this._clOnOff))      this._clOnOff            = true;
         else if (           isOff(e)                    && isUndef(this._clOnOff))      this._clOnOff            = false;
@@ -1630,16 +1661,17 @@ class Delta {
         p = e;
       }, this);
 
-      if (colorCycle && colorCycle.length) {                       // check if tag included color cycling
-        this._clCycle = [];                                        // only define if colorCycle exists
-        colorCycle.forEach((e, i, a) => {                          // preprocess color cycle deltas
-          let n = a[++i < colorCycle.length ? i : 0];              // get next element
-          let fadeDuration = orNullish(e.fadeDuration, 0);         // grab fade duration for this color since we are fading from it
-          let onDuration = orNullish(n.onDuration, 1);             // grab on duration for the next color since we are fading to it
-          let thisColor = orNullish(e.color, colorCycle[0].color); // grab this color
-          let nextColor = orNullish(n.color, colorCycle[0].color); // grab next color
-          console.log("hmm", thisColor, nextColor);
-          this._clCycle.push(Delta.createColor(thisColor, nextColor, fadeDuration, onDuration)); // create and push delta
+      if (colorCycle && colorCycle.length) {                             // check if tag included color cycling
+        this._clCycle = [];                                              // only define if colorCycle exists
+        colorCycle.forEach((e, i, a) => {                                // preprocess color cycle deltas
+          let n = a[++i < colorCycle.length ? i : 0];                    // get next element
+          let fadeDuration = orNullish(e.fadeDuration, 0);               // grab fade duration for this color since we are fading from it
+          let onDuration   = orNullish(n.onDuration, 1);                 // grab on duration for the next color since we are fading to it
+          let thisRadius   = orNullish(e.radiusGrow, this._clRadius, 0); // grab this radius or use the default
+          let nextRadius   = orNullish(n.radiusGrow, this._clRadius, 0); // grab next radius or use the default
+          let thisColor    = orNullish(e.color, colorCycle[0].color);    // grab this color
+          let nextColor    = orNullish(n.color, colorCycle[0].color);    // grab next color
+          this._clCycle.push(Delta.createLight(thisColor, nextColor, thisRadius, nextRadius, fadeDuration, onDuration)); // create and push delta
         }, this);
       }
     }
@@ -1707,13 +1739,18 @@ class Delta {
   Game_Event.prototype.incrementLightCycle = function () {
     let cycleList = this.getLightCycle();
     if (cycleList) {
-      if (this._clCycleDelta != null && !this._clCycleDelta.finished())
-        this._clColor = this._clCycleDelta.nextColor(); // assign color for this frame
+      if (this._clCycleDelta != null && !this._clCycleDelta.finished()) {
+        this._clCycleDelta.next();                       // compute next delta
+        this._clColor  = this._clCycleDelta.getColor();  // assign color
+        this._clRadius = this._clCycleDelta.getRadius(); // assign radius
+      }
       else {
-        let delta = cycleList.shift();                  // pop delta from front
-        this._clCycleDelta = new Delta(delta);          // duplicate delta
-        cycleList.push(delta);                          // push delta on back
-        this._clColor = this._clCycleDelta.nextColor(); // assign color for this frame
+        let delta = cycleList.shift();                   // pop delta from front
+        this._clCycleDelta = new Delta(delta);           // duplicate delta
+        cycleList.push(delta);                           // push delta on back
+        this._clCycleDelta.next();                       // compute next delta
+        this._clColor  = this._clCycleDelta.getColor();  // assign color
+        this._clRadius = this._clCycleDelta.getRadius(); // assign radius
       }
     }
   };
@@ -2069,7 +2106,7 @@ class Delta {
           // Set target to the next hour tint if enabled and the tint matches the current target
           if (daynightTintEnabled && $gameVariables.GetTintTarget().finished()) {
             let delta = Delta.createTimeTint(true /*useCurrentTint*/, 60 * $gameVariables.GetDaynightSpeed() /*fade duration*/);
-            $gameVariables.SetTint(delta.current);
+            $gameVariables.SetTint(delta.getColor());
             $gameVariables.SetTintTarget(delta);
           }
         }
@@ -2226,7 +2263,7 @@ class Delta {
     ctxMul.globalCompositeOperation = 'lighter';
 
     // Compute tint for next frame
-    let tintValue = $gameVariables.GetTintTarget().nextColor();
+    let tintValue = $gameVariables.GetTintTarget().next().getColor();
     $gameVariables.SetTint(tintValue);
     this._maskBitmaps.FillRect(-lightMaskPadding, 0, maxX + lightMaskPadding, maxY, tintValue);
 
@@ -2703,10 +2740,10 @@ class Delta {
     this._maskBitmaps.additive.clearRect(0, 0, battleMaxX + lightMaskPadding, battleMaxY);
 
     // Prevent the battle scene from being too dark
-    let c = $gameTemp._BattleTintTarget.nextColor(); // reference
+    let c = $gameTemp._BattleTintTarget.next().getColor(); // reference
     if (c.magnitude() < 0x66 * 3 && c.r < 0x66 && c.g < 0x66 && c.b < 0x66) {
       c.set({ v: false, r: 0x66, g: 0x66, b: 0x66, a: 0xff });
-      $gameTemp._BattleTintTarget.current = c; // reassign if out of bounds. Shouldn't be possible.
+      $gameTemp._BattleTintTarget.currentColor = c; // reassign if out of bounds. Shouldn't be possible.
     }
 
     // Compute tint for next frame
@@ -2833,7 +2870,7 @@ class Delta {
               $gameVariables.SetDaynightSpeed(daynightspeed);
             }
             let delta = Delta.createTimeTint(false /*useCurrentTint*/, 60 * $gameVariables.GetDaynightSpeed() /*fade duration*/);
-            $gameVariables.SetTint(delta.current);
+            $gameVariables.SetTint(delta.getColor());
             $gameVariables.SetTintTarget(delta);
           }
         }
@@ -2999,7 +3036,7 @@ class Delta {
     else if (cmd.equalsIC("reset", "daylight")) {
       let fadeDuration = 60 * (+args[1] || 0);
       let delta = Delta.createTimeTint(false /*useCurrentTint*/, 0 /*fadeDuration*/); // get the daynight tint for the current time
-      delta = Delta.createTint(delta.current, fadeDuration); // use tint for current time as target
+      delta = Delta.createTint(delta.getColor(), fadeDuration); // use tint for current time as target
       $gameVariables.SetTintTarget(delta);
     }
   };
@@ -3040,14 +3077,14 @@ class Delta {
     };
     let setColorDelta = () => {
       let delta = Delta.createTint(gV.GetTint());
-      $gameVariables.SetTint(delta.current);
+      $gameVariables.SetTint(delta.getColor());
       $gameVariables.SetTintTarget(delta);
     };
     let setTimeColorDelta = () => {
       if (daynightCycleEnabled && daynightTintEnabled) {
         let isInstant = 'instant'.equalsIC(...a) || gV.GetDaynightSpeed() == 0;
         let delta = Delta.createTimeTint(!isInstant /*useCurrentTint*/, 60 * $gameVariables.GetDaynightSpeed() /*fade duration*/); // whether to change tint instantly
-        $gameVariables.SetTint(delta.current);
+        $gameVariables.SetTint(delta.getColor());
         $gameVariables.SetTintTarget(delta);
       }
     };
