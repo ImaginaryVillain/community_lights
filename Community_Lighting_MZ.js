@@ -773,9 +773,9 @@ Imported[Community.Lighting.name] = true;
 *               that will be cycled through before repeating from the beginning:
 *               <cl: light 100 cycle #f00 15 15 15 #0f0 15 15 15 #00f 15 15 15 ...etc>
 *               fadeDuration and growRadius are optional argument used to transition between colors
-*               and radius sizes over the provided cycle interval.
-*               In Terrax Lighting, there was a hard limit of 4, but now you can use
-*               as many as you want. [optional]
+*               and radius sizes over the provided cycle interval. If growRadius is not provided
+*               the default radius is used for the given color. In Terrax Lighting, there was a hard
+*               limit of 4, but now you can use as many as you want. [optional]
 * - color       #ffffff, #ff0000, etc
 * - onoff:      Initial state:  0, 1, off, on (default). Ignored if day|night passed [optional]
 * - day         Causes the light to only come on during the day [optional]
@@ -795,17 +795,20 @@ Imported[Community.Lighting.name] = true;
 * - Same as Light params above, but adds a subtle flicker
 *
 * Flashlight bl bw color [onoff] [day|night] [sdir|angle] [x] [y] [id]
-* Flashlight bl bw cycle <color onDuration [fadeDuration]>... [onoff] [day|night] [sdir|angle] [x] [y] [id]
+* Flashlight bl bw cycle <color onDuration [fadeDuration [grow_bl [grow_bw]]]>... [onoff] [day|night] [sdir|angle] [x] [y] [id]
 * - Sets the light as a flashlight with beam length (bl) beam width (bw) color (c),
 *      0|1 (onoff), and 1=up, 2=right, 3=down, 4=left for static direction (sdir)
 * - bl:       Beam length:  Any number, optionally preceded by "L", so 8, L8
 * - bw:       Beam width:  Any number, optionally preceded by "W", so 12, W12
-* - cycle     Allows any number of color, onDuration, fadeDuration, growRadius tuples to follow
-*             that will be cycled through before repeating from the beginning:
-*             <cl: Flashlight l8 w12 cycle #f00 15 #ff0 15 #0f0 15 on someId d3>
-*             fadeDuration is an optional argument used to transition between colors
-*             over the provided cycle interval.
-*             There's no limit to how many colors can be cycled. [optional]
+* - cycle     Allows any number of color, onDuration, fadeDuration, grow_bl, and
+*             grow_bw tuples to follow that will be cycled through before repeating
+*             from the beginning:
+*             <cl: Flashlight l8 w12 cycle #f00 15 15 8 11 #ff0 15 15 7 10 #0f0 15 6 10 on someId d3>
+*             fadeDuration, grow_bl, and grow_bw are optional arguments used to
+*             transition between colors and beam lengths & widths over the provided
+*             cycle interval. If grow_bl or grow_bw are not provided, the default
+*             length or width is used for the given color. There's no limit to how
+*             many colors can be cycled. [optional]
 * - color     #ffffff, #ff0000, etc
 * - onoff:    Initial state:  0, 1, off, on (default). Ignored if day|night passed [optional]
 * - day       Sets the event's light to only show during the day [optional]
@@ -839,6 +842,10 @@ Imported[Community.Lighting.name] = true;
 * Creates a fire that only lights up at night.
 *
 * <cl: Flashlight l8 w12 #ff0000 on asdf>
+* Creates a flashlight beam with id asdf which can be turned on or off via
+* plugin commands.
+*
+* <cl: Flashlight l8 w12 cycle #ff0000 on asdf>
 * Creates a flashlight beam with id asdf which can be turned on or off via
 * plugin commands.
 *
@@ -1678,7 +1685,7 @@ class Delta {
       let isPrefix     = (x, ...a) => { for (let i of a) if (x.slice(0, i.length).equalsIC(i)) return true; return false; };
       let isUndef      = (x)       => x === undefined;
       let cycleLast    = ()        => colorCycle[colorCycle.length - 1]; // get last element of cycle array
-      let cycleIndex = -1;
+      let cycleIndex   = -1;
       let colorCycle, p;
       tagData.forEach((e, i) => {
         if      (!isFL() && !isNaN(+e)                     && isUndef(this._clRadius))     this._clRadius           = +e;
