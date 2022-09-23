@@ -1235,93 +1235,103 @@ class VRGBA {
 /** Class representing a color delta for providing color changes over time at different speeds. */
 class Delta {
   /**
-   * Create color delta based off of the start color, target color, specified speed, and whether to consider the remaining ticks or not for speed purposes.
+   * Create color delta based off of the start color, target color, specified durations, and whether to consider the remaining ticks or not for speed purposes.
    * @param {VRGBA} current
    * @param {VRGBA} target
-   * @param {Number} speed
+   * @param {Number} fadeDuration
+   * @param {Number} onDuration
    * @param {Number} useTicksRemaining
    * @returns {Delta}
    */
-  constructor(start, target, speed, useTicksRemaining) {
-    this.current = new VRGBA(start);
-    this.target   = new VRGBA(target);
-    this._finished = false; // true when current value == target value
-    speed         = orNaN(speed, 0);
-    let tickTotal = 60 * speed - (useTicksRemaining ? Community.Lighting.ticks() : 0); // use either thee remaining ticks (of the hour) or total ticks
-    this.delta = new VRGBA(this.target.v, // divide by zero is +inf or -inf so deltas work for speed = 0
-                          (this.target.r - this.current.r) / tickTotal, (this.target.g - this.current.g) / tickTotal,
-                          (this.target.b - this.current.b) / tickTotal, (this.target.a - this.current.a) / tickTotal);
+  constructor(start, target, fadeDuration, onDuration, useTicksRemaining) {
+    this.current    = new VRGBA(start);
+    this.target     = new VRGBA(target);
+    this.onDuration = orNaN(onDuration, 0);
+    this.lazyEquals = false; // true when current value == target value
+    fadeDuration    = orNaN(fadeDuration, 0) - (useTicksRemaining ? Community.Lighting.ticks() : 0); // use either the remaining ticks (of the hour) or total fade duration
+    this.delta      = new VRGBA(this.target.v, // divide by zero is +inf or -inf so deltas work for speed = 0
+                               (this.target.r - this.current.r) / fadeDuration, (this.target.g - this.current.g) / fadeDuration,
+                               (this.target.b - this.current.b) / fadeDuration, (this.target.a - this.current.a) / fadeDuration);
   }
 
   /**
-   * Create color delta from the start color, target color, and specified speed.
+   * Create color delta from the start color, target color, and specified durations.
    * @param {VRGBA} start
    * @param {VRGBA} target
-   * @param {Number} speed
+   * @param {Number} fadeDuration
+   * @param {Number} onDuration
    * @returns {Delta}
    */
-  static createColor(start, target, speed = 0) { return new Delta(start, target, speed, false /* don't use remaining ticks */ ); }
+  static createColor(start, target, fadeDuration = 0, onDuration = 0) {
+    return new Delta(start, target, fadeDuration, onDuration, false /* don't use remaining ticks */);
+  }
 
   /**
-   * Create map color delta from the current map tint, target tint, and specified speed.
+   * Create map color delta from the current map tint, target tint, and fade duration.
    * @param {VRGBA} target
-   * @param {Number} speed
+   * @param {Number} fadeDuration
    * @returns {Delta}
    */
-  static createTint(target, speed = 0) { return new Delta($gameVariables.GetTint(), target, speed, false /* don't use remaining ticks */); }
+  static createTint(target, fadeDuration = 0) { return new Delta($gameVariables.GetTint(), target, fadeDuration, 0, false /* don't use remaining ticks */); }
 
   /**
-   * Create battle color delta from the current battle tint, target tint, and specified speed.
+   * Create battle color delta from the current battle tint, target tint, and fade duration.
    * @param {VRGBA} target
-   * @param {Number} speed
+   * @param {Number} fadeDuration
    * @returns {Delta}
    */
-  static createBattleTint(target, speed = 0) { return new Delta($gameTemp._BattleTintTarget.current, target, speed, false /* don't use remaining ticks */); }
+  static createBattleTint(target, fadeDuration = 0) { return new Delta($gameTemp._BattleTintTarget.current, target, fadeDuration, 0, false /* don't use remaining ticks */); }
 
   /**
-   * Create a time color delta from the current time and speed. Fade specifies whether to fade from the current color to the target or
+   * Create a time color delta from the current time and speed. useCurrentTint specifies whether to fade from the current color to the target or
    * to have the start color be the color it would normally be at the given time interval (difference between current hour and next).
-   * @param {Boolean} fade
+   * @param {Boolean} useCurrentTint
    * @returns {Delta}
    */
-  static createTimeTint(fade = false) {
-    let speed = $gameVariables.GetDaynightSpeed();
-    let target = $gameVariables.GetTintByTime(1);
-    if (fade) { // delta should fade from current color to target
-      return new Delta($gameVariables.GetTint(), target, speed, true /* use remaining ticks for speed computation */);
-    } else {       // start color should be the color it would normally be at the given time
-      let ticks = speed == 0 ? Community.Lighting.minutes() * 60 + Community.Lighting.seconds() : Community.Lighting.ticks();
-      speed     = speed == 0 ? 60 : speed; // speed = 0 needs a reference speed to compute the color at the current time so use 1 tick = 1 second
-      let delta = new Delta($gameVariables.GetTintByTime(), target, speed, false /* don't use remaining ticks */);
+  static createTimeTint(useCurrentTint = true) {
+    let fadeDuration = 60 * $gameVariables.GetDaynightSpeed();
+    if (useCurrentTint) { // delta should fade from current color to target
+      return new Delta($gameVariables.GetTint(), $gameVariables.GetTintByTime(1), fadeDuration, 0 /*on duration*/, true /* use remaining ticks for speed computation */);
+    } else {              // start color should be the color it would normally be at the given time
+      let ticks    = fadeDuration == 0 ? Community.Lighting.minutes() * 60 + Community.Lighting.seconds() : Community.Lighting.ticks();
+      fadeDuration = fadeDuration == 0 ? 60 * 60 : fadeDuration; // speed = 0 needs a reference speed to compute the color at the current time so use 1 tick = 1 second
+      let delta = new Delta($gameVariables.GetTintByTime(), $gameVariables.GetTintByTime(1), fadeDuration, 0 /*on duration*/, false /* don't use remaining ticks */);
       delta.nextColor(ticks); // get current color based off of ticks elapsed in hour
       return delta;
     }
   }
 
   /**
-   * Returns the next delta color in between the current color and target color. Scale is used to scale the output color by a factor the scale amount.
+   * Returns the next delta color in between the current color and target color. Scale is used to scale the delta increment by a factor of the scale amount.
    * @param {VRGBA} scale
    * @returns {VRGBA}
    */
   nextColor(scale = 1) {
-    if (this.finished()) return this.target; // lazy-short-circuit
-    this.current.v = this.delta.v;           // Compute next color step and clamp to target
+    if (this.equals()) return (this.onDuration = Math.max(this.onDuration - 1, 0), this.target); // subtract onDuration and lazy-short-circuit
+    this.current.v = this.delta.v;  // Compute next color step and clamp to target
     this.current.r = Math.minmax(this.delta.r > 0, this.current.r + scale * this.delta.r, this.target.r);
     this.current.g = Math.minmax(this.delta.g > 0, this.current.g + scale * this.delta.g, this.target.g);
     this.current.b = Math.minmax(this.delta.b > 0, this.current.b + scale * this.delta.b, this.target.b);
     this.current.a = Math.minmax(this.delta.a > 0, this.current.a + scale * this.delta.a, this.target.a);
+    if (this.equals()) this.onDuration = Math.max(this.onDuration - 1, 0); // check if done and if so subtract onDuration
     return new VRGBA(this.current); // duplicate so reference can't be messed with
   }
 
   /**
-   * Returns whether the current color is equal to the target and if so returns true; otherwise false.
+   * Returns true if the current color is equal to the target; otherwise false.
    * @returns {Boolean}
    */
-  finished() {
-    if (this._finished) return this._finished; // lazy-short-circuit comparison followed by real comparison
-    if ((this._finished = this.current.equals(this.target))) this.current = this.target; // set cur to refer to target on match
-    return this._finished; // return comparison
+  equals() {
+    if (this.lazyEquals) return true; // lazy-short-circuit comparison followed by real comparison
+    if ((this.lazyEquals = this.current.equals(this.target))) return (this.current = this.target, true); // set cur to refer to target on match
+    return false;
   }
+
+  /**
+   * Returns true if the current color is equal to the target and on duration has been reached; otherwise false.
+   * @returns {Boolean}
+   */
+  finished() { return this.equals() && this.onDuration == 0; }
 }
 
 (function ($$) {
@@ -1556,107 +1566,72 @@ class Delta {
 
   // Event note tag caching
   Game_Event.prototype.resetLightData = function () {
-    this._clType = undefined;
+    this._clType        = undefined;
     this._lastLightPage = undefined;
-    this._clRadius = undefined;
-    this._clColor = undefined;
-    this._clCycle = undefined;
-    this._clBrightness = undefined;
-    this._clSwitch = undefined;
-    this._clDirection = undefined;
-    this._clXOffset = undefined;
-    this._clYOffset = undefined;
-    this._clId = undefined;
-    this._clBeamColor = undefined;
-    this._clBeamLength = undefined;
-    this._clBeamWidth = undefined;
-    this._clFlashlightDirection = undefined;
-    this._clOnOff = undefined;
-    this._clCycleTimer = undefined;
-    this._clCycleIndex = undefined;
+    this._clRadius      = undefined;
+    this._clColor       = undefined;
+    this._clCycle       = undefined;
+    this._clBrightness  = undefined;
+    this._clSwitch      = undefined;
+    this._clDirection   = undefined;
+    this._clXOffset     = undefined;
+    this._clYOffset     = undefined;
+    this._clId          = undefined;
+    this._clBeamLength  = undefined;
+    this._clBeamWidth   = undefined;
+    this._clOnOff       = undefined;
+    this._clCycleIndex  = undefined;
     this.initLightData();
   };
   Game_Event.prototype.initLightData = function () {
     this._lastLightPage = this._pageIndex;
     let tagData = this.getCLTag().toLowerCase().split(/\s+/);
-    let needsCycleDuration = false;
     this._clType = LightType[tagData.shift()];
-
-    // Handle parsing of light and fire
-    if (this._clType && this._clType.is(LightType.Light, LightType.Fire)) {
-      this._clRadius = undefined;
-      for (let x of tagData) {
-        if (!isNaN(+x) && this._clRadius === undefined) this._clRadius = +x;
-        else if (x.equalsIC("cycle") && this._clColor === undefined) this._clCycle = [];
-        else if (this._clCycle && !needsCycleDuration && (x[0].equalsIC("#") || x.slice(0, 2).equalsIC("a#"))) {
-          this._clCycle.push({ "color": new VRGBA(x), "duration": 1 });
-          needsCycleDuration = true;
-        }
-        else if (this._clCycle && needsCycleDuration && !isNaN(+x)) {
-          this._clCycle[this._clCycle.length - 1].duration = +x || 1;
-          needsCycleDuration = false;
-        }
-        else if ((x[0].equalsIC("#") || x.slice(0, 2).equalsIC("a#")) &&
-                  this._clColor === undefined) this._clColor = new VRGBA(x);
-        else if (isOn(x) && this._clOnOff === undefined) this._clOnOff = true;
-        else if (isOff(x) && this._clOnOff === undefined) this._clOnOff = false;
-        else if (x.equalsIC("night", "day") && this._clSwitch === undefined) this._clSwitch = x;
-        else if (x[0].equalsIC("b") && this._clBrightness === undefined) {
-          this._clBrightness = Number(+(x.slice(1, x.length)) / 100).clamp(0, 1);
-        }
-        else if (x[0].equalsIC("d") && this._clDirection === undefined) this._clDirection = +(x.slice(1, x.length));
-        else if (x[0].equalsIC("x") && this._clXOffset === undefined) this._clXOffset = +(x.slice(1, x.length));
-        else if (x[0].equalsIC("y") && this._clYOffset === undefined) this._clYOffset = +(x.slice(1, x.length));
-        else if (x.length > 0 && this._clId === undefined) this._clId = x;
-      }
+    // Handle parsing of light, fire, and flashlight
+    if (this._clType) {
+      let isFL         = ()        => this._clType.is(LightType.Flashlight); // is flashlight
+      let isEquals     = (x, ...a) => { for (let i of a) if (x.equalsIC(i)) return true; return false; };
+      let isPrefix     = (x, ...a) => { for (let i of a) if (x.slice(0, i.length).equalsIC(i)) return true; return false; };
+      let isUndef      = (x)       => x === undefined;
+      let cycleLast    = ()        => this._clCycle[this._clCycle.length - 1]; // get last element of cycle array
+      let cycleIndex = -1;
+      let p;
+      tagData.forEach((e, i) => {
+        if      (!isFL() && !isNaN(+e)                  && isUndef(this._clRadius))     this._clRadius           = +e;
+        else if (isFL()  && !isNaN(+e)                  && isUndef(this._clBeamLength)) this._clBeamLength       = +e;
+        else if (isFL()  && !isNaN(+e)                  && isUndef(this._clBeamWidth))  this._clBeamWidth        = +e;
+        else if (isFL()  && isPrefix(e, "l")            && isUndef(this._clBeamLength)) this._clBeamLength       = +(e.slice(1));
+        else if (isFL()  && isPrefix(e, "w")            && isUndef(this._clBeamWidth))  this._clBeamWidth        = +(e.slice(1));
+        else if (           isEquals(e, "cycle")        && isUndef(this._clColor))      this._clCycle            = [];
+        else if (           isPrefix(e, "#", "a#")      && this._clCycle)             { this._clCycle.push({ "color": new VRGBA(e) }); cycleIndex = i; }
+        else if (           !isNaN(+e)                  && cycleIndex + 1 == i)         cycleLast().onDuration   = +e;
+        else if (           !isNaN(+p) && !isNaN(+e)    && cycleIndex + 2 == i)         cycleLast().fadeDuration = +e; // check previous
+        else if (           isPrefix(e, "#", "a#")      && isUndef(this._clColor))      this._clColor            = new VRGBA(e);
+        else if (           isOn(e)                     && isUndef(this._clOnOff))      this._clOnOff            = true;
+        else if (           isOff(e)                    && isUndef(this._clOnOff))      this._clOnOff            = false;
+        else if (           isEquals(e, "night", "day") && isUndef(this._clSwitch))     this._clSwitch           = e;
+        else if (           isPrefix(e, "b")            && isUndef(this._clBrightness)) this._clBrightness       = Number(+(e.slice(1)) / 100).clamp(0, 1);
+        else if (!isFL() && isPrefix(e, "d")            && isUndef(this._clDirection))  this._clDirection        = +(e.slice(1));
+        else if ( isFL() && !isNaN(+e)                  && isUndef(this._clDirection))  this._clDirection        = +e;
+        else if ( isFL() && isPrefix(e, "d")            && isUndef(this._clDirection))  this._clDirection        = CLDirectionMap[+(e.slice(1))];
+        else if ( isFL() && isPrefix(e, "a")            && isUndef(this._clDirection))  this._clDirection        = Math.PI / 180 * +(e.slice(1));
+        else if (           isPrefix(e, "x")            && isUndef(this._clXOffset))    this._clXOffset          = +(e.slice(1));
+        else if (           isPrefix(e, "y")            && isUndef(this._clYOffset))    this._clYOffset          = +(e.slice(1));
+        else if (           e.length > 0                && isUndef(this._clId))         this._clId               = e;
+        p = e;
+      }, this);
     }
-    // Handle parsing of flashlight
-    else if (this._clType && this._clType.is(LightType.Flashlight)) {
-      this._clBeamLength = undefined;
-      this._clBeamWidth = undefined;
-      this._clOnOff = undefined;
-      this._clFlashlightDirection = undefined;
-      this._clRadius = 1;
-      for (let x of tagData) {
-        if (!isNaN(+x) && this._clBeamLength === undefined) this._clBeamLength = +x;
-        else if (!isNaN(+x) && this._clBeamWidth === undefined) this._clBeamWidth = +x;
-        else if (x[0].equalsIC("l") && this._clBeamLength === undefined) this._clBeamLength = this._clBeamLength = +(x.slice(1, x.length));
-        else if (x[0].equalsIC("w") && this._clBeamWidth === undefined) this._clBeamWidth = this._clBeamWidth = +(x.slice(1, x.length));
-        else if (x.equalsIC("cycle") && this._clColor === undefined) this._clCycle = [];
-        else if (this._clCycle && !needsCycleDuration && (x[0].equalsIC("#") || x.slice(0, 2).equalsIC("a#"))) {
-          this._clCycle.push({ "color": new VRGBA(x), "duration": 1 });
-          needsCycleDuration = true;
-        }
-        else if (this._clCycle && needsCycleDuration && !isNaN(+x)) {
-          this._clCycle[this._clCycle.length - 1].duration = +x || 1;
-          needsCycleDuration = false;
-        }
-        else if ((x[0].equalsIC("#") || x.slice(0, 2).equalsIC("a#")) &&
-                  this._clBeamColor === undefined) this._clColor = new VRGBA(x);
-        else if (isOn(x) && this._clOnOff === undefined) this._clOnOff = true;
-        else if (isOff(x) && this._clOnOff === undefined) this._clOnOff = false;
-        else if (x.equalsIC("night", "day") && this._clSwitch === undefined) this._clSwitch = x;
-        else if (!isNaN(+x) && this._clFlashlightDirection === undefined) this._clFlashlightDirection = +x;
-        else if (x[0].equalsIC("d") && this._clFlashlightDirection === undefined) this._clFlashlightDirection = CLDirectionMap[+(x.slice(1, x.length))];
-        else if (x[0].equalsIC("a") && this._clFlashlightDirection === undefined) this._clFlashlightDirection = Math.PI/180*+(x.slice(1, x.length));
-        else if (x[0].equalsIC("x") && this._clXOffset === undefined) this._clXOffset = +(x.slice(1, x.length));
-        else if (x[0].equalsIC("y") && this._clYOffset === undefined) this._clYOffset = +(x.slice(1, x.length));
-        else if (x.length > 0 && this._clId === undefined) this._clId = x;
-      }
-    }
-    this._clRadius = this._clRadius || 0;
-    this._clColor = new VRGBA(this._clColor);
+    this._clRadius     = this._clRadius || 0;
+    this._clColor      = this._clColor || new VRGBA(this._clColor);
     this._clBrightness = this._clBrightness || 0;
-    this._clDirection = this._clDirection || 0;
-    this._clId = this._clId || 0;
-    this._clBeamWidth = this._clBeamWidth || 0;
+    this._clDirection  = orNaN(this._clDirection, undefined); // must be undefined for later checks
+    this._clId         = this._clId || 0;
+    this._clBeamWidth  = this._clBeamWidth || 0;
     this._clBeamLength = this._clBeamLength || 0;
-    this._clOnOff = orBoolean(this._clOnOff, true);
-    this._clFlashlightDirection = this._clFlashlightDirection || undefined; // Must be undefined.
-    this._clXOffset = this._clXOffset || 0;
-    this._clYOffset = this._clYOffset || 0;
-    this._clCycle = this._clCycle || null;
-    this._clCycleTimer = 0;
+    this._clOnOff      = orBoolean(this._clOnOff, true);
+    this._clXOffset    = this._clXOffset || 0;
+    this._clYOffset    = this._clYOffset || 0;
+    this._clCycle      = this._clCycle || null;
     this._clCycleIndex = 0;
   };
   Game_Event.prototype.getLightType = function () {
@@ -1691,10 +1666,6 @@ class Delta {
     if (this._clType === undefined) this.initLightData();
     return this._clBeamWidth;
   };
-  Game_Event.prototype.getLightFlashlightDirection = function () {
-    if (this._clType === undefined) this.initLightData();
-    return this._clFlashlightDirection;
-  };
   Game_Event.prototype.getLightXOffset = function () {
     if (this._clType === undefined) this.initLightData();
     return this._clXOffset;
@@ -1714,20 +1685,27 @@ class Delta {
   };
   Game_Event.prototype.incrementLightCycle = function () {
     if (this._clCycle) {
-      this._clCycleTimer--;
-      if (this._clCycleTimer < 1) {
+      if (this._clCycleDelta == null || this._clCycleDelta.finished()) {
         let cycleList = this.getLightCycle();
-        this._clCycleIndex++;
-        if (this._clCycleIndex >= cycleList.length) this._clCycleIndex = 0;
-        if (this._clCycleIndex < cycleList.length) {
-          this._clColor = new VRGBA(cycleList[this._clCycleIndex].color);
-          this._clCycleTimer = cycleList[this._clCycleIndex].duration;
+        if (cycleList.length) {
+          if (++this._clCycleIndex >= cycleList.length) this._clCycleIndex = 0;        // bounds check for this cycle
+          let nextCycleIndex = this._clCycleIndex + 1;
+          if (nextCycleIndex >= cycleList.length) nextCycleIndex = 0;                  // bounds check for next color
+          let fadeDuration = orNullish(cycleList[this._clCycleIndex].fadeDuration, 0); // grab fade duration for this color since we are fading from it
+          let onDuration   = orNullish(cycleList[nextCycleIndex].onDuration, 1);       // grab on duration for the next color since we are fading to it
+          this._clColor    = orNullish(cycleList[this._clCycleIndex].color, cycleList[0].color);      //grab this color
+          let nextColor    = orNullish(cycleList[nextCycleIndex].color, cycleList[0].color);          //grab next color
+          this._clCycleDelta = Delta.createColor(this._clColor, nextColor, fadeDuration, onDuration); // create delta
+          this._clColor = this._clCycleDelta.nextColor();                                             // assign color for this frame
+          this._clCycleDelta.finished();                                                              // if the color is 'done' this decrements the on duration
         }
+      } else {
+        this._clColor = this._clCycleDelta.nextColor();
       }
     }
   };
-  let _Game_Interpreter_pluginCommand = Game_Interpreter.prototype.pluginCommand;
 
+  let _Game_Interpreter_pluginCommand = Game_Interpreter.prototype.pluginCommand;
   /**
    *
    * @param {String} command
@@ -2075,7 +2053,7 @@ class Delta {
           $$.saveTime();                                                       // save
           // Set target to the next hour tint if enabled and the tint matches the current target
           if (daynightTintEnabled && $gameVariables.GetTintTarget().finished()) {
-            let delta = Delta.createTimeTint(true /*fade*/);
+            let delta = Delta.createTimeTint(true /*useCurrentTint*/, 60 * $gameVariables.GetDaynightSpeed() /*fade duration*/);
             $gameVariables.SetTint(delta.current);
             $gameVariables.SetTintTarget(delta);
           }
@@ -2101,8 +2079,6 @@ class Delta {
       if (lightType) {
         let objectflicker = lightType.is(LightType.Fire);
         let light_radius = cur.getLightRadius();
-        let flashlength = cur.getLightFlashlightLength();
-        let flashwidth = cur.getLightFlashlightWidth();
         let xoffset = cur.getLightXOffset() * $gameMap.tileWidth();
         let yoffset = cur.getLightYOffset() * $gameMap.tileHeight();
         if (light_radius >= 0) {
@@ -2157,8 +2133,9 @@ class Delta {
             if (lightType.is(LightType.Flashlight)) {
               let ldir = RMDirectionMap[$gameMap.events()[event_stacknumber[i]]._direction] || 0;
 
-              let tldir = cur.getLightFlashlightDirection();
-              if (!isNaN(tldir)) ldir = tldir;
+              let flashlength = cur.getLightFlashlightLength();
+              let flashwidth  = cur.getLightFlashlightWidth();
+              if (!isNaN(direction)) ldir = direction;
               this._maskBitmaps.radialgradientFlashlight(lx1, ly1, colorvalue, new VRGBA(), ldir, flashlength, flashwidth);
             } else if(lightType.is(LightType.Light, LightType.Fire)) {
               this._maskBitmaps.radialgradientFillRect(lx1, ly1, 0, light_radius, colorvalue, new VRGBA(), objectflicker, brightness, direction);
@@ -2840,7 +2817,7 @@ class Delta {
               if (daynightspeed < 1) daynightspeed = 5000;
               $gameVariables.SetDaynightSpeed(daynightspeed);
             }
-            let delta = Delta.createTimeTint(false /*fade*/);
+            let delta = Delta.createTimeTint(false /*useCurrentTint*/, 60 * $gameVariables.GetDaynightSpeed() /*fade duration*/);
             $gameVariables.SetTint(delta.current);
             $gameVariables.SetTintTarget(delta);
           }
@@ -3003,10 +2980,11 @@ class Delta {
   $$.tint = function (args) {
     let cmd = args[0].trim();
     if (cmd.equalsIC('set', 'fade'))
-      $gameVariables.SetTintTarget(Delta.createTint(args[1], args[2]));
+      $gameVariables.SetTintTarget(Delta.createTint(args[1] /*target*/, 60 * (+args[2] || 0) /*fadeDuration*/));
     else if (cmd.equalsIC("reset", "daylight")) {
-      let delta = Delta.createTimeTint((+args[1] || 0) != 0 /*fade*/);
-      $gameVariables.SetTint(delta.current);
+      let fadeDuration = 60 * (+args[1] || 0);
+      let delta = Delta.createTimeTint(false /*useCurrentTint*/, 0 /*fadeDuration*/); // get the daynight tint for the current time
+      delta = Delta.createTint(delta.current, fadeDuration); // use tint for current time as target
       $gameVariables.SetTintTarget(delta);
     }
   };
@@ -3019,9 +2997,9 @@ class Delta {
     if ($gameParty.inBattle()) {
       let cmd = args[0].trim();
       if (cmd.equalsIC("set", 'fade'))
-        $gameTemp._BattleTintTarget = Delta.createBattleTint(new VRGBA(args[1], "#666666"), args[2]);
+        $gameTemp._BattleTintTarget = Delta.createBattleTint(new VRGBA(args[1], "#666666"), 60 * (+args[2] || 0));
       else if (cmd.equalsIC('reset', 'daylight')) {
-        $gameTemp._BattleTintTarget = Delta.createBattleTint($gameTemp._BattleTintInitial, args[1]); // battle initial color
+        $gameTemp._BattleTintTarget = Delta.createBattleTint($gameTemp._BattleTintInitial, 60 * (+args[1] || 0)); // battle initial color
       }
     }
   };
@@ -3053,7 +3031,7 @@ class Delta {
     let setTimeColorDelta = () => {
       if (daynightCycleEnabled && daynightTintEnabled) {
         let isInstant = 'instant'.equalsIC(...a) || gV.GetDaynightSpeed() == 0;
-        let delta = Delta.createTimeTint(!isInstant /*fade*/); // whether to change tint instantly
+        let delta = Delta.createTimeTint(!isInstant /*useCurrentTint*/, 60 * $gameVariables.GetDaynightSpeed() /*fade duration*/); // whether to change tint instantly
         $gameVariables.SetTint(delta.current);
         $gameVariables.SetTintTarget(delta);
       }
