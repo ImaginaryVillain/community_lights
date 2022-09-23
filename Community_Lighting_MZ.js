@@ -1682,7 +1682,7 @@ class Delta {
     if (this._clType) {
       let isFL         = ()        => this._clType.is(LightType.Flashlight); // is flashlight
       let isEquals     = (x, ...a) => { for (let i of a) if (x.equalsIC(i)) return true; return false; };
-      let isPrefix     = (x, ...a) => { for (let i of a) if (x.slice(0, i.length).equalsIC(i)) return true; return false; };
+      let isPre     = (x, ...a) => { for (let i of a) if (x.slice(0, i.length).equalsIC(i)) return true; return false; };
       let isUndef      = (x)       => x === undefined;
       let cycleLast    = ()        => colorCycle[colorCycle.length - 1]; // get last element of cycle array
       let cycleIndex   = -1;
@@ -1691,26 +1691,28 @@ class Delta {
         if      (!isFL() && !isNaN(+e)                     && isUndef(this._clRadius))     this._clRadius           = +e;
         else if (isFL()  && !isNaN(+e)                     && isUndef(this._clBeamLength)) this._clBeamLength       = +e;
         else if (isFL()  && !isNaN(+e)                     && isUndef(this._clBeamWidth))  this._clBeamWidth        = +e;
-        else if (isFL()  && isPrefix(e, "l")               && isUndef(this._clBeamLength)) this._clBeamLength       = +(e.slice(1));
-        else if (isFL()  && isPrefix(e, "w")               && isUndef(this._clBeamWidth))  this._clBeamWidth        = +(e.slice(1));
+        else if (isFL()  && isPre(e, "l")                  && isUndef(this._clBeamLength)) this._clBeamLength       = +(e.slice(1));
+        else if (isFL()  && isPre(e, "w")                  && isUndef(this._clBeamWidth))  this._clBeamWidth        = +(e.slice(1));
         else if (           isEquals(e, "cycle")           && isUndef(this._clColor))      colorCycle               = [];
-        else if (           isPrefix(e, "#", "a#")         && colorCycle)                { colorCycle.push({ "color": new VRGBA(e) }); cycleIndex = i; }
+        else if (           isPre(e, "#", "a#")            && colorCycle)                { colorCycle.push({ "color": new VRGBA(e) }); cycleIndex = i; }
         else if (           !isNaN(+e)                     && cycleIndex + 1 == i)         cycleLast().onDuration   = +e;
-        else if (           !isNaN(+p) && !isNaN(+e)       && cycleIndex + 2 == i)         cycleLast().fadeDuration = +e; // check previous
-        else if (!isFL() && !isNaN(+p) && !isNaN(+e)       && cycleIndex + 3 == i)         cycleLast().radiusGrow   = +e; // check previous
-        else if (isFL() &&  !isNaN(+p) && !isNaN(+e)       && cycleIndex + 3 == i)         cycleLast().beamLength   = +e; // check previous
-        else if (isFL() &&  !isNaN(+p) && !isNaN(+e)       && cycleIndex + 4 == i)         cycleLast().beamWidth    = +e; // check previous
-        else if (           isPrefix(e, "#", "a#")         && isUndef(this._clColor))      this._clColor            = new VRGBA(e);
+        else if (           !isNaN(+p) && !isNaN(+e)       && cycleIndex + 2 == i)         cycleLast().fadeDuration = +e;            // check previous
+        else if (!isFL() && !isNaN(+p) && !isNaN(+e)       && cycleIndex + 3 == i)         cycleLast().radiusGrow   = +e;            // check previous
+        else if ( isFL() && !isNaN(+p) && !isNaN(+e)       && cycleIndex + 3 == i)         cycleLast().beamLength   = +e;            // check previous
+        else if ( isFL() && !isNaN(+p) && !isNaN(+e)       && cycleIndex + 4 == i)         cycleLast().beamWidth    = +e;            // check previous
+        else if ( isFL() && !isNaN(+p)    && isPre(e, "l") && cycleIndex + 3 == i)         cycleLast().beamLength   = +(e.slice(1)); // check previous
+        else if ( isFL() && isPre(p, "l") && isPre(e, "w") && cycleIndex + 4 == i)         cycleLast().beamWidth    = +(e.slice(1)); // check previous
+        else if (           isPre(e, "#", "a#")            && isUndef(this._clColor))      this._clColor            = new VRGBA(e);
         else if (           isOn(e)                        && isUndef(this._clOnOff))      this._clOnOff            = true;
         else if (           isOff(e)                       && isUndef(this._clOnOff))      this._clOnOff            = false;
         else if (           isEquals(e, "night", "day")    && isUndef(this._clSwitch))     this._clSwitch           = e;
-        else if (           isPrefix(e, "b")               && isUndef(this._clBrightness)) this._clBrightness       = Number(+(e.slice(1)) / 100).clamp(0, 1);
-        else if (!isFL() && isPrefix(e, "d")               && isUndef(this._clDirection))  this._clDirection        = +(e.slice(1));
+        else if (           isPre(e, "b")                  && isUndef(this._clBrightness)) this._clBrightness       = Number(+(e.slice(1)) / 100).clamp(0, 1);
+        else if (!isFL() && isPre(e, "d")                  && isUndef(this._clDirection))  this._clDirection        = +(e.slice(1));
         else if ( isFL() && !isNaN(+e)                     && isUndef(this._clDirection))  this._clDirection        = +e;
-        else if ( isFL() && isPrefix(e, "d")               && isUndef(this._clDirection))  this._clDirection        = CLDirectionMap[+(e.slice(1))];
-        else if ( isFL() && isPrefix(e, "a")               && isUndef(this._clDirection))  this._clDirection        = Math.PI / 180 * +(e.slice(1));
-        else if (           isPrefix(e, "x")               && isUndef(this._clXOffset))    this._clXOffset          = +(e.slice(1));
-        else if (           isPrefix(e, "y")               && isUndef(this._clYOffset))    this._clYOffset          = +(e.slice(1));
+        else if ( isFL() && isPre(e, "d")                  && isUndef(this._clDirection))  this._clDirection        = CLDirectionMap[+(e.slice(1))];
+        else if ( isFL() && isPre(e, "a")                  && isUndef(this._clDirection))  this._clDirection        = Math.PI / 180 * +(e.slice(1));
+        else if (           isPre(e, "x")                  && isUndef(this._clXOffset))    this._clXOffset          = +(e.slice(1));
+        else if (           isPre(e, "y")                  && isUndef(this._clYOffset))    this._clYOffset          = +(e.slice(1));
         else if (           e.length > 0                   && isUndef(this._clId))         this._clId               = e;
         p = e;
       }, this);
@@ -1719,14 +1721,14 @@ class Delta {
         this._clCycle = [];                                                    // only define if colorCycle exists
         colorCycle.forEach((e, i, a) => {                                      // preprocess color cycle deltas
           let n = a[++i < colorCycle.length ? i : 0];                          // get next element
-          let fadeDuration   = orNullish(e.fadeDuration, 0);                   // grab fade duration for this color since we are fading from it
-          let onDuration     = orNullish(n.onDuration, 1);                     // grab on duration for the next color since we are fading to it
-          let thisRadius     = orNullish(e.radiusGrow, this._clRadius, 0);     // grab this radius or use the default (light only)
-          let nextRadius     = orNullish(n.radiusGrow, this._clRadius, 0);     // grab next radius or use the default (light only)
-          let thisBeamLength = orNullish(e.beamLength, this._clBeamLength, 0); // grab this beam length or use the default (flashlight only)
-          let nextBeamLength = orNullish(n.beamLength, this._clBeamLength, 0); // grab next beam length or use the default (flashlight only)
-          let thisBeamWidth  = orNullish(e.beamWidth, this._clBeamWidth, 0);   // grab this beam width or use the default (flashlight only)
-          let nextBeamWidth  = orNullish(n.beamWidth, this._clBeamWidth, 0);   // grab next beam width or use the default (flashlight only)
+          let fadeDuration   =     orNaN(e.fadeDuration, 0);                   // grab fade duration for this color since we are fading from it
+          let onDuration     =     orNaN(n.onDuration,   1);                   // grab on duration for the next color since we are fading to it
+          let thisRadius     =     orNaN(e.radiusGrow, this._clRadius, 0);     // grab this radius or use the default (light only)
+          let nextRadius     =     orNaN(n.radiusGrow, this._clRadius, 0);     // grab next radius or use the default (light only)
+          let thisBeamLength =     orNaN(e.beamLength, this._clBeamLength, 0); // grab this beam length or use the default (flashlight only)
+          let nextBeamLength =     orNaN(n.beamLength, this._clBeamLength, 0); // grab next beam length or use the default (flashlight only)
+          let thisBeamWidth  =     orNaN(e.beamWidth,  this._clBeamWidth,  0); // grab this beam width or use the default (flashlight only)
+          let nextBeamWidth  =     orNaN(n.beamWidth,  this._clBeamWidth,  0); // grab next beam width or use the default (flashlight only)
           let thisColor      = orNullish(e.color, colorCycle[0].color);        // grab this color
           let nextColor      = orNullish(n.color, colorCycle[0].color);        // grab next color
           this._clCycle.push(Delta.createLight(thisColor,      nextColor,      // push colors
