@@ -2230,7 +2230,7 @@ class Delta {
         y1 = y1 + tile.yOffset;
         this._maskBitmaps.FillEllipse(x1, y1, tile.blockWidth, tile.blockHeight, tile.color);
       }
-    });
+    }, this);
     ctxMul.globalCompositeOperation = 'lighter';
 
     // Compute tint for next frame
@@ -3218,7 +3218,7 @@ Game_Variables.prototype.SetRadiusTarget = function (value) {
 };
 Game_Variables.prototype.GetRadiusTarget = function () {
   if (this._Community_Lighting_RadiusTarget == null) {
-    return 150;
+    return this.GetRadius();
   } else {
     return this._Community_Lighting_RadiusTarget;
   }
