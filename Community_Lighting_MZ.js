@@ -1634,7 +1634,7 @@ class Delta {
   };
   $$.hours   = () => Math.floor($gameVariables.GetDaynightSeconds () / (60 * 60));
   $$.minutes = () => Math.floor($gameVariables.GetDaynightSeconds () / 60) % 60;
-  $$.seconds = () => $gameVariables.GetDaynightSeconds() % 60;
+  $$.seconds = () => Math.floor($gameVariables.GetDaynightSeconds() % 60);
   $$.ticks   = () => Math.floor($$.seconds() / $gameVariables.GetDaynightTick() + $$.minutes() * $gameVariables.GetDaynightSpeed());
   $$.time = function (showSeconds) {
     let result = $$.hours() + ":" + $$.minutes().padZero(2);
@@ -1682,7 +1682,7 @@ class Delta {
     if (this._clType) {
       let isFL         = ()        => this._clType.is(LightType.Flashlight); // is flashlight
       let isEquals     = (x, ...a) => { for (let i of a) if (x.equalsIC(i)) return true; return false; };
-      let isPre     = (x, ...a) => { for (let i of a) if (x.slice(0, i.length).equalsIC(i)) return true; return false; };
+      let isPre        = (x, ...a) => { for (let i of a) if (x.startsWithIC(i)) return true; return false; };
       let isUndef      = (x)       => x === undefined;
       let cycleLast    = ()        => colorCycle[colorCycle.length - 1]; // get last element of cycle array
       let cycleIndex   = -1;
@@ -3197,7 +3197,6 @@ class Delta {
 Community.Lighting.distance = function (x1, y1, x2, y2) {
   return Math.abs(Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2)));
 };
-
 Game_Variables.prototype.SetActiveRadius = function (value) {
   this._Player_Light_Radius = orNaN(+value);
 };
@@ -3205,7 +3204,6 @@ Game_Variables.prototype.GetActiveRadius = function () {
   if (this._Player_Light_Radius >= 0) return this._Player_Light_Radius;
   return Number(Community.Lighting.parameters['Lights Active Radius']) || 0;
 };
-
 Game_Variables.prototype.GetFirstRun = function () {
   if (typeof this._Community_Lighting_FirstRun === 'undefined') {
     this._Community_Lighting_FirstRun = true;
@@ -3224,7 +3222,6 @@ Game_Variables.prototype.GetScriptActive = function () {
 Game_Variables.prototype.SetScriptActive = function (value) {
   this._Community_Lighting_ScriptActive = value;
 };
-
 Game_Variables.prototype.GetOldMapId = function () {
   if (typeof this._Community_Lighting_OldMapId === 'undefined') {
     this._Community_Lighting_OldMapId = 0;
@@ -3357,7 +3354,7 @@ Game_Variables.prototype.GetDaynightSpeed = function () {
   return orNullish(Number(Community.Lighting.parameters['Daynight Initial Speed']), 10);
 };
 Game_Variables.prototype.GetDaynightTick = function () {
-  return Math.floor(60 / this.GetDaynightSpeed());
+  return 60 / this.GetDaynightSpeed();
 };
 Game_Variables.prototype.SetDaynightSeconds = function (value) {
   this._Community_Lighting_DaynightSeconds = orNaN(+value);
