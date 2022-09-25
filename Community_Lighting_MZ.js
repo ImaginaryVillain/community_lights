@@ -2628,9 +2628,7 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
     if (!DataManager.isBattleTest() && !DataManager.isEventTest() && $gameMap.mapId() >= 0) { // If we went there from a map...
       if ($gameVariables.GetScriptActive() === true) {                                        // If the script is active...
         if (options_lighting_on && lightInBattle) {                                           // If configuration autorise using lighting effects
-          if (eventObjId.length > 0) {                                                        // If there is lightsource on this map...
-            $gameTemp._MapTint = $gameVariables.GetTint();                                    // ... Use the tint of the map.
-          }
+          $gameTemp._MapTint = $gameVariables.GetTint();                                    // ... Use the tint of the map.
         }
         // Add daylight tint?
       }
