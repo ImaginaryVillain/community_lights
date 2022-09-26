@@ -447,8 +447,10 @@ Imported[Community.Lighting.name] = true;
 *
 * defaultbrightness
 * - Sets the default brightness of all the lights in the map
+*
 * Tint set c
 * - Sets the current screen tint to the color (c)
+*
 * Tint daylight
 * - Sets the tint based on the current hour.
 * -------------------------------------------------------------------------------
@@ -590,6 +592,15 @@ Imported[Community.Lighting.name] = true;
 * -------------------------------------------------------------------------------
 * Plugin Commands - Battle
 * -------------------------------------------------------------------------------
+*
+* The following tag may be used in a comment field in the first page of a
+* battle event to change the battle tint prior to the first turn:
+*
+* TintBattle set
+* - Sets the current screen tint to the color (c)
+*
+* The following commands may be used at any time in battle events (note, these do
+* not work as tags in comment fields):
 *
 * TintBattle set [c] [s]
 * TintBattle fade [c] [s]
@@ -937,9 +948,8 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
   let event_reload_counter = 0;
   let notetag_reg = RegExp("<" + noteTagKey + ":[ ]*([^>]+)>", "i");
   let radialColor2 = new VRGBA(useSmootherLights ? "#00000000" : "#000000");
-  $$.getFirstComment = function () {
+  $$.getFirstComment = function (page) {
     let result = null;
-    let page = this.page();
     if (page && page.list[0] != null) {
       if (page.list[0].code === 108) {
         result = page.list[0].parameters[0] || "";
@@ -970,7 +980,7 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
   };
   Game_Event.prototype.getCLTag = function () {
     let result;
-    let pageNote = noteTagKey ? $$.getFirstComment.call(this) : null;
+    let pageNote = noteTagKey ? $$.getFirstComment(this.page()) : null;
     let note = this.event().note;
     if (pageNote) result = $$.getCLTag(pageNote);
     if (!result) result = $$.getCLTag(note);
@@ -2161,6 +2171,14 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
              $gameVariables.GetScriptActive() && options_lighting_on && lightInBattle) ?
             $gameVariables.GetTint() : new VRGBA("#ffffff");
 
+    let note = $$.getCLTag($$.getFirstComment($dataTroops[$gameTroop._troopId].pages[0]));
+    if ((/^tintbattle\b/i).test(note)) {
+      let data = note.split(/\s+/);
+      data.splice(0, 1);
+      data.map(x => x.trim());
+      $$.tintbattle(data, true);
+    }
+
     // Prevent the battle scene from being too dark
     if (c.magnitude() < 0x66 * 3 && c.r < 0x66 && c.g < 0x66 && c.b < 0x66)
       c.set({ v: false, r: 0x66, g: 0x66, b: 0x66, a: 0xff });
@@ -2309,7 +2327,7 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
       let mapnote = $$.getCLTag(note.trim());
       if (mapnote) {
         mapnote = mapnote.toLowerCase().trim();
-        if ((/^daynight/i).test(mapnote)) {
+        if ((/^daynight\b/i).test(mapnote)) {
           daynightTintEnabled = true;
           let dnspeed = note.match(/\d+/);
           if (dnspeed) {
@@ -2318,31 +2336,31 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
             $gameVariables.SetDaynightSpeed(daynightspeed);
           }
         }
-        else if ((/^RegionFire/i).test(mapnote)) {
+        else if ((/^RegionFire\b/i).test(mapnote)) {
           let data = mapnote.split(/\s+/);
           data.splice(0, 1);
           data.map(x => x.trim());
           $gameMap._interpreter.addTileLight("regionfire", data);
         }
-        else if ((/^RegionGlow/i).test(mapnote)) {
+        else if ((/^RegionGlow\b/i).test(mapnote)) {
           let data = mapnote.split(/\s+/);
           data.splice(0, 1);
           data.map(x => x.trim());
           $gameMap._interpreter.addTileLight("regionglow", data);
         }
-        else if ((/^RegionLight/i).test(mapnote)) {
+        else if ((/^RegionLight\b/i).test(mapnote)) {
           let data = mapnote.split(/\s+/);
           data.splice(0, 1);
           data.map(x => x.trim());
           $gameMap._interpreter.addTileLight("regionlight", data);
         }
-        else if ((/^RegionBlock/i).test(mapnote)) {
+        else if ((/^RegionBlock\b/i).test(mapnote)) {
           let data = mapnote.split(/\s+/);
           data.splice(0, 1);
           data.map(x => x.trim());
           $gameMap._interpreter.addTileBlock("regionblock", data);
         }
-        else if ((/^tint/i).test(mapnote)) {
+        else if ((/^tint\b/i).test(mapnote)) {
           let data = mapnote.split(/\s+/);
           data.splice(0, 1);
           data.map(x => x.trim());
@@ -2354,11 +2372,11 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
           }
           $$.tint(data);
         }
-        else if ((/^defaultBrightness/i).test(mapnote)) {
+        else if ((/^defaultBrightness\b/i).test(mapnote)) {
           let brightness = note.match(/\d+/);
           if (brightness) $$.defaultBrightness = Math.max(0, Math.min(Number(brightness[0], 100))) / 100;
         }
-        else if ((/^mapBrightness/i).test(mapnote)) {
+        else if ((/^mapBrightness\b/i).test(mapnote)) {
           let brightness = note.match(/\d+/);
           if (brightness) {
             let c = $gameVariables.GetTint();
@@ -2491,8 +2509,8 @@ class VRGBA { // Class to handle volumetric/additive coloring with rgba colors u
    *
    * @param {String[]} args
    */
-  $$.tintbattle = function (args) {
-    if ($gameParty.inBattle()) {
+  $$.tintbattle = function (args, overrideInBattleCheck = false) {
+    if ($gameParty.inBattle() || overrideInBattleCheck) {
       let cmd = args[0].trim();
       if (cmd.equalsIC("set", 'fade')) {
         set('_BattleTintTarget', new VRGBA(args[1], "#666666"));

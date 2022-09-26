@@ -226,8 +226,19 @@ You can post your questions on the related thread on rpgmakerweb: https://forums
 	*             numbers are faster, and 0 stops the flow of time entirely.
 	*             If speed is not specified, then the current speed is used.
 	*
+	* TileLight id ON c r
+	* RegionLight id ON c r
+	* - Turns on lights for tile tag or region tag (id) using color (c) and radius (r)
+	* - Replace ON with OFF to turn them off
+	*
 	* RegionFire, RegionGlow
 	* - Same as above, but different lighting effects
+	*
+	* RegionBlock id ON color
+	* - Turns on light blocking for tile with region id (id) using color (color)
+	*
+	* RegionBlock id OFF
+	* - Turns off light blocking for tile with region id (id)
 	*
 	* defaultbrightness
 	* - Sets the default brightness of all the lights in the map
@@ -277,10 +288,10 @@ You can post your questions on the related thread on rpgmakerweb: https://forums
 	* - Turn off the flashlight.  yup.
 	*
 	* Daynight speed n
-	* - Changes the speed by which hours pass ingame in relation to real life seconds
+	* - Changes the speed by which hours pass in game in relation to real life seconds
 	*
 	* Daynight hour h m
-	* - Sets the ingame time to hh:mm
+	* - Sets the in game time to hh:mm
 	*
 	* Daynight color h c
 	* - Sets the hour (h) to use color (c)
@@ -373,6 +384,15 @@ You can post your questions on the related thread on rpgmakerweb: https://forums
 	* -------------------------------------------------------------------------------
 	* Plugin Commands - Battle
 	* -------------------------------------------------------------------------------
+	*
+	* The following tag may be used in a comment field in the first page of a
+	* battle event to change the battle tint prior to the first turn:
+	*
+	* TintBattle set
+	* - Sets the current screen tint to the color (c)
+	*
+	* The following commands may be used at any time in battle events (note, these do
+	* not work as tags in comment fields):
 	*
 	* TintBattle set [c] [s]
 	* TintBattle fade [c] [s]
