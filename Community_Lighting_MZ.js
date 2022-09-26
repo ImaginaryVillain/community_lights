@@ -1233,18 +1233,6 @@ class VRGBA {
   set(that) { for (let k in that) if (this[k] != null) this[k] = that[k]; }
 
   /**
-   * Compares this Object to that Object and returns true if the v, r, g, b, and a properties are equal; otherwise false.
-   * @param {VRGBA} that
-   * @returns {Boolean}
-   */
-  equals(that) { // fastest non-exactness comparison -- only checks v, r, g, b, a properties
-    let [a, b] = [this, that];
-    if (b && cmpFloat(a.v, b.v) && cmpFloat(a.r, b.r) && cmpFloat(a.g, b.g) && cmpFloat(a.b, b.b) && cmpFloat(a.a, b.a))
-      return true;
-    return false;
-  }
-
-  /**
    * Adds together the r, g, and b properties and returns the result.
    * @returns {Number}
    */
@@ -1408,9 +1396,11 @@ class ConditionalLight {
     let pauseDuration = properties.find((e) => (e.startsWithIC('p')));
     fadeDuration      = fadeDuration ?  +fadeDuration.slice(1)  : 0;
     pauseDuration     = pauseDuration ? +pauseDuration.slice(1) : 0;
+    this.duration     = fadeDuration + pauseDuration;
+
     properties.forEach((e) => {
-      if      (e.startsWithIC('#'))  this.colorDelta      = ColorDelta.createLight(this.color,  new VRGBA(e), fadeDuration, pauseDuration);
-      else if (e.startsWithIC('a#')) this.colorDelta      = ColorDelta.createLight(this.color,  new VRGBA(e), fadeDuration, pauseDuration);
+      if      (e.startsWithIC('#'))  this.colorDelta      = ColorDelta.createLight(this.color,  new VRGBA(e), fadeDuration);
+      else if (e.startsWithIC('a#')) this.colorDelta      = ColorDelta.createLight(this.color,  new VRGBA(e), fadeDuration);
       else if (e.startsWithIC('a'))  this.directionDelta  = NumberDelta.create(this.direction,  Math.PI / 180 * +(e.slice(1)), fadeDuration);
       else if (e.startsWithIC('b'))  this.brightnessDelta = NumberDelta.create(this.brightness, orNaN(+e.slice(1)), fadeDuration);
       else if (e.startsWithIC('x'))  this.xOffsetDelta    = NumberDelta.create(this.xOffset,    orNaN(+e.slice(1)), fadeDuration);
@@ -1426,6 +1416,7 @@ class ConditionalLight {
    * @returns {this}
    */
   next() {
+    if (this.finished()) return this;
     if (this.colorDelta      != null) this.color      = this.colorDelta     .next().get();
     if (this.directionDelta  != null) this.direction  = this.directionDelta .next().get();
     if (this.brightnessDelta != null) this.brightness = this.brightnessDelta.next().get();
@@ -1434,6 +1425,7 @@ class ConditionalLight {
     if (this.radiusDelta     != null) this.radius     = this.radiusDelta    .next().get();
     if (this.beamLengthDelta != null) this.beamLength = this.beamLengthDelta.next().get();
     if (this.beamWidthDelta  != null) this.beamWidth  = this.beamWidthDelta .next().get();
+    this.duration--;
     return this;
   }
 
@@ -1441,9 +1433,7 @@ class ConditionalLight {
    * Returns whether all deltas are finished or not.
    * @returns {Boolean}
    */
-  finished() {
-    return this.colorDelta.finished();
-  }
+  finished() { return this.duration <= 0; }
 }
 
 /** Class representing individual number deltas for providing number changes over time at different speeds. **/
@@ -1479,17 +1469,17 @@ class NumberDelta {
    * @param {Number} duration
    * @returns {NumberDelta}
    */
-  static create(start, target, duration) { return new NumberDelta(start, target, duration, duration); }
+  static create(start, target, duration) { return new NumberDelta(start, target, duration); }
 
   /**
    * Computes the next delta number in between the current number and target number.
    * @returns {this}
    */
   next() {
-    if (this.equals()) return this; // lazy-short-circuit
-    this.duration -= 1;
+    if (this.finished()) return this; // lazy-short-circuit
     this.current = Math.minmax(this.delta > 0, this.current + this.delta, this.target);
-    this.equals();
+    this.duration -= 1;
+    this.finished();
     return this;
   }
 
@@ -1503,7 +1493,7 @@ class NumberDelta {
    * Returns true if the current number is equal to the target number; otherwise false.
    * @returns {Boolean}
    */
-  equals() {
+  finished() {
     if (this.lazyEquals) return true; // lazy-short-circuit comparison followed by real comparison
     if ((this.lazyEquals = this.duration <= 0))
       return (this.current = this.target, true); // set cur to refer to target on match
@@ -1514,28 +1504,26 @@ class NumberDelta {
 /** Class representing a color delta for providing color changes over time at different speeds. **/
 class ColorDelta {
   /**
-   * Create a color delta from the start color, target color, fade & on durations, and
+   * Create a color delta from the start color, target color, fade duration, and
    * whether to consider the remaining ticks or not for speed purposes.
    * @param {VRGBA}  start
    * @param {VRGBA}  target
    * @param {Number} fadeDuration
-   * @param {Number} onDuration
    * @param {Number} useTicksRemaining
    * @returns {ColorDelta}
    */
-  constructor(start, target = start, fadeDuration = 0, onDuration = 0, useTicksRemaining = false) {
+  constructor(start, target = start, fadeDuration = 0, useTicksRemaining = false) {
     if (arguments.length == 0) return;
-    this.current     = start.clone();           // - deep copy
-    this.target      = target.clone();          // - deep copy
-    this.onDuration  = orNaN(onDuration, 0);    // - parse onDuration
-    this.lazyEquals  = false;                   // - true when current value == target value
-    fadeDuration     = orNaN(fadeDuration, 0);  // - use either the remaining time (of the hour) or total fade duration
-    fadeDuration    -= (useTicksRemaining ? Community.Lighting.ticks() : 0);
-    this.delta       = new VRGBA(this.target.v, // - divide by zero is +inf or -inf so deltas work for speed = 0
-                                (this.target.r - this.current.r) / fadeDuration,
-                                (this.target.g - this.current.g) / fadeDuration,
-                                (this.target.b - this.current.b) / fadeDuration,
-                                (this.target.a - this.current.a) / fadeDuration);
+    this.current      = start.clone();           // - deep copy
+    this.target       = target.clone();          // - deep copy
+    this.fadeDuration = orNaN(fadeDuration, 0);  // - use either the remaining time (of the hour) or total fade duration
+    fadeDuration     -= (useTicksRemaining ? Community.Lighting.ticks() : 0);
+    this.lazyEquals   = false;                   // - true when current value == target value
+    this.delta        = new VRGBA(this.target.v, // - divide by zero is +inf or -inf so deltas work for speed = 0
+                                 (this.target.r - this.current.r) / fadeDuration,
+                                 (this.target.g - this.current.g) / fadeDuration,
+                                 (this.target.b - this.current.b) / fadeDuration,
+                                 (this.target.a - this.current.a) / fadeDuration);
   }
   /**
    * Creates a copy of the ColorDelta object.
@@ -1543,21 +1531,20 @@ class ColorDelta {
    **/
   clone() {
     let that = new ColorDelta();
-    [that.current,           that.target,         that.onDuration, that.lazyEquals, that.delta] =
-    [this.current.clone(),   this.target.clone(), this.onDuration, this.lazyEquals, this.delta.clone()];
+    [that.current,           that.target,         that.fadeDuration, that.lazyEquals, that.delta] =
+    [this.current.clone(),   this.target.clone(), this.fadeDuration, this.lazyEquals, this.delta.clone()];
     return that;
   }
 
   /**
-   * Creates a light delta from the start color, target color, and fade & on durations.
+   * Creates a light delta from the start color, target color, and fade duration.
    * @param {VRGBA}  start
    * @param {VRGBA}  target
    * @param {Number} fadeDuration
-   * @param {Number} onDuration
    * @returns {ColorDelta}
    */
-  static createLight(start, target, fadeDuration, onDuration) {
-    return new ColorDelta(start, target, fadeDuration, onDuration, false /* don't use remaining ticks */);
+  static createLight(start, target, fadeDuration) {
+    return new ColorDelta(start, target, fadeDuration, false /* don't use remaining ticks */);
   }
 
   /**
@@ -1566,7 +1553,7 @@ class ColorDelta {
    * @param {Number} fadeDuration
    * @returns {ColorDelta}
    */
-  static createTint(targetTint, fadeDuration = 0) { return new ColorDelta($gameVariables.GetTint(), targetTint, fadeDuration, 0, false); }
+  static createTint(targetTint, fadeDuration = 0) { return new ColorDelta($gameVariables.GetTint(), targetTint, fadeDuration); }
 
   /**
    * Creates a battle color delta from the current battle tint, target tint, and fade duration.
@@ -1574,7 +1561,7 @@ class ColorDelta {
    * @param {Number} fadeDuration
    * @returns {ColorDelta}
    */
-  static createBattleTint(targetTint, fadeDuration = 0) { return new ColorDelta($gameTemp._BattleTintTarget.current, targetTint, fadeDuration, 0, false); }
+  static createBattleTint(targetTint, fadeDuration = 0) { return new ColorDelta($gameTemp._BattleTintTarget.current, targetTint, fadeDuration); }
 
   /**
    * Creates a time color delta from the current time and speed. useCurrentTint specifies whether to
@@ -1586,11 +1573,11 @@ class ColorDelta {
   static createTimeTint(useCurrentTint = true) {
     let fadeDuration = 60 * $gameVariables.GetDaynightSpeed();
     if (useCurrentTint) { // delta should fade from current color to target
-      return new ColorDelta($gameVariables.GetTint(), $gameVariables.GetTintByTime(1), fadeDuration, 0 /*on duration*/, true);
+      return new ColorDelta($gameVariables.GetTint(), $gameVariables.GetTintByTime(1), fadeDuration, true);
     } else {              // start color should be the color it would normally be at the given time
       let ticks    = fadeDuration == 0 ? Community.Lighting.minutes() * 60 + Community.Lighting.seconds() : Community.Lighting.ticks();
       fadeDuration = fadeDuration == 0 ? 60 * 60 : fadeDuration; // speed = 0 needs a ref speed to compute the start color
-      let delta = new ColorDelta($gameVariables.GetTintByTime(), $gameVariables.GetTintByTime(1), fadeDuration, 0 /*on duration*/, false);
+      let delta = new ColorDelta($gameVariables.GetTintByTime(), $gameVariables.GetTintByTime(1), fadeDuration);
       delta.next(ticks); // get current color based off of ticks elapsed in hour
       return delta;
     }
@@ -1603,13 +1590,13 @@ class ColorDelta {
    * @returns {this}
    */
   next(scale = 1) {
-    if (this.equals()) return (this.onDuration = Math.max(this.onDuration - 1, 0), this); // subtract onDuration and lazy-short-circuit
+    if (this.finished()) return this; // lazy-short-circuit
     this.current.v = this.delta.v;  // Compute next color step and clamp to target
     this.current.r = Math.minmax(this.delta.r > 0, this.current.r + scale * this.delta.r, this.target.r);
     this.current.g = Math.minmax(this.delta.g > 0, this.current.g + scale * this.delta.g, this.target.g);
     this.current.b = Math.minmax(this.delta.b > 0, this.current.b + scale * this.delta.b, this.target.b);
     this.current.a = Math.minmax(this.delta.a > 0, this.current.a + scale * this.delta.a, this.target.a);
-    if (this.equals()) this.onDuration = Math.max(this.onDuration - 1, 0); // check if done and if so subtract onDuration
+    this.fadeDuration -= 1;
     return this;
   }
 
@@ -1620,21 +1607,15 @@ class ColorDelta {
   get() { return this.current.clone(); } // duplicate color so reference can't be messed with
 
   /**
-   * Returns true if the current color is equal to the target color; otherwise false.
+   * Returns true if the current color is equal to the target; otherwise false.
    * @returns {Boolean}
    */
-  equals() {
+  finished() {
     if (this.lazyEquals) return true; // lazy-short-circuit comparison followed by real comparison
-    if ((this.lazyEquals = this.current.equals(this.target)))
+    if ((this.lazyEquals = this.fadeDuration <= 0))
       return (this.current = this.target, true); // set cur to refer to target on match
     return false;
-  }
-
-  /**
-   * Returns true if the current color is equal to the target and on duration has been reached; otherwise false.
-   * @returns {Boolean}
-   */
-  finished() { return this.equals() && this.onDuration == 0; }
+   }
 }
 
 (function ($$) {
@@ -1860,9 +1841,7 @@ class ColorDelta {
   * @returns {Boolean}
   */
   Game_Temp.prototype.testAndSet = function (index, value) {
-    if (this[index] && (this[index] == value ||
-       (this[index].equals && this[index].equals(value))))
-      return false;
+    if (this[index] && this[index] == value) return false;
     return (this[index] = value, true);
   };
 
