@@ -1306,6 +1306,7 @@ class ConditionalLight {
    **/
   constructor(color, direction, brightness, xOffset, yOffset, radius, beamLength, beamWidth) {
     if (arguments.length == 0) return;
+    this.duration   = 0;
     this.color      = color;
     this.direction  = direction;
     this.brightness = brightness;
@@ -1323,6 +1324,7 @@ class ConditionalLight {
   clone() {
     let that = new ConditionalLight();
     // clone properties
+    if (this.duration   != null) that.duration   = this.duration;
     if (this.color      != null) that.color      = this.color.clone();
     if (this.direction  != null) that.direction  = this.direction;
     if (this.brightness != null) that.brightness = this.brightness;
