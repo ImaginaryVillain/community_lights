@@ -447,8 +447,10 @@ Imported[Community.Lighting.name] = true;
 *
 * defaultbrightness
 * - Sets the default brightness of all the lights in the map
+*
 * Tint set c
 * - Sets the current screen tint to the color (c)
+*
 * Tint daylight
 * - Sets the tint based on the current hour.
 * -------------------------------------------------------------------------------

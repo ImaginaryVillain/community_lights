@@ -860,8 +860,10 @@ Imported[Community.Lighting.name] = true;
 *
 * defaultbrightness
 * - Sets the default brightness of all the lights in the map
+*
 * Tint set c
 * - Sets the current screen tint to the color (c)
+*
 * Tint daylight
 * - Sets the tint based on the current hour.
 *
@@ -2685,7 +2687,7 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
 
 
     let note = $$.getCLTag($$.getFirstComment($dataTroops[$gameTroop._troopId].pages[0]));
-    if ((/^tintbattle /i).test(note)) {
+    if ((/^tintbattle\b/i).test(note)) {
       let data = note.split(/\s+/);
       data.splice(0, 1);
       data.map(x => x.trim());
@@ -2887,7 +2889,7 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
       let mapnote = $$.getCLTag(note.trim());
       if (mapnote) {
         mapnote = mapnote.toLowerCase().trim();
-        if ((/^daynight/i).test(mapnote)) {
+        if ((/^daynight\b/i).test(mapnote)) {
           $$.daynightset = true;
           let dnspeed = note.match(/\d+/);
           if (dnspeed) {
@@ -2896,31 +2898,31 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
             $gameVariables.SetDaynightSpeed(daynightspeed);
           }
         }
-        else if ((/^RegionFire/i).test(mapnote)) {
+        else if ((/^RegionFire\b/i).test(mapnote)) {
           let data = mapnote.split(/\s+/);
           data.splice(0, 1);
           data.map(x => x.trim());
           $gameMap._interpreter.addTileLight("regionfire", data);
         }
-        else if ((/^RegionGlow/i).test(mapnote)) {
+        else if ((/^RegionGlow\b/i).test(mapnote)) {
           let data = mapnote.split(/\s+/);
           data.splice(0, 1);
           data.map(x => x.trim());
           $gameMap._interpreter.addTileLight("regionglow", data);
         }
-        else if ((/^RegionLight/i).test(mapnote)) {
+        else if ((/^RegionLight\b/i).test(mapnote)) {
           let data = mapnote.split(/\s+/);
           data.splice(0, 1);
           data.map(x => x.trim());
           $gameMap._interpreter.addTileLight("regionlight", data);
         }
-        else if ((/^RegionBlock/i).test(mapnote)) {
+        else if ((/^RegionBlock\b/i).test(mapnote)) {
           let data = mapnote.split(/\s+/);
           data.splice(0, 1);
           data.map(x => x.trim());
           $gameMap._interpreter.addTileBlock("regionblock", data);
         }
-        else if ((/^tint/i).test(mapnote)) {
+        else if ((/^tint\b/i).test(mapnote)) {
           let data = mapnote.split(/\s+/);
           data.splice(0, 1);
           data.map(x => x.trim());
@@ -2935,11 +2937,11 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
           }
           $$.tint(data);
         }
-        else if ((/^defaultBrightness/i).test(mapnote)) {
+        else if ((/^defaultBrightness\b/i).test(mapnote)) {
           let brightness = note.match(/\d+/);
           if (brightness) $$.defaultBrightness = Math.max(0, Math.min(Number(brightness[0], 100))) / 100;
         }
-        else if ((/^mapBrightness/i).test(mapnote)) {
+        else if ((/^mapBrightness\b/i).test(mapnote)) {
           let brightness = note.match(/\d+/);
           if (brightness) {
             let color = $gameVariables.GetTint();
