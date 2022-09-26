@@ -447,8 +447,10 @@ Imported[Community.Lighting.name] = true;
 *
 * defaultbrightness
 * - Sets the default brightness of all the lights in the map
+*
 * Tint set c
 * - Sets the current screen tint to the color (c)
+*
 * Tint daylight
 * - Sets the tint based on the current hour.
 * -------------------------------------------------------------------------------
@@ -587,6 +589,15 @@ Imported[Community.Lighting.name] = true;
 * -------------------------------------------------------------------------------
 * Plugin Commands - Battle
 * -------------------------------------------------------------------------------
+*
+* The following tag may be used in a comment field in the first page of a
+* battle event to change the battle tint prior to the first turn:
+*
+* TintBattle set
+* - Sets the current screen tint to the color (c)
+*
+* The following commands may be used at any time in battle events (note, these do
+* not work as tags in comment fields):
 *
 * TintBattle set [c] [s]
 * TintBattle fade [c] [s]
@@ -792,9 +803,8 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
   let glow_dir = 1;
   let notetag_reg = RegExp("<" + noteTagKey + ":[ ]*([^>]+)>", "i");
   let radialColor2 = useSmootherLights == true ? "#00000000" : "#000000";
-  $$.getFirstComment = function () {
+  $$.getFirstComment = function (page) {
     let result = null;
-    let page = this.page();
     if (page && page.list[0] != null) {
       if (page.list[0].code === 108) {
         result = page.list[0].parameters[0] || "";
@@ -825,7 +835,7 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
   };
   Game_Event.prototype.getCLTag = function () {
     let result;
-    let pageNote = noteTagKey ? $$.getFirstComment.call(this) : null;
+    let pageNote = noteTagKey ? $$.getFirstComment(this.page()) : null;
     let note = this.event().note;
     if (pageNote) result = $$.getCLTag(pageNote);
     if (!result) result = $$.getCLTag(note);
@@ -1133,9 +1143,14 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
    * @param {String} command
    * @param {String[]} args
    */
-  Game_Interpreter.prototype.tint = function (command, args) {
-    $$.tint(args);
-  };
+  Game_Interpreter.prototype.tint = (command, args) => $$.tint(args);
+
+  /**
+   *
+   * @param {String} command
+   * @param {String[]} args
+   */
+  Game_Interpreter.prototype.tintbattle = (command, args) => $$.tintbattle(args);
 
   /**
    *
@@ -1212,40 +1227,6 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
     if (args[0].equalsIC("events")) {
       $$.ReloadMapEvents();
     }
-  };
-
-  Game_Interpreter.prototype.tintbattle = function (command, args) {
-    if ($gameParty.inBattle()) {
-      let cmd = args[0].trim();
-      if (cmd.equalsIC("set", 'fade')) {
-        $gameTemp._BattleTintFade = $gameTemp._BattleTint;
-        $gameTemp._BattleTintTimer = 0;
-        $gameTemp._BattleTint = this.determineBattleTint(args[1]);
-        $gameTemp._BattleTintSpeed = +args[2] || 0;
-      }
-      else if (cmd.equalsIC('reset', 'daylight')) {
-        $gameTemp._BattleTintTimer = 0;
-        $gameTemp._BattleTint = $gameTemp._MapTint;
-        $gameTemp._BattleTintSpeed = +args[1] || 0;
-      }
-    }
-  };
-
-  Game_Interpreter.prototype.determineBattleTint = function (tintColor) {
-    if (!tintColor || tintColor.length < 7) {
-      return '#666666'; // Not an hex color string
-    }
-    let redhex = tintColor.substring(1, 3);
-    let greenhex = tintColor.substring(3, 5);
-    let bluehex = tintColor.substring(5);
-    let red = parseInt(redhex, 16);
-    let green = parseInt(greenhex, 16);
-    let blue = parseInt(bluehex, 16);
-    let color = red + green + blue;
-    if (color < 300 && red < 100 && green < 100 && blue < 100) { // Check for NaN values or too dark colors
-      return '#666666'; // The player have to see something
-    }
-    return tintColor;
   };
 
   Spriteset_Map.prototype.createLightmask = function () {
@@ -2293,9 +2274,7 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
     if (!DataManager.isBattleTest() && !DataManager.isEventTest() && $gameMap.mapId() >= 0) { // If we went there from a map...
       if ($gameVariables.GetScriptActive() === true) {                                        // If the script is active...
         if (options_lighting_on && lightInBattle) {                                           // If configuration autorise using lighting effects
-          if (eventObjId.length > 0) {                                                        // If there is lightsource on this map...
-            $gameTemp._MapTint = $gameVariables.GetTint();                                    // ... Use the tint of the map.
-          }
+          $gameTemp._MapTint = $gameVariables.GetTint();                                    // ... Use the tint of the map.
         }
         // Add daylight tint?
       }
@@ -2366,6 +2345,16 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
       $gameTemp._MapTint = '#666666'; // Prevent the battle scene from being too dark.
     }
     $gameTemp._BattleTint = $$.daynightset ? $gameVariables.GetTintByTime() : $gameTemp._MapTint;
+
+
+    let note = $$.getCLTag($$.getFirstComment($dataTroops[$gameTroop._troopId].pages[0]));
+    if ((/^tintbattle\b/i).test(note)) {
+      let data = note.split(/\s+/);
+      data.splice(0, 1);
+      data.map(x => x.trim());
+      $$.tintbattle(data, true);
+    }
+
     this._maskBitmaps.FillRect(-lightMaskPadding, 0, battleMaxX + lightMaskPadding, battleMaxY, $gameTemp._BattleTint);
     $gameTemp._BattleTintSpeed = 0;
   };
@@ -2561,7 +2550,7 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
       let mapnote = $$.getCLTag(note.trim());
       if (mapnote) {
         mapnote = mapnote.toLowerCase().trim();
-        if ((/^daynight/i).test(mapnote)) {
+        if ((/^daynight\b/i).test(mapnote)) {
           $$.daynightset = true;
           let dnspeed = note.match(/\d+/);
           if (dnspeed) {
@@ -2570,31 +2559,31 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
             $gameVariables.SetDaynightSpeed(daynightspeed);
           }
         }
-        else if ((/^RegionFire/i).test(mapnote)) {
+        else if ((/^RegionFire\b/i).test(mapnote)) {
           let data = mapnote.split(/\s+/);
           data.splice(0, 1);
           data.map(x => x.trim());
           $gameMap._interpreter.addTileLight("regionfire", data);
         }
-        else if ((/^RegionGlow/i).test(mapnote)) {
+        else if ((/^RegionGlow\b/i).test(mapnote)) {
           let data = mapnote.split(/\s+/);
           data.splice(0, 1);
           data.map(x => x.trim());
           $gameMap._interpreter.addTileLight("regionglow", data);
         }
-        else if ((/^RegionLight/i).test(mapnote)) {
+        else if ((/^RegionLight\b/i).test(mapnote)) {
           let data = mapnote.split(/\s+/);
           data.splice(0, 1);
           data.map(x => x.trim());
           $gameMap._interpreter.addTileLight("regionlight", data);
         }
-        else if ((/^RegionBlock/i).test(mapnote)) {
+        else if ((/^RegionBlock\b/i).test(mapnote)) {
           let data = mapnote.split(/\s+/);
           data.splice(0, 1);
           data.map(x => x.trim());
           $gameMap._interpreter.addTileBlock("regionblock", data);
         }
-        else if ((/^tint/i).test(mapnote)) {
+        else if ((/^tint\b/i).test(mapnote)) {
           let data = mapnote.split(/\s+/);
           data.splice(0, 1);
           data.map(x => x.trim());
@@ -2609,11 +2598,11 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
           }
           $$.tint(data);
         }
-        else if ((/^defaultBrightness/i).test(mapnote)) {
+        else if ((/^defaultBrightness\b/i).test(mapnote)) {
           let brightness = note.match(/\d+/);
           if (brightness) $$.defaultBrightness = Math.max(0, Math.min(Number(brightness[0], 100))) / 100;
         }
-        else if ((/^mapBrightness/i).test(mapnote)) {
+        else if ((/^mapBrightness\b/i).test(mapnote)) {
           let brightness = note.match(/\d+/);
           if (brightness) {
             let color = $gameVariables.GetTint();
@@ -2747,6 +2736,44 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
       if (speed == 0) $gameVariables.SetTint(currentColor);
       $gameVariables.SetTintTarget(currentColor);
       $gameVariables.SetTintSpeed(speed);
+    }
+  };
+
+  /**
+   *
+   * @param {String[]} args
+   */
+  $$.tintbattle = function (args, overrideInBattleCheck = false) {
+    let determineBattleTint = function (tintColor) {
+      if (!tintColor || tintColor.length < 7) {
+        return '#666666'; // Not an hex color string
+      }
+      let redhex = tintColor.substring(1, 3);
+      let greenhex = tintColor.substring(3, 5);
+      let bluehex = tintColor.substring(5);
+      let red = parseInt(redhex, 16);
+      let green = parseInt(greenhex, 16);
+      let blue = parseInt(bluehex, 16);
+      let color = red + green + blue;
+      if (color < 300 && red < 100 && green < 100 && blue < 100) { // Check for NaN values or too dark colors
+        return '#666666'; // The player have to see something
+      }
+      return tintColor;
+    };
+
+    if ($gameParty.inBattle() || overrideInBattleCheck) {
+      let cmd = args[0].trim();
+      if (cmd.equalsIC("set", 'fade')) {
+        $gameTemp._BattleTintFade = $gameTemp._BattleTint;
+        $gameTemp._BattleTintTimer = 0;
+        $gameTemp._BattleTint = determineBattleTint(args[1]);
+        $gameTemp._BattleTintSpeed = +args[2] || 0;
+      }
+      else if (cmd.equalsIC('reset', 'daylight')) {
+        $gameTemp._BattleTintTimer = 0;
+        $gameTemp._BattleTint = $gameTemp._MapTint;
+        $gameTemp._BattleTintSpeed = +args[1] || 0;
+      }
     }
   };
 
