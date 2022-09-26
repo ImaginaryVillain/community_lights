@@ -1144,8 +1144,6 @@ Math.minmax                   = function (minOrMax, ...a) { return minOrMax ? Ma
 let isRMMZ = () => Utils.RPGMAKER_NAME === "MZ";
 let isRMMV = () => Utils.RPGMAKER_NAME === "MV";
 
-let cmpFloat = (x, y) => Math.abs(x - y) < 1e-3; // custom epsilon
-
 function orBoolean(...a) {
   for (let i = 0; i < a.length; i++) {
     if (typeof a[i] === "boolean") return a[i];
