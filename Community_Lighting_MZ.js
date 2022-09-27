@@ -1135,10 +1135,10 @@ Imported[Community.Lighting.name] = true;
 * ....where # is the max distance you want in tiles.
 */
 
-Number.prototype.is           = (...a)           => a.includes(Number(this));
-Number.prototype.inRange      = (min, max)       => this >= min && this <= max;
-String.prototype.equalsIC     = (...a)           => a.map(s => s.toLowerCase()).includes(this.toLowerCase());
-String.prototype.startsWithIC = (s)              => this.toLowerCase().startsWith(s.toLowerCase());
+Number.prototype.is           = function(...a)    { return a.includes(Number(this)); };
+Number.prototype.inRange      = function(min, max){ return this >= min && this <= max; };
+String.prototype.equalsIC     = function(...a)    { return a.map(s => s.toLowerCase()).includes(this.toLowerCase()); };
+String.prototype.startsWithIC = function(s)       { return this.toLowerCase().startsWith(s.toLowerCase()); };
 Math.minmax                   = (minOrMax, ...a) => minOrMax ? Math.min(...a) : Math.max(...a); // min if positive
 
 let isRMMZ = () => Utils.RPGMAKER_NAME === "MZ";
@@ -1681,9 +1681,9 @@ class ColorDelta {
 }
 
 (function ($$) {
-  let isOn = (x) => x.toLowerCase() === "on";
-  let isOff = (x) => x.toLowerCase() === "off";
-  let isActivate = (x) => x.toLowerCase() === "activate";
+  let isOn         = (x) => x.toLowerCase() === "on";
+  let isOff        = (x) => x.toLowerCase() === "off";
+  let isActivate   = (x) => x.toLowerCase() === "activate";
   let isDeactivate = (x) => x.toLowerCase() === "deactivate";
 
   // Map community light directions to polar angles (360 degrees)
