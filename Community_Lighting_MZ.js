@@ -1401,14 +1401,16 @@ class ConditionalLight {
     properties.forEach((e) => {
       if      (e.startsWithIC('#'))  this.cColor      = new VRGBA(e);
       else if (e.startsWithIC('a#')) this.cColor      = new VRGBA(e);
-      else if (e.startsWithIC('a'))  this.cDirection  = orNaN(Math.PI / 180 * +(e.slice(1)));
+      else if (e.startsWithIC('a'))  this.cDirection  = Math.PI / 180 * orNaN(+e.slice(1), 0);
+      else if (e.startsWithIC('+a')) this.cDirection  = Math.PI / 180 * orNaN(+e.slice(2), 0);
+      else if (e.startsWithIC('-a')) this.cDirection  = Math.PI / 180 * orNaN(+e.slice(2), 0);
       else if (e.startsWithIC('b'))  this.cBrightness = orNaN(+e.slice(1));
       else if (e.startsWithIC('x'))  this.cXOffset    = orNaN(+e.slice(1));
       else if (e.startsWithIC('y'))  this.cYOffset    = orNaN(+e.slice(1));
       else if (e.startsWithIC('r'))  this.cRadius     = orNaN(+e.slice(1));
       else if (e.startsWithIC('l'))  this.cBeamLength = orNaN(+e.slice(1));
       else if (e.startsWithIC('w'))  this.cBeamWidth  = orNaN(+e.slice(1));
-    });
+    }, this);
   }
 
   /**
@@ -1416,17 +1418,32 @@ class ConditionalLight {
    * @param {String[]} properties
    **/
   parseTargetProps(properties) {
+    let normalizeAngle = (rads) => rads % (2 * Math.PI) + (rads < 0) * 2 * Math.PI; // normalize between 0 & 2*Pi
+    let normalizeClockwiseMovement = (target) => {
+      this.cDirection = normalizeAngle(this.cDirection); // normalize already assigned current
+      this.tDirection = normalizeAngle(Math.PI / 180 * target); // convert target to radians before normalization
+      if (this.cDirection > this.tDirection) this.tDirection += 2 * Math.PI; // normalize for clockwise movement
+    };
+    let normalizeCounterClockwiseMovement = (target) => {
+      this.cDirection = normalizeAngle(this.cDirection); // normalize already assigned current
+      this.tDirection = normalizeAngle(Math.PI / 180 * target); // convert target to radians before normalization
+      if (this.cDirection < this.tDirection) {
+        this.tDirection -= 2 * Math.PI; // normalize for counterclockwise movement
+      }
+    };
     properties.forEach((e) => {
-      if      (e.startsWithIC('#'))  this.tColor      = new VRGBA(e);
-      else if (e.startsWithIC('a#')) this.tColor      = new VRGBA(e);
-      else if (e.startsWithIC('a'))  this.tDirection  = orNaN(Math.PI / 180 * +(e.slice(1)));
+      if (e.startsWithIC('#'))       this.tColor = new VRGBA(e);
+      else if (e.startsWithIC('a#')) this.tColor = new VRGBA(e);
+      else if (e.startsWithIC('a'))  normalizeClockwiseMovement(orNaN(+e.slice(1), 0));
+      else if (e.startsWithIC('+a')) normalizeClockwiseMovement(orNaN(+e.slice(2), 0));
+      else if (e.startsWithIC('-a')) normalizeCounterClockwiseMovement(orNaN(+e.slice(2), 0));
       else if (e.startsWithIC('b'))  this.tBrightness = orNaN(+e.slice(1));
       else if (e.startsWithIC('x'))  this.tXOffset    = orNaN(+e.slice(1));
       else if (e.startsWithIC('y'))  this.tYOffset    = orNaN(+e.slice(1));
       else if (e.startsWithIC('r'))  this.tRadius     = orNaN(+e.slice(1));
       else if (e.startsWithIC('l'))  this.tBeamLength = orNaN(+e.slice(1));
       else if (e.startsWithIC('w'))  this.tBeamWidth  = orNaN(+e.slice(1));
-    });
+    }, this);
   }
 
   /**
