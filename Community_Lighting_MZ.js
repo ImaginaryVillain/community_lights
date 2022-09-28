@@ -3119,7 +3119,7 @@ class ColorDelta {
     this._maskBitmaps.additive.clearRect(0, 0, battleMaxX + lightMaskPadding, battleMaxY);
 
     // Prevent the battle scene from being too dark
-    let c = $gameTemp._BattleTintTarget.next().get(); // reference
+    let c = $gameTemp._BattleTintTarget.next().get(); // get next color
     if (c.magnitude() < 0x66 * 3 && c.r < 0x66 && c.g < 0x66 && c.b < 0x66) {
       c.set({ v: false, r: 0x66, g: 0x66, b: 0x66, a: 0xff });
       $gameTemp._BattleTintTarget.current = c; // reassign if out of bounds. Shouldn't be possible.
