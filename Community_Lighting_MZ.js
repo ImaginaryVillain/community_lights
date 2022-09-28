@@ -302,8 +302,8 @@ Imported[Community.Lighting.name] = true;
 * @----------------------------
 *
 * @command condLight
-* @text Conditional Lighting
-* @desc Set conditional lighting properties. Supports: Fade, color, angle, brightness, x offset, y offset, radius, length, width.
+* @text Set Conditional Lighting
+* @desc Supports transition & pause durations, color, angle, brightness, x offset, y offset, radius, beam length & width.
 *
 * @arg id
 * @text Event ID
@@ -312,9 +312,9 @@ Imported[Community.Lighting.name] = true;
 *
 * @arg properties
 * @text properties
-* @desc Supported prefixes: f, #, #a, a, b, x, y, r, l, w.
+* @desc Format: [tN] [pN] [<#|#a><RRGGBBAA|RRGGBB>] [<a|+a|-a>N] [bN] [xN] [yN] [rN] [lN] [wN]
 * @type text
-* @default f5 #ffffff b0 x0 y0 r150
+* @default t5 #ffffff -a90 b0 x0 y0 r150 l12 w12
 *
 * @----------------------------
 *
@@ -783,16 +783,13 @@ Imported[Community.Lighting.name] = true;
 * Events
 * --------------------------------------------------------------------------
 * Light radius color [onoff] [day|night] [brightness] [direction] [x] [y] [id]
-* Light radius cycle <color onDuration [fadeDuration [growRadius]]>... [onoff] [day|night] [brightness] [direction] [x] [y] [id]
+* Light [radius] [color] [{CycleProps}...] [onoff] [day|night] [brightness] [direction] [x] [y] [id]
 * - Light
 * - radius      100, 250, etc
-* - cycle       Allows any number of color, onDuration, fadeDuration, growRadius tuples to follow
-*               that will be cycled through before repeating from the beginning:
-*               <cl: light 100 cycle #f00 15 15 15 #0f0 15 15 15 #00f 15 15 15 ...etc>
-*               fadeDuration and growRadius are optional argument used to transition between colors
-*               and radius sizes over the provided cycle interval. If growRadius is not provided
-*               the default radius is used for the given color. In Terrax Lighting, there was a hard
-*               limit of 4, but now you can use as many as you want. [optional]
+* - cycleProps  Cyclic conditional lighting properties can be specified within {} brackets.
+*               The can be used to create transitioning light patterns See the Conditional
+*               Lighting section for more details. * Any non-cyclic properties are inherited
+*               unless overridden by the first cyclic properties [Optional]
 * - color       #ffffff, #ff0000, etc
 * - onoff:      Initial state:  0, 1, off, on (default). Ignored if day|night passed [optional]
 * - day         Causes the light to only come on during the day [optional]
@@ -812,46 +809,41 @@ Imported[Community.Lighting.name] = true;
 * - Same as Light params above, but adds a subtle flicker
 *
 * Flashlight bl bw color [onoff] [day|night] [sdir|angle] [x] [y] [id]
-* Flashlight bl bw cycle <color onDuration [fadeDuration [grow_bl [grow_bw]]]>... [onoff] [day|night] [sdir|angle] [x] [y] [id]
+* Flashlight bl bw [{CycleProps}...] [onoff] [day|night] [sdir|angle] [x] [y] [id]
 * - Sets the light as a flashlight with beam length (bl) beam width (bw) color (c),
 *      0|1 (onoff), and 1=up, 2=right, 3=down, 4=left for static direction (sdir)
-* - bl:       Beam length:  Any number, optionally preceded by "L", so 8, L8
-* - bw:       Beam width:  Any number, optionally preceded by "W", so 12, W12
-* - cycle     Allows any number of color, onDuration, fadeDuration, grow_bl, and
-*             grow_bw tuples to follow that will be cycled through before repeating
-*             from the beginning:
-*             <cl: Flashlight l8 w12 cycle #f00 15 15 8 11 #ff0 15 15 7 10 #0f0 15 6 10 on someId d3>
-*             fadeDuration, grow_bl, and grow_bw are optional arguments used to
-*             transition between colors and beam lengths & widths over the provided
-*             cycle interval. If grow_bl or grow_bw are not provided, the default
-*             length or width is used for the given color. There's no limit to how
-*             many colors can be cycled. [optional]
-* - color     #ffffff, #ff0000, etc
-* - onoff:    Initial state:  0, 1, off, on (default). Ignored if day|night passed [optional]
-* - day       Sets the event's light to only show during the day [optional]
-* - night     Sets the event's light to only show during night time [optional]
-* - sdir:     Forced direction (optional): 0:auto, 1:up, 2:right, 3:down, 4:left
-*             Can be preceded by "D", so D4.  If omitted, defaults to 0
-* - angle:    Forced direction in degrees (optional): must be preceded by "A". If
-*             omitted, sdir is used. [optional]
-* - x         x[offset] Work the same as regular light [optional]
-* - y         y[offset] [optional]
-* - id        1, 2, potato, etc. An id (alphanumeric) for plugin commands [optional]
-*             These should not begin with 'a', 'd', 'x' or 'y' otherwise
-*             they will be mistaken for one of the previous optional parameters.
+* - bl:         Beam length:  Any number, optionally preceded by "L", so 8, L8
+* - bw:         Beam width:  Any number, optionally preceded by "W", so 12, W12
+* - cycleProps  Cyclic conditional lighting properties can be specified within {} brackets.
+*               The can be used to create transitioning light patterns See the Conditional
+*               Lighting section for more details. * Any non-cyclic properties are inherited
+*               unless overridden by the first cyclic properties [Optional]
+* - color       #ffffff, #ff0000, etc
+* - onoff:      Initial state:  0, 1, off, on (default). Ignored if day|night passed [optional]
+* - day         Sets the event's light to only show during the day [optional]
+* - night       Sets the event's light to only show during night time [optional]
+* - sdir:       Forced direction (optional): 0:auto, 1:up, 2:right, 3:down, 4:left
+*               Can be preceded by "D", so D4.  If omitted, defaults to 0
+* - angle:      Forced direction in degrees (optional): must be preceded by "A". If
+*               omitted, sdir is used. [optional]
+* - x           x[offset] Work the same as regular light [optional]
+* - y           y[offset] [optional]
+* - id          1, 2, potato, etc. An id (alphanumeric) for plugin commands [optional]
+*               These should not begin with 'a', 'd', 'x' or 'y' otherwise
+*               they will be mistaken for one of the previous optional parameters.
 *
 * Example note tags:
 *
 * <cl: light 250 #ffffff>
 * Creates a basic light
 *
-* <cl: light 300 cycle #ff0000 15 #ffff00 15 #00ff00 15 #00ffff 15 #0000ff 15>
+* <cl: light 300 {#ff0000 t15} {#ffff00 t15} {#00ff00 t15} {#00ffff t15} {#0000ff t15}>
 * Creates a cycling light that rotates every 15 frames.  Great for parties!
 *
-* <cl: light 300 cycle #ff0000 30 60 #ffff00 30 60 #00ff00 30 60 #00ffff 30 60 #0000ff 30 60>
+* <cl: light 300 {#ff0000 t30 p60} {#ffff00 t30 p60} {#00ff00 t30 p60} {#00ffff t30 p60}>
 * Creates a cycling light that stays on for 30 frames and transitions to the next color over 60 frames.
 *
-* <cl: light 300 cycle #ff0000 30 60 250 #ffff00 30 60 300 #00ff00 30 60 250 #00ffff 30 60 300>
+* <cl: light {#ff0000 t30 p60 r250} {#ffff00 t30 p60 r300} {#00ff00 t30 p60 r250} {#00ffff t30 p60 r300}>
 * Creates a cycling light that grows and shrink between radius sizes of 250 and 300, stays on for 30 frames,
 * and transitions to the next color and size over 60 frames.
 *
@@ -862,7 +854,7 @@ Imported[Community.Lighting.name] = true;
 * Creates a flashlight beam with id asdf which can be turned on or off via
 * plugin commands.
 *
-* <cl: Flashlight l8 w12 cycle #ff0000 on asdf>
+* <cl: Flashlight l8 w12 {#ff0000} on asdf>
 * Creates a flashlight beam with id asdf which can be turned on or off via
 * plugin commands.
 *
@@ -873,12 +865,54 @@ Imported[Community.Lighting.name] = true;
 * in front of any color light color.
 *
 * Example note tags:
-* <cl: light 300 cycle a#990000 15 a#999900 15 a#009900 15 a#009999 15 a#000099 15>
+* <cl: light 300 {a#990000 t15} {a#999900 t15} {a#009900 t15} {a#009999 t15} {a#000099 t15}>
 * Creates a cycling volumetric light that rotates every 15 frames.
 *
 * <cl: Flashlight l8 w12 a#660000 on asdf>
 * Creates a red volumetric flashlight beam with id asdf which can be turned on or off
 * via plugin commands.
+*
+* --------------------------------------------------------------------------
+* Conditional Lighting
+* --------------------------------------------------------------------------
+* Conditional Lighting allows light properties to be changed either cyclically or
+* dynamically over time via properties that consist of a prefix followed by a property
+* value. This is useful for creating any number of transitional lighting effects.
+*
+* The properties are supported in light tags or via the 'light cond' command. Light tags
+* support any number of light properties wrapped in {} brackets See the example note tags
+* above.
+*
+* The 'light cond' command allows for conditional lights to be dynamically changed on demand.
+* See the Plugin Commands section for more details.
+*
+* The following chart shows all supported properties:
+* --------------------------------------------------------------------------------------------------------------------
+* |   Property     |  Prefix   |        Format           | Examples          | Description                            |
+* |----------------|-----------|-------------------------|-------------------|----------------------------------------|
+* |     pause      |     p     |           pN            |    p0, p1, p20    | time period in cycles to pause after   |
+* |    duration    |           |                         |                   | transitioning for cycling lights       |
+* |----------------|-----------|-------------------------|-------------------|----------------------------------------|
+* |   transition   |     t     |           tN            |    t0, t1, t30    | time period to transition the          |
+* |    duration    |           |                         |                   | specified properties over              |
+* |----------------|-----------|-------------------------|-------------------|----------------------------------------|
+* |     color      |   #, #a   | <#|#a><RRGGBBAA|RRGGBB> | a#FFEEDD, #ffeedd | color or additive color                |
+* |----------------|-----------|-------------------------|-------------------|----------------------------------------|
+* |     angle      | a, +a, -a |       <a|+a|-a>N        |  a30, +a30, -a30  | flashlight angle in degrees. '+' moves |
+* |                |           |                         |                   | clockwise, '-' moves counterclockwise  |
+* |----------------|-----------|-------------------------|-------------------|----------------------------------------|
+* |   brightness   |     b     |           bN            |    b0, b1, b5     | brightness                             |
+* |----------------|-----------|-------------------------|-------------------|----------------------------------------|
+* |    x offset    |     x     |           xN            |     x2, x-2       | x offset                               |
+* |----------------|-----------|-------------------------|-------------------|----------------------------------------|
+* |    y offset    |     y     |           yN            |     y2, y-2       | y offset                               |
+* |----------------|-----------|-------------------------|-------------------|----------------------------------------|
+* |     radius     |     r     |           rN            |    r50, r150      | light radius                           |
+* |----------------|-----------|-------------------------|-------------------|----------------------------------------|
+* |   beam length  |     l     |           lN            |   l8, l9, l10     | flashlight beam length                 |
+* |----------------|-----------|-------------------------|-------------------|----------------------------------------|
+* |   beam width   |     w     |           wN            |  w12, w13, w14    | flashlight beam width                  |
+* --------------------------------------------------------------------------------------------------------------------
 *
 * --------------------------------------------------------------------------
 * Easy hex color references
@@ -960,6 +994,13 @@ Imported[Community.Lighting.name] = true;
 *
 * Light off id
 * - Turn off light with matching id number
+*
+* Light cond id [tN] [pN] [<#|#a><RRGGBBAA|RRGGBB>] [<a|+a|-a>N] [bN] [xN] [yN] [rN] [lN] [wN]
+* - transitions a conditional light to the specified properties over the the given
+* - time period in cycles. Supported propreties are color, flashlight angle (a),
+* - brightness (b), x offset (x), y offset (y), radius (r), flashlight beam length (l),
+* - flashlight beam width (w). Must use the specified prefixes. Unsupported prefixes are
+* - ignored. See the Conditional Light section for more detail on each property.
 *
 * Light color id c
 * - Change the color (c) of lightsource with id (id)
@@ -1310,16 +1351,16 @@ class ConditionalLight {
   constructor(currentColor, currentDirection, currentBrightness, currentXOffset, currentYOffset, currentRadius,
               currentBeamLength, currentBeamWidth) {
     if (arguments.length == 0) return;
-    this.fadeDuration      = 0;
-    this.pauseDuration     = 0;
-    this.currentColor      = currentColor;
-    this.currentDirection  = currentDirection;
-    this.currentBrightness = currentBrightness;
-    this.currentXOffset    = currentXOffset;
-    this.currentYOffset    = currentYOffset;
-    this.currentRadius     = currentRadius;
-    this.currentBeamLength = currentBeamLength;
-    this.currentBeamWidth  = currentBeamWidth;
+    this.transitionDuration = 0;
+    this.pauseDuration      = 0;
+    this.currentColor       = currentColor;
+    this.currentDirection   = currentDirection;
+    this.currentBrightness  = currentBrightness;
+    this.currentXOffset     = currentXOffset;
+    this.currentYOffset     = currentYOffset;
+    this.currentRadius      = currentRadius;
+    this.currentBeamLength  = currentBeamLength;
+    this.currentBeamWidth   = currentBeamWidth;
   }
 
   /**
@@ -1329,40 +1370,40 @@ class ConditionalLight {
   clone() {
     let that = new ConditionalLight();
     // clone durations
-    if (this.fadeDuration      != null) that.fadeDuration      = this.fadeDuration;
-    if (this.pauseDuration     != null) that.pauseDuration     = this.pauseDuration;
+    if (this.transitionDuration != null) that.transitionDuration = this.transitionDuration;
+    if (this.pauseDuration      != null) that.pauseDuration      = this.pauseDuration;
     // clone currents
-    if (this.currentColor      != null) that.currentColor      = this.currentColor.clone();
-    if (this.currentDirection  != null) that.currentDirection  = this.currentDirection;
-    if (this.currentBrightness != null) that.currentBrightness = this.currentBrightness;
-    if (this.currentXOffset    != null) that.currentXOffset    = this.currentXOffset;
-    if (this.currentYOffset    != null) that.currentYOffset    = this.currentYOffset;
-    if (this.currentRadius     != null) that.currentRadius     = this.currentRadius;
-    if (this.currentBeamLength != null) that.currentBeamLength = this.currentBeamLength;
-    if (this.currentBeamWidth  != null) that.currentBeamWidth  = this.currentBeamWidth;
+    if (this.currentColor       != null) that.currentColor       = this.currentColor.clone();
+    if (this.currentDirection   != null) that.currentDirection   = this.currentDirection;
+    if (this.currentBrightness  != null) that.currentBrightness  = this.currentBrightness;
+    if (this.currentXOffset     != null) that.currentXOffset     = this.currentXOffset;
+    if (this.currentYOffset     != null) that.currentYOffset     = this.currentYOffset;
+    if (this.currentRadius      != null) that.currentRadius      = this.currentRadius;
+    if (this.currentBeamLength  != null) that.currentBeamLength  = this.currentBeamLength;
+    if (this.currentBeamWidth   != null) that.currentBeamWidth   = this.currentBeamWidth;
     // clone targets
-    if (this.targetColor       != null) that.targetColor       = this.targetColor.clone();
-    if (this.targetDirection   != null) that.targetDirection   = this.targetDirection;
-    if (this.targetBrightness  != null) that.targetBrightness  = this.targetBrightness;
-    if (this.targetXOffset     != null) that.targetXOffset     = this.targetXOffset;
-    if (this.targetYOffset     != null) that.targetYOffset     = this.targetYOffset;
-    if (this.targetRadius      != null) that.targetRadius      = this.targetRadius;
-    if (this.targetBeamLength  != null) that.targetBeamLength  = this.targetBeamLength;
-    if (this.targetBeamWidth   != null) that.targetBeamWidth   = this.targetBeamWidth;
+    if (this.targetColor        != null) that.targetColor        = this.targetColor.clone();
+    if (this.targetDirection    != null) that.targetDirection    = this.targetDirection;
+    if (this.targetBrightness   != null) that.targetBrightness   = this.targetBrightness;
+    if (this.targetXOffset      != null) that.targetXOffset      = this.targetXOffset;
+    if (this.targetYOffset      != null) that.targetYOffset      = this.targetYOffset;
+    if (this.targetRadius       != null) that.targetRadius       = this.targetRadius;
+    if (this.targetBeamLength   != null) that.targetBeamLength   = this.targetBeamLength;
+    if (this.targetBeamWidth    != null) that.targetBeamWidth    = this.targetBeamWidth;
     // clone deltas
-    if (this.deltaColor        != null) that.deltaColor        = this.deltaColor     .clone();
-    if (this.deltaDirection    != null) that.deltaDirection    = this.deltaDirection .clone();
-    if (this.deltaBrightness   != null) that.deltaBrightness   = this.deltaBrightness.clone();
-    if (this.deltaXOffset      != null) that.deltaXOffset      = this.deltaXOffset   .clone();
-    if (this.deltaYOffset      != null) that.deltaYOffset      = this.deltaYOffset   .clone();
-    if (this.deltaRadius       != null) that.deltaRadius       = this.deltaRadius    .clone();
-    if (this.deltaBeamLength   != null) that.deltaBeamLength   = this.deltaBeamLength.clone();
-    if (this.deltaBeamWidth    != null) that.deltaBeamWidth    = this.deltaBeamWidth .clone();
+    if (this.deltaColor         != null) that.deltaColor         = this.deltaColor     .clone();
+    if (this.deltaDirection     != null) that.deltaDirection     = this.deltaDirection .clone();
+    if (this.deltaBrightness    != null) that.deltaBrightness    = this.deltaBrightness.clone();
+    if (this.deltaXOffset       != null) that.deltaXOffset       = this.deltaXOffset   .clone();
+    if (this.deltaYOffset       != null) that.deltaYOffset       = this.deltaYOffset   .clone();
+    if (this.deltaRadius        != null) that.deltaRadius        = this.deltaRadius    .clone();
+    if (this.deltaBeamLength    != null) that.deltaBeamLength    = this.deltaBeamLength.clone();
+    if (this.deltaBeamWidth     != null) that.deltaBeamWidth     = this.deltaBeamWidth .clone();
     return that;
   }
 
   /**
-   * Sets up all supported deltas using the provided fade duration, pause duration, and target values.
+   * Sets up all supported targets.
    * @param {VRGBA}  targetColor
    * @param {Number} targetDirection
    * @param {Number} targetBrightness
@@ -1385,14 +1426,14 @@ class ConditionalLight {
   }
 
   /**
-   * Processes and sets target fade and pause duration properties from a string array.
+   * Processes and sets target transition and pause duration properties from a string array.
    * @param {String[]} properties
    **/
   parseDurationProps(properties) {
-    this.fadeDuration  = properties.find((e) => (e.startsWithIC('f')));
-    this.pauseDuration = properties.find((e) => (e.startsWithIC('p')));
-    this.fadeDuration  = this.fadeDuration  ? +this.fadeDuration.slice(1)  : 0;
-    this.pauseDuration = this.pauseDuration ? +this.pauseDuration.slice(1) : 0;
+    this.transitionDuration = properties.find((e) => (e.startsWithIC('t')));
+    this.pauseDuration      = properties.find((e) => (e.startsWithIC('p')));
+    this.transitionDuration = this.transitionDuration ? +this.transitionDuration.slice(1) : 0;
+    this.pauseDuration      = this.pauseDuration      ? +this.pauseDuration.slice(1)      : 0;
   }
 
   /**
@@ -1447,21 +1488,21 @@ class ConditionalLight {
   }
 
   /**
-   * Create deltas from currents, targets, and fade duration.
+   * Create deltas from currents, targets, and transition duration.
    **/
   createDeltas() {
     let createColor  = (...a) => !a.some(x => x == null) && ColorDelta.create(...a)  || void (0);
     let createNumber = (...a) => !a.some(x => x == null) && NumberDelta.create(...a) || void (0);
     // assign deltas if current & targets exist
-    this.deltaColor      = createColor (this.currentColor,      this.targetColor,      this.fadeDuration);
-    this.deltaColor      = createColor (this.currentColor,      this.targetColor,      this.fadeDuration);
-    this.deltaDirection  = createNumber(this.currentDirection,  this.targetDirection,  this.fadeDuration);
-    this.deltaBrightness = createNumber(this.currentBrightness, this.targetBrightness, this.fadeDuration);
-    this.deltaXOffset    = createNumber(this.currentXOffset,    this.targetXOffset,    this.fadeDuration);
-    this.deltaYOffset    = createNumber(this.currentYOffset,    this.targetYOffset,    this.fadeDuration);
-    this.deltaRadius     = createNumber(this.currentRadius,     this.targetRadius,     this.fadeDuration);
-    this.deltaBeamLength = createNumber(this.currentBeamLength, this.targetBeamLength, this.fadeDuration);
-    this.deltaBeamWidth  = createNumber(this.currentBeamWidth,  this.targetBeamWidth,  this.fadeDuration);
+    this.deltaColor      = createColor (this.currentColor,      this.targetColor,      this.transitionDuration);
+    this.deltaColor      = createColor (this.currentColor,      this.targetColor,      this.transitionDuration);
+    this.deltaDirection  = createNumber(this.currentDirection,  this.targetDirection,  this.transitionDuration);
+    this.deltaBrightness = createNumber(this.currentBrightness, this.targetBrightness, this.transitionDuration);
+    this.deltaXOffset    = createNumber(this.currentXOffset,    this.targetXOffset,    this.transitionDuration);
+    this.deltaYOffset    = createNumber(this.currentYOffset,    this.targetYOffset,    this.transitionDuration);
+    this.deltaRadius     = createNumber(this.currentRadius,     this.targetRadius,     this.transitionDuration);
+    this.deltaBeamLength = createNumber(this.currentBeamLength, this.targetBeamLength, this.transitionDuration);
+    this.deltaBeamWidth  = createNumber(this.currentBeamWidth,  this.targetBeamWidth,  this.transitionDuration);
     // assign new currents for existing deltas (to propagate currents for duration = 0)
     if (this.deltaColor      != null) this.currentColor      = this.deltaColor     .get();
     if (this.deltaDirection  != null) this.currentDirection  = this.deltaDirection .get();
@@ -1479,7 +1520,7 @@ class ConditionalLight {
    */
   next() {
     if (this.finished()) return this;
-    if (this.fadeDuration > 0) { // only update if fade duration isn't 0
+    if (this.transitionDuration > 0) { // only update if transition duration isn't 0 (finished)
       if (this.deltaColor      != null) this.currentColor      = this.deltaColor     .next().get();
       if (this.deltaDirection  != null) this.currentDirection  = this.deltaDirection .next().get();
       if (this.deltaBrightness != null) this.currentBrightness = this.deltaBrightness.next().get();
@@ -1488,7 +1529,7 @@ class ConditionalLight {
       if (this.deltaRadius     != null) this.currentRadius     = this.deltaRadius    .next().get();
       if (this.deltaBeamLength != null) this.currentBeamLength = this.deltaBeamLength.next().get();
       if (this.deltaBeamWidth  != null) this.currentBeamWidth  = this.deltaBeamWidth .next().get();
-      this.fadeDuration--;
+      this.transitionDuration--;
     } else
       this.pauseDuration--;
     return this;
@@ -1498,7 +1539,7 @@ class ConditionalLight {
    * Returns whether all deltas are finished or not.
    * @returns {Boolean}
    */
-  finished() { return this.fadeDuration <= 0 && this.pauseDuration <= 0; }
+  finished() { return this.transitionDuration <= 0 && this.pauseDuration <= 0; }
 }
 
 /**
@@ -1960,14 +2001,12 @@ class ColorDelta {
       let isPre    = (x, ...a) => { for (let i of a) if (x.startsWithIC(i)) return true; return false; };
       let isNul   = (x)       => x == null;
       let clip     = (e)       => +e.slice(1); // clip prefix & convert to number
-      let hasCycle = false;
       tagData.forEach((e) => {
         if      (!isFL() && !isNaN(+e)              && isNul(this._clRadius))     this._clRadius     = +e;
         else if (isFL()  && !isNaN(+e)              && isNul(this._clBeamLength)) this._clBeamLength = +e;
         else if (isFL()  && !isNaN(+e)              && isNul(this._clBeamWidth))  this._clBeamWidth  = +e;
         else if (isFL()  && isPre(e, "l")           && isNul(this._clBeamLength)) this._clBeamLength = clip(e);
         else if (isFL()  && isPre(e, "w")           && isNul(this._clBeamWidth))  this._clBeamWidth  = clip(e);
-        else if (           isEq(e, "cycle")        && isNul(this._clColor))      hasCycle        = true;
         else if (           isPre(e, "#", "a#")     && isNul(this._clColor))      this._clColor      = new VRGBA(e);
         else if (           isOn(e)                 && isNul(this._clOnOff))      this._clOnOff      = true;
         else if (           isOff(e)                && isNul(this._clOnOff))      this._clOnOff      = false;
@@ -1996,7 +2035,7 @@ class ColorDelta {
       this._clCycle      = this._clCycle || null;
 
       // Process cycle parameters
-      if (hasCycle && cycleGroups.length) {             // check if tag included color cycling
+      if (cycleGroups.length) {                         // check if tag included color cycling
         this._clCycle = [];                             // only define if cycle exists
         let args = [this._clColor, this._clDirection, this._clBrightness, this._clXOffset, this._clYOffset,
                     this._clRadius, this._clBeamLength, this._clBeamWidth];
