@@ -802,8 +802,9 @@ Imported[Community.Lighting.name] = true;
 * - x           x offset [optional] (0.5: half tile, 1 = full tile, etc)
 * - y           y offset [optional]
 * - id          1, 2, potato, etc. An id (alphanumeric) for plugin commands [optional]
-*               These should not begin with 'd', 'x' or 'y' otherwise
-*               they will be mistaken for one of the previous optional parameters.
+*               These should not be in the format of 'aN', 'bN', dN', 'lN', 'wN' 'xN' or 'yN'
+*               where N is a number otherwise they will be mistaken for one of the previous
+*               optional parameters.
 *
 * Fire ...params
 * - Same as Light params above, but adds a subtle flicker
@@ -829,8 +830,9 @@ Imported[Community.Lighting.name] = true;
 * - x           x[offset] Work the same as regular light [optional]
 * - y           y[offset] [optional]
 * - id          1, 2, potato, etc. An id (alphanumeric) for plugin commands [optional]
-*               These should not begin with 'a', 'd', 'x' or 'y' otherwise
-*               they will be mistaken for one of the previous optional parameters.
+*               These should not be in the format of 'aN', 'bN', dN', 'lN', 'wN' 'xN' or 'yN'
+*               where N is a number otherwise they will be mistaken for one of the previous
+*               optional parameters.
 *
 * Example note tags:
 *
@@ -1996,29 +1998,31 @@ class ColorDelta {
     this._clType = LightType[tagData.shift()];
     // Handle parsing of light, fire, and flashlight
     if (this._clType) {
-      let isFL     = ()        => this._clType.is(LightType.Flashlight); // is flashlight
-      let isEq     = (x, ...a) => { for (let i of a) if (x.equalsIC(i)) return true; return false; };
-      let isPre    = (x, ...a) => { for (let i of a) if (x.startsWithIC(i)) return true; return false; };
-      let isNul   = (x)       => x == null;
-      let clip     = (e)       => +e.slice(1); // clip prefix & convert to number
+      let isFL       = ()        => this._clType.is(LightType.Flashlight); // is flashlight
+      let isEq       = (e, ...a) => { for (let i of a) if (e.equalsIC(i)) return true; return false; };
+      let isPre      = (e, ...a) => { for (let i of a) if (e.startsWithIC(i)) return true; return false; };
+      let isNul      = (e)       => e == null;
+      let isDayNight = (e)       => isEq(e, "night", "day");
+      let clip       = (e)       => orNaN(e.slice(1)); // clip prefix & convert to number or undefined
       tagData.forEach((e) => {
-        if      (!isFL() && !isNaN(+e)              && isNul(this._clRadius))     this._clRadius     = +e;
-        else if (isFL()  && !isNaN(+e)              && isNul(this._clBeamLength)) this._clBeamLength = +e;
-        else if (isFL()  && !isNaN(+e)              && isNul(this._clBeamWidth))  this._clBeamWidth  = +e;
-        else if (isFL()  && isPre(e, "l")           && isNul(this._clBeamLength)) this._clBeamLength = clip(e);
-        else if (isFL()  && isPre(e, "w")           && isNul(this._clBeamWidth))  this._clBeamWidth  = clip(e);
-        else if (           isPre(e, "#", "a#")     && isNul(this._clColor))      this._clColor      = new VRGBA(e);
-        else if (           isOn(e)                 && isNul(this._clOnOff))      this._clOnOff      = true;
-        else if (           isOff(e)                && isNul(this._clOnOff))      this._clOnOff      = false;
-        else if (           isEq(e, "night", "day") && isNul(this._clSwitch))     this._clSwitch     = e;
-        else if (           isPre(e, "b")           && isNul(this._clBrightness)) this._clBrightness = (clip(e) / 100).clamp(0, 1);
-        else if (!isFL() && isPre(e, "d")           && isNul(this._clDirection))  this._clDirection  = clip(e);
-        else if ( isFL() && !isNaN(+e)              && isNul(this._clDirection))  this._clDirection  = +e;
-        else if ( isFL() && isPre(e, "d")           && isNul(this._clDirection))  this._clDirection  = CLDirectionMap[clip(e)];
-        else if ( isFL() && isPre(e, "a")           && isNul(this._clDirection))  this._clDirection  = Math.PI / 180 * clip(e);
-        else if (           isPre(e, "x")           && isNul(this._clXOffset))    this._clXOffset    = clip(e);
-        else if (           isPre(e, "y")           && isNul(this._clYOffset))    this._clYOffset    = clip(e);
-        else if (           e.length > 0            && isNul(this._clId))         this._clId         = e;
+        let n = clip(e);
+        if      (!isFL() && !isNaN(+e)         && isNul(this._clRadius))     this._clRadius     = +e;
+        else if (isFL()  && !isNaN(+e)         && isNul(this._clBeamLength)) this._clBeamLength = +e;
+        else if (isFL()  && !isNaN(+e)         && isNul(this._clBeamWidth))  this._clBeamWidth  = +e;
+        else if (isFL()  && isPre(e, "l") && n && isNul(this._clBeamLength)) this._clBeamLength = n;
+        else if (isFL()  && isPre(e, "w") && n && isNul(this._clBeamWidth))  this._clBeamWidth  = n;
+        else if (           isPre(e, "#", "a#")&& isNul(this._clColor))      this._clColor      = new VRGBA(e);
+        else if (           isOn(e)            && isNul(this._clOnOff))      this._clOnOff      = true;
+        else if (           isOff(e)           && isNul(this._clOnOff))      this._clOnOff      = false;
+        else if (           isDayNight(e)      && isNul(this._clSwitch))     this._clSwitch     = e;
+        else if (           isPre(e, "b") && n && isNul(this._clBrightness)) this._clBrightness = (n / 100).clamp(0, 1);
+        else if (!isFL() && isPre(e, "d") && n && isNul(this._clDirection))  this._clDirection  = n;
+        else if ( isFL() && !isNaN(+e)         && isNul(this._clDirection))  this._clDirection  = +e;
+        else if ( isFL() && isPre(e, "d") && n && isNul(this._clDirection))  this._clDirection  = CLDirectionMap[n];
+        else if ( isFL() && isPre(e, "a") && n && isNul(this._clDirection))  this._clDirection  = Math.PI / 180 * n;
+        else if (           isPre(e, "x") && n && isNul(this._clXOffset))    this._clXOffset    = n;
+        else if (           isPre(e, "y") && n && isNul(this._clYOffset))    this._clYOffset    = n;
+        else if (           e.length > 0       && isNul(this._clId))         this._clId         = e;
       }, this);
 
       // normalize parameters
