@@ -1589,7 +1589,7 @@ class ConditionalLight {
       if (this.currentDirection < this.targetDirection) this.targetDirection -= M_2PI; // c-clockwise normalize
     };
     properties.forEach((e) => {
-      if      (                       e.startsWithIC('#'))       this.targetColor = new VRGBA(e);
+      if      (                       e.startsWithIC('#'))  this.targetColor = new VRGBA(e);
       else if (                       e.startsWithIC('a#')) this.targetColor = new VRGBA(e);
       else if (this.isFlashlight() && e.startsWithIC('a'))  normalizeClockwiseMovement(orNaN(+e.slice(1), 0));
       else if (this.isFlashlight() && e.startsWithIC('+a')) normalizeClockwiseMovement(orNaN(+e.slice(2), 0));
@@ -2936,8 +2936,8 @@ class ColorDelta {
       let distance = 3 * (flashlength * (flashlength - 1));
 
       // Compute spotlight radiuses
-      r1 = (flashlength - 1) * flashlightdensity;
-      r2 = (flashlength - 1) * flashwidth;
+      r1 = Math.max((flashlength - 1) * flashlightdensity, 0);
+      r2 = Math.max((flashlength - 1) * flashwidth, 0);
 
       // Compute beam left start coordinates
       let xLeftBeamStart = x1 - (r2 / 7) * Math.sin(dirAngle);
