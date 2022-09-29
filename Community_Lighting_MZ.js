@@ -2170,9 +2170,10 @@ class ColorDelta {
     return orNullish(this._clCondLight.currentYOffset, this._clYOffset);
   };
   Game_Event.prototype.getLightEnabled = function () {
-    if (!this._clSwitch) return this._clOnOff;
-    return (this._clSwitch.equalsIC("night") &&  $$.isNight()) ||
-           (this._clSwitch.equalsIC("day")   && !$$.isNight());
+    if (!this._clSwitch) return orNullish(this._clCondLight.enabled, this._clOnOff);
+    return orNullish(this._clCondLight.enabled,
+                    (this._clSwitch.equalsIC("night") && $$.isNight()) ||
+                    (this._clSwitch.equalsIC("day")   && !$$.isNight()));
   };
   Game_Event.prototype.getLightCycle = function () {
     if (this._clType === undefined) this.initLightData();
@@ -3434,7 +3435,7 @@ class ColorDelta {
     // *********************** SET COLOR *********************
     else if (args[0].equalsIC('color')) {
       let condLight = $gameVariables.GetLightArray()[args[1].toLowerCase()];
-      if (condLight) { condLight.color = args[2] ? new VRGBA(args[2]) : null; } // null for no passed color
+      if (condLight) { condLight.currentColor = args[2] ? new VRGBA(args[2]) : null; } // null for no passed color
     }
 
     // *********************** SET CONDITIONAL LIGHT *********************
