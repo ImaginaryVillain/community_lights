@@ -1195,6 +1195,9 @@ Imported[Community.Lighting.name] = true;
 * ....where # is the max distance you want in tiles.
 */
 
+const M_2PI    = 2 * Math.PI;   // cache 2PI - this is faster
+const M_PI_180 = Math.PI / 180; // cache PI/180 - this is faster
+
 Number.prototype.is           = function(...a)    { return a.includes(Number(this)); };
 Number.prototype.inRange      = function(min, max){ return this >= min && this <= max; };
 String.prototype.equalsIC     = function(...a)    { return a.map(s => s.toLowerCase()).includes(this.toLowerCase()); };
@@ -1463,9 +1466,9 @@ class ConditionalLight {
     properties.forEach((e) => {
       if      (e.startsWithIC('#'))  this.currentColor      = new VRGBA(e);
       else if (e.startsWithIC('a#')) this.currentColor      = new VRGBA(e);
-      else if (e.startsWithIC('a'))  this.currentDirection  = Math.PI / 180 * orNaN(+e.slice(1), 0);
-      else if (e.startsWithIC('+a')) this.currentDirection  = Math.PI / 180 * orNaN(+e.slice(2), 0);
-      else if (e.startsWithIC('-a')) this.currentDirection  = Math.PI / 180 * orNaN(+e.slice(2), 0);
+      else if (e.startsWithIC('a'))  this.currentDirection  = M_PI_180 * orNaN(+e.slice(1), 0);
+      else if (e.startsWithIC('+a')) this.currentDirection  = M_PI_180 * orNaN(+e.slice(2), 0);
+      else if (e.startsWithIC('-a')) this.currentDirection  = M_PI_180 * orNaN(+e.slice(2), 0);
       else if (e.startsWithIC('b'))  this.currentBrightness = orNaN(+e.slice(1));
       else if (e.startsWithIC('x'))  this.currentXOffset    = orNaN(+e.slice(1));
       else if (e.startsWithIC('y'))  this.currentYOffset    = orNaN(+e.slice(1));
@@ -1480,16 +1483,17 @@ class ConditionalLight {
    * @param {String[]} properties
    **/
   parseTargetProps(properties) {
-    let normalizeAngle = (rads) => rads % (2 * Math.PI) + (rads < 0) * 2 * Math.PI; // normalize between 0 & 2*Pi
+    let normalizeAngle = (rads) => rads % (M_2PI) + (rads < 0) * M_2PI; // normalize between 0 & 2*Pi
+
     let normalizeClockwiseMovement = (target) => {
       this.currentDirection = normalizeAngle(this.currentDirection); // normalize already assigned current
-      this.targetDirection  = normalizeAngle(Math.PI / 180 * target); // convert target to radians before normalization
-      if (this.currentDirection > this.targetDirection) this.targetDirection += 2 * Math.PI; // clockwise normalize
+      this.targetDirection  = normalizeAngle(M_PI_180 * target);     // convert target to radians before normalization
+      if (this.currentDirection > this.targetDirection) this.targetDirection += M_2PI; // clockwise normalize
     };
     let normalizeCounterClockwiseMovement = (target) => {
       this.currentDirection = normalizeAngle(this.currentDirection); // normalize already assigned current
-      this.targetDirection  = normalizeAngle(Math.PI / 180 * target); // convert target to radians before normalization
-      if (this.currentDirection < this.targetDirection) this.targetDirection -= 2 * Math.PI; // c-clockwise normalize
+      this.targetDirection  = normalizeAngle(M_PI_180 * target);     // convert target to radians before normalization
+      if (this.currentDirection < this.targetDirection) this.targetDirection -= M_2PI; // c-clockwise normalize
     };
     properties.forEach((e) => {
       if (e.startsWithIC('#'))       this.targetColor = new VRGBA(e);
@@ -2051,17 +2055,17 @@ class ColorDelta {
       }, this);
 
       // normalize parameters
-      this._clRadius     = this._clRadius || 0;
-      this._clColor      = orNullish(this._clColor, VRGBA.empty());
-      this._clBrightness = this._clBrightness || 0;
-      this._clDirection  = orNaN(this._clDirection, undefined); // must be undefined for later checks
-      this._clId         = this._clId || 0;
-      this._clBeamLength = this._clBeamLength || 0;
-      this._clBeamWidth  = this._clBeamWidth || 0;
-      this._clOnOff      = orBoolean(this._clOnOff, true);
-      this._clXOffset    = this._clXOffset || 0;
-      this._clYOffset    = this._clYOffset || 0;
-      this._clCycle      = this._clCycle || null;
+      this._clRadius        = orNaN(this._clRadius, 0);
+      this._clColor         = orNullish(this._clColor, VRGBA.empty());
+      this._clBrightness    = orNaN(this._clBrightness, 0);
+      this._clDirection     = orNaN(this._clDirection, undefined); // must be undefined for later checks
+      this._clId            = orNullish(this._clId, 0); // Alphanumeric
+      this._clBeamLength    = orNaN(this._clBeamLength, 0);
+      this._clBeamWidth     = orNaN(this._clBeamWidth, 0);
+      this._clOnOff         = orBoolean(this._clOnOff, true);
+      this._clXOffset       = orNaN(this._clXOffset, 0);
+      this._clYOffset       = orNaN(this._clYOffset, 0);
+      this._clCycle         = this._clCycle || null;
 
       // Process cycle parameters
       if (cycleGroups.length) {                         // check if tag included color cycling
@@ -2761,14 +2765,14 @@ class ColorDelta {
     //ctxMul.save(); // unnecessary significant performance hit
     ctxMul.fillStyle = hex;
     ctxMul.beginPath();
-    ctxMul.ellipse(centerX, centerY, xradius, yradius, 0, 0, 2 * Math.PI);
+    ctxMul.ellipse(centerX, centerY, xradius, yradius, 0, 0, M_2PI);
     ctxMul.fill();
     if (isRMMV()) this.multiply._setDirty(); // doesn't exist in RMMZ
     if (c.v) {
       let ctxAdd = this.additive._context; // Additive lighting context
       ctxAdd.fillStyle = hex;
       ctxAdd.beginPath();
-      ctxAdd.ellipse(centerX, centerY, xradius, yradius, 0, 0, 2 * Math.PI);
+      ctxAdd.ellipse(centerX, centerY, xradius, yradius, 0, 0, M_2PI);
       ctxAdd.fill();
       if (isRMMV()) this.additive._setDirty(); // doesn't exist in RMMZ
     }
