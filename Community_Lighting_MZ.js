@@ -2025,7 +2025,7 @@ class ColorDelta {
       let isDayNight = (e)       => isEq(e, "night", "day");
       let clip       = (e)       => orNaN(e.slice(1)); // clip prefix & convert to number or undefined
       let cycleIndex, hasCycle = false;
-      tagData.forEach((e, i) => {
+      tagData.forEach((e) => {
         let n = clip(e);
         if      (!isFL() && !isNaN(+e)          && isNul(this._clRadius))     this._clRadius     = +e;
         else if (isFL()  && !isNaN(+e)          && isNul(this._clBeamLength)) this._clBeamLength = +e;
