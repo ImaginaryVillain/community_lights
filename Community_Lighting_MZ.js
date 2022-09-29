@@ -1530,14 +1530,14 @@ class ConditionalLight {
    */
   setTargets(targetColor, targetDirection, targetBrightness, targetXOffset, targetYOffset, targetRadius,
              targetBeamLength, targetBeamWidth) {
-    this.targetColor      = targetColor;
-    this.targetDirection  = this.isFlashlight() ? targetDirection  : void(0);
-    this.targetBrightness = targetBrightness;
-    this.targetXOffset    = targetXOffset;
-    this.targetYOffset    = targetYOffset;
-    this.targetRadius     = this.isOtherLight() ? targetRadius     : void(0);
-    this.targetBeamLength = this.isFlashlight() ? targetBeamLength : void(0);
-    this.targetBeamWidth  = this.isFlashlight() ? targetBeamWidth  : void(0);
+    if (targetColor       != null) this.targetColor      = targetColor;
+    if (targetDirection   != null) this.targetDirection  = this.isFlashlight() ? targetDirection  : void(0);
+    if (targetBrightness  != null) this.targetBrightness = targetBrightness;
+    if (targetXOffset     != null) this.targetXOffset    = targetXOffset;
+    if (targetYOffset     != null) this.targetYOffset    = targetYOffset;
+    if (targetRadius      != null) this.targetRadius     = this.isOtherLight() ? targetRadius     : void(0);
+    if (targetBeamLength  != null) this.targetBeamLength = this.isFlashlight() ? targetBeamLength : void(0);
+    if (targetBeamWidth   != null) this.targetBeamWidth  = this.isFlashlight() ? targetBeamWidth  : void(0);
   }
 
   /**
@@ -2042,7 +2042,7 @@ class ColorDelta {
       let isPre      = (e, ...a) => { for (let i of a) if (e.startsWithIC(i)) return true; return false; };
       let isNul      = (e)       => e == null;
       let isDayNight = (e)       => isEq(e, "night", "day");
-      let clip       = (e)       => orNaN(e.slice(1)); // clip prefix & convert to number or undefined
+      let clip       = (e)       => orNaN(+e.slice(1)); // clip prefix & convert to number or undefined
       let cycleIndex, hasCycle = false;
       tagData.forEach((e) => {
         let n = clip(e);
