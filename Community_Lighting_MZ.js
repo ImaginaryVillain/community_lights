@@ -783,9 +783,15 @@ Imported[Community.Lighting.name] = true;
 * Events
 * --------------------------------------------------------------------------
 * Light radius color [onoff] [day|night] [brightness] [direction] [x] [y] [id]
+* Light radius cycle <color [pauseDuration]>... [onoff] [day|night] [brightness] [direction] [x] [y] [id]
 * Light [radius] [color] [{CycleProps}...] [onoff] [day|night] [brightness] [direction] [x] [y] [id]
 * - Light
 * - radius      100, 250, etc
+* - cycle       Allows any number of color + duration pairs to follow that will be cycled
+*               through before repeating from the beginning. See the examples below for usage.
+*               In Terrax Lighting, there was a hard limit of 4, but now there is no limit.
+*               To cycle any light property or for fade transitions, use the cycleProps
+*               format instead. [optional]
 * - cycleProps  Cyclic conditional lighting properties can be specified within {} brackets.
 *               The can be used to create transitioning light patterns See the Conditional
 *               Lighting section for more details. * Any non-cyclic properties are inherited
@@ -810,11 +816,17 @@ Imported[Community.Lighting.name] = true;
 * - Same as Light params above, but adds a subtle flicker
 *
 * Flashlight bl bw color [onoff] [day|night] [sdir|angle] [x] [y] [id]
+* Flashlight bl bw cycle <color [pauseDuration]>... [onoff] [day|night] [sdir|angle] [x] [y] [id]
 * Flashlight bl bw [{CycleProps}...] [onoff] [day|night] [sdir|angle] [x] [y] [id]
 * - Sets the light as a flashlight with beam length (bl) beam width (bw) color (c),
 *      0|1 (onoff), and 1=up, 2=right, 3=down, 4=left for static direction (sdir)
 * - bl:         Beam length:  Any number, optionally preceded by "L", so 8, L8
 * - bw:         Beam width:  Any number, optionally preceded by "W", so 12, W12
+* - cycle       Allows any number of color + duration pairs to follow that will be cycled
+*               through before repeating from the beginning. See the examples below for usage.
+*               In Terrax Lighting, there was a hard limit of 4, but now there is no limit.
+*               To cycle any light property or for fade transitions, use the cycleProps
+*               format instead. [optional]
 * - cycleProps  Cyclic conditional lighting properties can be specified within {} brackets.
 *               The can be used to create transitioning light patterns See the Conditional
 *               Lighting section for more details. * Any non-cyclic properties are inherited
@@ -839,7 +851,8 @@ Imported[Community.Lighting.name] = true;
 * <cl: light 250 #ffffff>
 * Creates a basic light
 *
-* <cl: light 300 {#ff0000 t15} {#ffff00 t15} {#00ff00 t15} {#00ffff t15} {#0000ff t15}>
+* <cl: light 300 cycle #ff0000 15 #ffff00 15 #00ff00 15 #00ffff 15 #0000ff 15>
+* <cl: light 300 {#ff0000 p15} {#ffff00 p15} {#00ff00 p15} {#00ffff p15} {#0000ff p15}>
 * Creates a cycling light that rotates every 15 frames.  Great for parties!
 *
 * <cl: light 300 {#ff0000 t30 p60} {#ffff00 t30 p60} {#00ff00 t30 p60} {#00ffff t30 p60}>
@@ -856,9 +869,13 @@ Imported[Community.Lighting.name] = true;
 * Creates a flashlight beam with id asdf which can be turned on or off via
 * plugin commands.
 *
-* <cl: Flashlight l8 w12 {#ff0000} on asdf>
+* <cl: Flashlight l8 w12 #ff0000 on asdf>
 * Creates a flashlight beam with id asdf which can be turned on or off via
 * plugin commands.
+*
+* <cl: Flashlight l8 w12 cycle #f00 15 #ff0 15 #0f0 15>
+* <cl: Flashlight l8 w12 {#f00 p15} {#ff0 p15} {#0f0 p15}>
+* Creates a flashlight beam that rotates every 15 frames.
 *
 * --------------------------------------------------------------------------
 * Additive Lighting Effects
@@ -1992,6 +2009,9 @@ class ColorDelta {
   Game_Event.prototype.initLightData = function () {
     this._lastLightPage = this._pageIndex;
     let tagData = this.getCLTag().toLowerCase();
+
+    // parse new cycle groups format within {} braces and extract from tag data for separate handling
+    // old cycle groups are parsed in tagData loop below and are converted to the new group format
     let cycleGroups = [];
     tagData = tagData.replace(/\{(.*?)\}/g, (_, group) => ((cycleGroups.push(group.split(/\s+/)), '')));
     tagData = tagData.split(/\s+/);
@@ -2004,25 +2024,30 @@ class ColorDelta {
       let isNul      = (e)       => e == null;
       let isDayNight = (e)       => isEq(e, "night", "day");
       let clip       = (e)       => orNaN(e.slice(1)); // clip prefix & convert to number or undefined
-      tagData.forEach((e) => {
+      let cycleIndex, hasCycle = false;
+      tagData.forEach((e, i) => {
         let n = clip(e);
-        if      (!isFL() && !isNaN(+e)         && isNul(this._clRadius))     this._clRadius     = +e;
-        else if (isFL()  && !isNaN(+e)         && isNul(this._clBeamLength)) this._clBeamLength = +e;
-        else if (isFL()  && !isNaN(+e)         && isNul(this._clBeamWidth))  this._clBeamWidth  = +e;
-        else if (isFL()  && isPre(e, "l") && n && isNul(this._clBeamLength)) this._clBeamLength = n;
-        else if (isFL()  && isPre(e, "w") && n && isNul(this._clBeamWidth))  this._clBeamWidth  = n;
-        else if (           isPre(e, "#", "a#")&& isNul(this._clColor))      this._clColor      = new VRGBA(e);
-        else if (           isOn(e)            && isNul(this._clOnOff))      this._clOnOff      = true;
-        else if (           isOff(e)           && isNul(this._clOnOff))      this._clOnOff      = false;
-        else if (           isDayNight(e)      && isNul(this._clSwitch))     this._clSwitch     = e;
-        else if (           isPre(e, "b") && n && isNul(this._clBrightness)) this._clBrightness = (n / 100).clamp(0, 1);
-        else if (!isFL() && isPre(e, "d") && n && isNul(this._clDirection))  this._clDirection  = n;
-        else if ( isFL() && !isNaN(+e)         && isNul(this._clDirection))  this._clDirection  = +e;
-        else if ( isFL() && isPre(e, "d") && n && isNul(this._clDirection))  this._clDirection  = CLDirectionMap[n];
-        else if ( isFL() && isPre(e, "a") && n && isNul(this._clDirection))  this._clDirection  = Math.PI / 180 * n;
-        else if (           isPre(e, "x") && n && isNul(this._clXOffset))    this._clXOffset    = n;
-        else if (           isPre(e, "y") && n && isNul(this._clYOffset))    this._clYOffset    = n;
-        else if (           e.length > 0       && isNul(this._clId))         this._clId         = e;
+        if      (!isFL() && !isNaN(+e)          && isNul(this._clRadius))     this._clRadius     = +e;
+        else if (isFL()  && !isNaN(+e)          && isNul(this._clBeamLength)) this._clBeamLength = +e;
+        else if (isFL()  && !isNaN(+e)          && isNul(this._clBeamWidth))  this._clBeamWidth  = +e;
+        else if (isFL()  && isPre(e, "l") && n  && isNul(this._clBeamLength)) this._clBeamLength = n;
+        else if (isFL()  && isPre(e, "w") && n  && isNul(this._clBeamWidth))  this._clBeamWidth  = n;
+        else if (           isEq(e, "cycle")    && isNul(this._clColor))      hasCycle           = true;
+        else if (           isPre(e, "#", "a#") && hasCycle)                  cycleIndex = cycleGroups.push([e]) - 2;
+        else if (           !isNaN(+e)          && cycleGroups[cycleIndex])   cycleGroups[cycleIndex].push('p' + e);
+        else if (           isPre(e, "#", "a#") && isNul(this._clColor))      this._clColor      = new VRGBA(e);
+        else if (           isOn(e)             && isNul(this._clOnOff))      this._clOnOff      = true;
+        else if (           isOff(e)            && isNul(this._clOnOff))      this._clOnOff      = false;
+        else if (           isDayNight(e)       && isNul(this._clSwitch))     this._clSwitch     = e;
+        else if (           isPre(e, "b") && n  && isNul(this._clBrightness)) this._clBrightness = (n / 100).clamp(0, 1);
+        else if (!isFL() && isPre(e, "d") && n  && isNul(this._clDirection))  this._clDirection  = n;
+        else if ( isFL() && !isNaN(+e)          && isNul(this._clDirection))  this._clDirection  = +e;
+        else if ( isFL() && isPre(e, "d") && n  && isNul(this._clDirection))  this._clDirection  = CLDirectionMap[n];
+        else if ( isFL() && isPre(e, "a") && n  && isNul(this._clDirection))  this._clDirection  = Math.PI / 180 * n;
+        else if (           isPre(e, "x") && n  && isNul(this._clXOffset))    this._clXOffset    = n;
+        else if (           isPre(e, "y") && n  && isNul(this._clYOffset))    this._clYOffset    = n;
+        else if (           e.length > 0        && isNul(this._clId))         this._clId         = e;
+        cycleIndex += 1; // increment index. Valid for 1 iteration after a cycle color is parsed before OOB.
       }, this);
 
       // normalize parameters
