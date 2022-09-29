@@ -2491,13 +2491,11 @@ class ColorDelta {
       y1 = y1 - flashlightYoffset;
       if (iplayer_radius < 100) {
         // dim the light a bit at lower lightradius for a less focused effect.
-        let c = playercolor;
-        c.r = Math.max(0, c.r - 50);
-        c.g = Math.max(0, c.g - 50);
-        c.b = Math.max(0, c.b - 50);
-        let newcolor = c;
+        playercolor.r = Math.max(0, playercolor.r - 50);
+        playercolor.g = Math.max(0, playercolor.g - 50);
+        playercolor.b = Math.max(0, playercolor.b - 50);
 
-        this._maskBitmaps.radialgradientFillRect(x1, y1, 0, iplayer_radius, newcolor, radialColor2, playerflicker,
+        this._maskBitmaps.radialgradientFillRect(x1, y1, 0, iplayer_radius, playercolor, radialColor2, playerflicker,
                                                  playerbrightness);
       } else {
         this._maskBitmaps.radialgradientFillRect(x1, y1, lightMaskPadding, iplayer_radius, playercolor, radialColor2,
@@ -2610,14 +2608,12 @@ class ColorDelta {
       let y1 = (ph / 2) + (y - dy) * ph;
 
       let objectflicker = tile.lightType.is(LightType.Fire);
-      let tile_color = tile.color;
+      let tile_color = tile.color.clone();
       if (tile.lightType.is(LightType.Glow)) {
-        let c = tile.color.clone();
-        c.r = Math.floor(c.r + (60 - $gameTemp._glowAmount)).clamp(0, 255);
-        c.g = Math.floor(c.g + (60 - $gameTemp._glowAmount)).clamp(0, 255);
-        c.b = Math.floor(c.b + (60 - $gameTemp._glowAmount)).clamp(0, 255);
-        c.a = Math.floor(c.a + (60 - $gameTemp._glowAmount)).clamp(0, 255);
-        tile_color = c;
+        tile_color.r = Math.floor(tile_color.r + (60 - $gameTemp._glowAmount)).clamp(0, 255);
+        tile_color.g = Math.floor(tile_color.g + (60 - $gameTemp._glowAmount)).clamp(0, 255);
+        tile_color.b = Math.floor(tile_color.b + (60 - $gameTemp._glowAmount)).clamp(0, 255);
+        tile_color.a = Math.floor(tile_color.a + (60 - $gameTemp._glowAmount)).clamp(0, 255);
       }
       this._maskBitmaps.radialgradientFillRect(x1, y1, 0, tile.radius, tile_color, VRGBA.empty(), objectflicker,
                                                tile.brightness);
@@ -3483,8 +3479,8 @@ class ColorDelta {
       seconds = orNaN(seconds, 0);
       seconds += hours * 60 * 60 + minutes * 60;
       let totalSeconds = hoursInDay * 60 * 60;
-      while (seconds >= totalSeconds) seconds -= totalSeconds;
-      while (seconds < 0) seconds += totalSeconds;
+      seconds %= totalSeconds; // clamp to within total seconds
+      if (seconds < 0) seconds += totalSeconds;
       gV.SetDaynightSeconds(seconds);
       gV.SetDaynightHoursinDay(hoursInDay);
       setTimeColorDelta();
