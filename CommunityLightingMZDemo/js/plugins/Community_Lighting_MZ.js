@@ -267,9 +267,9 @@ Imported[Community.Lighting.name] = true;
 * @off Off
 * @default true
 *
-* @arg instant
-* @text Instant tint change
-* @desc If set to "off" then the tint will gradually transition to that of the next hour.
+* @arg fade
+* @text Fade tint over hour
+* @desc If set to "on" the tint will gradually transition to that of the next hour.
 * @type boolean
 * @on On
 * @off Off
@@ -462,9 +462,9 @@ Imported[Community.Lighting.name] = true;
 * @value subtract
 * @default set
 *
-* @arg instant
-* @text Instant tint change
-* @desc If set to "off" then the tint will gradually transition to that of the next hour.
+* @arg fade
+* @text Fade tint over hour
+* @desc If set to "on" the tint will gradually transition to that of the next hour.
 * @type boolean
 * @on On
 * @off Off
@@ -487,9 +487,9 @@ Imported[Community.Lighting.name] = true;
 * @type text
 * @default #ffffff
 *
-* @arg instant
-* @text Instant tint change
-* @desc If set to "off" then the tint will gradually transition to that of the next hour.
+* @arg fade
+* @text Fade tint over hour
+* @desc If set to "on" the tint will gradually transition to that of the next hour.
 * @type boolean
 * @on On
 * @off Off
@@ -507,9 +507,9 @@ Imported[Community.Lighting.name] = true;
 * @min 0
 * @default 24
 *
-* @arg instant
-* @text Instant tint change
-* @desc If set to "off" then the tint will gradually transition to that of the next hour.
+* @arg fade
+* @text Fade tint over hour
+* @desc If set to "on" the tint will gradually transition to that of the next hour.
 * @type boolean
 * @on On
 * @off Off
@@ -1052,31 +1052,27 @@ Imported[Community.Lighting.name] = true;
 * Flashlight off
 * - Turn off the flashlight.  yup.
 *
-* DayNight on|off [instant]
-* - Activates or deactivates the day/night cycle. Specifying 'instant' will set the
-*   tint for the current hour instantly, otherwise it will change gradually to that of
-*   the next hour
+* DayNight on|off [fade]
+* - Activates or deactivates the day/night cycle. Specifying 'fade' will gradually
+*   transition the tint to that of the next hour.
 *
 * Daynight speed n
 * - Changes the speed by which hours pass in game in relation to real life seconds
 *
-* Daynight hour h m [instant]
-* - Sets the in game time to hh:mm. Specifying 'instant' will set the
-*   tint for the current hour instantly, otherwise it will change gradually to that of
-*   the next hour
+* Daynight hour h m [fade]
+* - Sets the in game time to hh:mm. Specifying 'fade' will gradually transition the
+*   tint to that of the next hour.
 *
 * Daynight color h c
 * - Sets the hour (h) to use color (c)
 *
-* Daynight add h m [instant]
-* - Adds the specified hours (h) and minutes (m) to the in game clock. Specifying 'instant' will set the
-*   tint for the current hour instantly, otherwise it will change gradually to that of
-*   the next hour
+* Daynight add h m [fade]
+* - Adds the specified hours (h) and minutes (m) to the in game clock. Specifying
+*   'fade' will gradually transition the tint to that of the next hour.
 *
-* Daynight subtract h m [instant]
-* - Subtracts the specified hours (h) and minutes (m) from the in game clock. Specifying 'instant' will set the
-*   tint for the current hour instantly, otherwise it will change gradually to that of
-*   the next hour
+* Daynight subtract h m [fade]
+* - Subtracts the specified hours (h) and minutes (m) from the in game clock.
+*   Specifying  'fade' will gradually transition the tint to that of the next hour.
 *
 * Daynight show
 * - Shows the current time of day in the upper right corner of the map screen (h:mm)
@@ -1087,10 +1083,9 @@ Imported[Community.Lighting.name] = true;
 * Daynight hide
 * - Hides the current time of day mini-window
 *
-* Daynight hoursinday h [instant]
-* - Sets the number of hours in a day to [h] (set hour colors if doing this), Specifying 'instant' will set the
-*   tint for the current hour instantly, otherwise it will change gradually to that of
-*   the next hour
+* Daynight hoursinday h [fade]
+* - Sets the number of hours in a day to [h] (set hour colors if doing this).
+*   Specifying 'fade' will gradually transition the tint to that of the next hour.
 *
 * Tint set c [s]
 * Tint fade c [s]
@@ -2192,7 +2187,7 @@ class ColorDelta {
     let mapOnOff = a  => a.enabled === "true" ? "on" : "off";
     let tileType = a  => (a.tileType === "terrain" ? "tile" : "region") + (a.lightType ? a.lightType : "block");
     let tintType = () => $gameParty.inBattle() ? "tintbattle" : "tint";
-    let dayMode =  a  => a.instant === "true" ? "instant" : "";
+    let dayMode =  a  => a.fade === "true" ? "fade" : "";
     let tintMode = a  => a.color ? "set" : "reset";
     let mathMode = a  => a.mode === "set" ? "hour" : a.mode; // set, add, or subtract.
     let showMode = a  => a.enabled.equalsIC("true") ? (a.showSeconds.equalsIC("true") ? "showseconds" : "show") : "hide";
@@ -3476,8 +3471,8 @@ class ColorDelta {
     };
     let setTimeColorDelta = () => {
       if (daynightCycleEnabled && daynightTintEnabled) {
-        let isInstant = 'instant'.equalsIC(...a) || gV.GetDaynightSpeed() == 0;
-        let delta = ColorDelta.createTimeTint(!isInstant, 60 * $gameVariables.GetDaynightSpeed());
+        let hasFade = 'fade'.equalsIC(...a) || gV.GetDaynightSpeed() == 0;
+        let delta = ColorDelta.createTimeTint(hasFade, 60 * $gameVariables.GetDaynightSpeed());
         $gameVariables.SetTint(delta.get());
         $gameVariables.SetTintTarget(delta);
       }
