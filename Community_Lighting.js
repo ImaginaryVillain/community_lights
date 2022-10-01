@@ -705,9 +705,10 @@ class TileLight {
     this.lightType  = LightType[lightType];
     this.id         = +id || 0;
     this.enabled    = isOn(onoff);
-    this.color      = $$.validateColor(color, "#ffffff");
+    this.color      = Community.Lighting.validateColor(color, "#ffffff");
     this.radius     = +radius || 0;
-    this.brightness = brightness && (brightness.substr(1, brightness.length) / 100).clamp(0, 1) || $$.defaultBrightness || 0;
+    this.brightness = brightness && (brightness.slice(1, brightness.length) / 100).clamp(0, 1) ||
+                      Community.Lighting.defaultBrightness || 0;
   }
 }
 
@@ -716,7 +717,7 @@ class TileBlock {
     this.tileType    = TileType[tileType];
     this.id          = +id || 0;
     this.enabled     = isOn(onoff);
-    this.color       = $$.validateColor(color, "#ffffff");
+    this.color       = Community.Lighting.validateColor(color, "#ffffff");
     this.shape       = +shape || 0;
     this.xOffset     = +xOffset || 0;
     this.yOffset     = +yOffset || 0;
