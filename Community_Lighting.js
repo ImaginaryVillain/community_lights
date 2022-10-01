@@ -728,6 +728,83 @@ class TileBlock {
 
 const isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-9A-F]{8}$)/i; // a|A before # for additive lighting
 
+/**
+ *
+ * @param {String} hex
+ * @returns {{r:number,g:number,b:number,a:number}}
+ */
+function hex2rgba(hex) {
+  let regex = new RegExp(/^[Aa]?#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})?$/i);
+  let result = regex.exec(hex);
+  result = result ? {
+    r: parseInt(result[1], 16),
+    g: parseInt(result[2], 16),
+    b: parseInt(result[3], 16),
+    a: result[4] == null ? 255 : parseInt(result[4], 16)
+  } : null;
+  return result;
+}
+
+/**
+ * Function to convert the
+ * RGB code to Hex color code
+ * @param {Number} R
+ * @param {Number} G
+ * @param {Number} B
+ * @param {Number} A
+ * @returns {String}
+ */
+  function rgba2hex(R, G, B, A = 255) {
+  if ((R >= 0 && R <= 255) &&
+      (G >= 0 && G <= 255) &&
+      (B >= 0 && B <= 255) &&
+      (A >= 0 && A <= 255)) {
+
+    let hexCode = "#";
+    let redHex = R.toString(16);
+    if (redHex.length < 2) {
+      redHex = "0" + redHex;
+    }
+
+    let greenHex = G.toString(16);
+    if (greenHex.length < 2) {
+      greenHex = "0" + greenHex;
+    }
+
+    let blueHex = B.toString(16);
+    if (blueHex.length < 2) {
+      blueHex = "0" + blueHex;
+    }
+
+    let alphaHex = A.toString(16);
+    if (alphaHex.length < 2) {
+      alphaHex = "0" + alphaHex;
+    }
+
+    hexCode += redHex;
+    hexCode += greenHex;
+    hexCode += blueHex;
+    hexCode += alphaHex;
+
+    return hexCode;
+  }
+  // The hex color code doesn't exist
+  else {
+    return "-1";
+  }
+}
+
+/**
+ * @param {Number} r
+ * @param {Number} g
+ * @param {Number} b
+ * @param {Number} a
+ * @returns {String}
+ */
+function rgba(r, g, b, a) {
+  return "rgba(" + r + "," + g + "," + b + "," + a + ")";
+}
+
 (function ($$) {
 
   class Mask_Bitmaps {
@@ -801,9 +878,6 @@ const isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[
   let tint_timer = 0;
   let oldseconds = 0;
   let event_reload_counter = 0;
-  let tileglow = 0;
-  let glow_oldseconds = 0;
-  let glow_dir = 1;
   let notetag_reg = RegExp("<" + noteTagKey + ":[ ]*([^>]+)>", "i");
   let radialColor2 = useSmootherLights == true ? "#00000000" : "#000000";
   $$.getFirstComment = function (page) {
@@ -887,6 +961,19 @@ const isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[
     if (showSeconds) result = result + ":" + $$.seconds().padZero(2);
     return result;
   };
+
+  /**
+  * Tests the value at the specified index of the $gameTemp object for equality with the
+  * passed in value and sets it. Returns true if the values match, or false otherwise.
+  * @param {String} index
+  * @param {any}    value
+  * @returns {Boolean}
+  */
+  Game_Temp.prototype.testAndSet = function (index, value) {
+    if (this[index] && this[index] == value) return false;
+    return (this[index] = value, true);
+  };
+
   // Event note tag caching
   Game_Event.prototype.resetLightData = function () {
     this._clType = undefined;
@@ -1411,11 +1498,9 @@ const isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[
     let daynightspeed = $gameVariables.GetDaynightSpeed();
 
     if (daynightspeed > 0 && daynightspeed < 5000 && brightnessOverTime) {
-
       let datenow = new Date();
       let seconds = Math.floor(datenow.getTime() / 10);
       if (seconds > oldseconds) {
-
         let daynighttimer = $gameVariables.GetDaynightTimer();     // timer = minutes * speed
         let daynightcycle = $gameVariables.GetDaynightCycle();     // cycle = hours
         let daynighthoursinday = $gameVariables.GetDaynightHoursinDay();   // 24
@@ -1438,9 +1523,6 @@ const isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[
     }
 
     // ********** OTHER LIGHTSOURCES **************
-
-
-
     for (let i = 0, len = eventObjId.length; i < len; i++) {
       let evid = event_id[i];
       let cur = $gameMap.events()[eventObjId[i]];
@@ -1530,19 +1612,11 @@ const isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[
 
     // *************************** TILE TAG *********************
     //glow/colorfade
-    let glowdatenow = new Date();
-    let glowseconds = Math.floor(glowdatenow.getTime() / 100);
-
-    if (glowseconds > glow_oldseconds) {
-      glow_oldseconds = glowseconds;
-      tileglow = tileglow + glow_dir;
-
-      if (tileglow > 120) {
-        glow_dir = -1;
-      }
-      if (tileglow < 1) {
-        glow_dir = 1;
-      }
+    if ($gameTemp.testAndSet('_glowTimeout', Math.floor((new Date()).getTime() / 100))) {
+      $gameTemp._glowDirection = orNaN($gameTemp._glowDirection, 1);
+      $gameTemp._glowAmount    = orNaN($gameTemp._glowAmount, 0) + $gameTemp._glowDirection;
+      if ($gameTemp._glowAmount > 120) $gameTemp._glowDirection = -1;
+      if ($gameTemp._glowAmount < 1)   $gameTemp._glowDirection = 1;
     }
 
     light_tiles = $gameVariables.GetLightTiles();
@@ -1558,10 +1632,10 @@ const isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[
       if (tile.lightType.is(LightType.Glow)) {
         let add = tile.color[0].equalsIC('a') ? 'a' : ''; // additive lighting
         let c = hex2rgba(tile.color);
-        c.r = Math.floor(c.r + (60 - tileglow)).clamp(0, 255);
-        c.g = Math.floor(c.g + (60 - tileglow)).clamp(0, 255);
-        c.b = Math.floor(c.b + (60 - tileglow)).clamp(0, 255);
-        c.a = Math.floor(c.a + (60 - tileglow)).clamp(0, 255);
+        c.r = Math.floor(c.r + (60 - $gameTemp._glowAmount)).clamp(0, 255);
+        c.g = Math.floor(c.g + (60 - $gameTemp._glowAmount)).clamp(0, 255);
+        c.b = Math.floor(c.b + (60 - $gameTemp._glowAmount)).clamp(0, 255);
+        c.a = Math.floor(c.a + (60 - $gameTemp._glowAmount)).clamp(0, 255);
         tile_color = add + rgba2hex(c.r, c.g, c.b, c.a);
       }
       this._maskBitmaps.radialgradientFillRect(x1, y1, 0, tile.radius, tile_color, '#000000', objectflicker, tile.brightness);
@@ -1729,6 +1803,42 @@ const isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[
    */
   Lightmask.prototype._removeSprite = function () { this.removeChild(this._sprites.pop()); };
 
+  /**
+  * @param {Number} brightness
+  * @param {String} c1
+  * @param {String} c2
+  */
+  CanvasGradient.prototype.addTransparentColorStops = function (brightness, c1, c2) {
+
+    if (brightness) {
+      if (!useSmootherLights) {
+        let alpha = Math.floor(brightness * 100 * 2.55).toString(16);
+        if (alpha.length < 2) {
+          alpha = "0" + alpha;
+        }
+        this.addColorStop(0, '#FFFFFF' + alpha);
+      }
+    }
+
+    if (useSmootherLights) {
+      for (let distanceFromCenter = 0; distanceFromCenter < 1; distanceFromCenter += 0.1) {
+        let c = hex2rgba(c1);
+        let newRed   = c.r - (distanceFromCenter * 100 * 2.55);
+        let newGreen = c.g - (distanceFromCenter * 100 * 2.55);
+        let newBlue  = c.b - (distanceFromCenter * 100 * 2.55);
+        let newAlpha = 1 - distanceFromCenter;
+        if (brightness > 0) {
+          newAlpha = Math.max(0, brightness - distanceFromCenter);
+        }
+        this.addColorStop(distanceFromCenter, rgba(~~newRed, ~~newGreen, ~~newBlue, newAlpha));
+      }
+    } else {
+      this.addColorStop(brightness, c1);
+    }
+
+    this.addColorStop(1, c2);
+  };
+
   // *******************  NORMAL BOX SHAPE ***********************************
   /**
    *
@@ -1788,106 +1898,6 @@ const isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[
     //ctxMul.restore();
   };
 
-  /**
-   *
-   * @param {Number} r
-   * @param {Number} g
-   * @param {Number} b
-   * @param {Number} a
-   * @returns {String}
-   */
-  function rgba(r, g, b, a) {
-    return "rgba(" + r + "," + g + "," + b + "," + a + ")";
-  }
-
-
-
-  /**
-   * Function to convert the
-   * RGB code to Hex color code
-   * @param {Number} R
-   * @param {Number} G
-   * @param {Number} B
-   * @param {Number} A
-   * @returns {String}
-   */
-  function rgba2hex(R, G, B, A = 255) {
-    if ((R >= 0 && R <= 255) &&
-        (G >= 0 && G <= 255) &&
-        (B >= 0 && B <= 255) &&
-        (A >= 0 && A <= 255)) {
-
-      let hexCode = "#";
-      let redHex = R.toString(16);
-      if (redHex.length < 2) {
-        redHex = "0" + redHex;
-      }
-
-      let greenHex = G.toString(16);
-      if (greenHex.length < 2) {
-        greenHex = "0" + greenHex;
-      }
-
-      let blueHex = B.toString(16);
-      if (blueHex.length < 2) {
-        blueHex = "0" + blueHex;
-      }
-
-      let alphaHex = A.toString(16);
-      if (alphaHex.length < 2) {
-        alphaHex = "0" + alphaHex;
-      }
-
-      hexCode += redHex;
-      hexCode += greenHex;
-      hexCode += blueHex;
-      hexCode += alphaHex;
-
-      return hexCode;
-    }
-
-    // The hex color code doesn't exist
-    else {
-      return "-1";
-    }
-
-  }
-
-  /**
-  * @param {Number} brightness
-  * @param {String} c1
-  * @param {String} c2
-  */
-  CanvasGradient.prototype.addTransparentColorStops = function (brightness, c1, c2) {
-
-    if (brightness) {
-      if (!useSmootherLights) {
-        let alpha = Math.floor(brightness * 100 * 2.55).toString(16);
-        if (alpha.length < 2) {
-          alpha = "0" + alpha;
-        }
-        this.addColorStop(0, '#FFFFFF' + alpha);
-      }
-    }
-
-    if (useSmootherLights) {
-      for (let distanceFromCenter = 0; distanceFromCenter < 1; distanceFromCenter += 0.1) {
-        let c = hex2rgba(c1);
-        let newRed   = c.r - (distanceFromCenter * 100 * 2.55);
-        let newGreen = c.g - (distanceFromCenter * 100 * 2.55);
-        let newBlue  = c.b - (distanceFromCenter * 100 * 2.55);
-        let newAlpha = 1 - distanceFromCenter;
-        if (brightness > 0) {
-          newAlpha = Math.max(0, brightness - distanceFromCenter);
-        }
-        this.addColorStop(distanceFromCenter, rgba(~~newRed, ~~newGreen, ~~newBlue, newAlpha));
-      }
-    } else {
-      this.addColorStop(brightness, c1);
-    }
-
-    this.addColorStop(1, c2);
-  };
   // *******************  NORMAL LIGHT SHAPE ***********************************
   /**
   *
@@ -2198,26 +2208,7 @@ const isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[
     }
   };
 
-
-  /**
-   *
-   * @param {String} hex
-   * @returns {{r:number,g:number,b:number,a:number}}
-   */
-  function hex2rgba(hex) {
-    let regex = new RegExp(/^[Aa]?#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})?$/i);
-    let result = regex.exec(hex);
-    result = result ? {
-      r: parseInt(result[1], 16),
-      g: parseInt(result[2], 16),
-      b: parseInt(result[3], 16),
-      a: result[4] == null ? 255 : parseInt(result[4], 16)
-    } : null;
-    return result;
-  }
-
   // ALIASED Begin battle: prepare battle lighting
-
   let Community_Lighting_BattleManager_setup = BattleManager.setup;
   BattleManager.setup = function (troopId, canEscape, canLose) {
     $gameTemp._MapTint = '#FFFFFF';                                          // By default, no darkness during battle
