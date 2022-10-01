@@ -2624,13 +2624,10 @@ class ColorDelta {
     this._maskBitmaps.additive.clearRect(0, 0, maxX, maxY);
 
     // if we came from a map, script is active, configuration authorizes using lighting effects,
-    // and there is lightsource on this map, then use the tint of the map, otherwise use full brightness
+    // then use the tint of the map, otherwise use full brightness
     let c = (!DataManager.isBattleTest() && !DataManager.isEventTest() && $gameMap.mapId() >= 0 &&
              $gameVariables.GetScriptActive() && options_lighting_on && lightInBattle) ?
             $gameVariables.GetTint() : new VRGBA("#ffffff");
-
-    // Set initial tint for battle
-    c = $$.daynightset ? $gameVariables.GetTintByTime() : c;
 
     let note = $$.getCLTag($$.getFirstComment($dataTroops[$gameTroop._troopId].pages[0]));
     if ((/^tintbattle\b/i).test(note)) {
