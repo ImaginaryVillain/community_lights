@@ -2965,7 +2965,7 @@ class ColorDelta {
    * @param {String[]} args
    */
   $$.tintbattle = function (args, overrideInBattleCheck = false) {
-    if ($gameParty.inBattle() || overrideInBattleCheck) {
+    if ($gameVariables.GetScriptActive() && lightInBattle && ($gameParty.inBattle() || overrideInBattleCheck)) {
       let cmd = args[0].trim();
       if (cmd.equalsIC("set", 'fade'))
         $gameTemp._BattleTintTarget = ColorDelta.createBattleTint(new VRGBA(args[1], "#666666"), 60 * (+args[2] || 0));
