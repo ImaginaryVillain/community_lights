@@ -647,86 +647,87 @@ function orBoolean(...a) {
 function orNullish(...a) { for (let i = 0; i < a.length; i++) if (a[i] != null) return a[i]; }
 function orNaN(...a)     { for (let i = 0; i < a.length; i++) if (!isNaN(a[i])) return a[i]; }
 
-let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-9A-F]{8}$)/i; // a|A before # for additive lighting
+let isOn         = (x) => x.toLowerCase() === "on";
+let isOff        = (x) => x.toLowerCase() === "off";
+let isActivate   = (x) => x.toLowerCase() === "activate";
+let isDeactivate = (x) => x.toLowerCase() === "deactivate";
+
+// Map community light directions to polar angles (360 degrees)
+const CLDirectionMap = {
+  0: undefined,       // auto
+  1: 3 * Math.PI / 2, // up
+  2: 2 * Math.PI,     // right
+  3: Math.PI / 2,     // down
+  4: Math.PI          // left
+};
+
+// Map RM directions to polar angles (360 degrees)
+const RMDirectionMap = {
+  1: 3 * Math.PI / 4, // down-left
+  2: Math.PI / 2,     // down
+  3: Math.PI / 4,     // down-right
+  4: Math.PI,         // left
+  6: 2 * Math.PI,     // right
+  7: 5 * Math.PI / 4, // up-left
+  8: 3 * Math.PI / 2, // up
+  9: 7 * Math.PI / 4  // up-right
+};
+
+const TileType = {
+  Terrain: 1, terrain: 1, 1: 1,
+  Region:  2, region:  2, 2: 2
+};
+
+const LightType = {
+  Light     : 1, light     : 1, 1: 1,
+  Fire      : 2, fire      : 2, 2: 2,
+  Flashlight: 3, flashlight: 3, 3: 3,
+  Glow      : 4, glow      : 4, 4: 4
+};
+
+const TileLightType = {
+  tilelight:   [TileType.Terrain, LightType.Light],
+  tilefire:    [TileType.Terrain, LightType.Fire],
+  tileglow:    [TileType.Terrain, LightType.Glow],
+  regionlight: [TileType.Region,  LightType.Light],
+  regionfire:  [TileType.Region,  LightType.Fire],
+  regionglow:  [TileType.Region,  LightType.Glow],
+};
+
+const TileBlockType = {
+  tileblock:   TileType.Terrain,
+  regionblock: TileType.Region
+};
+
+class TileLight {
+  constructor(tileType, lightType, id, onoff, color, radius, brightness) {
+    this.tileType   = TileType[tileType];
+    this.lightType  = LightType[lightType];
+    this.id         = +id || 0;
+    this.enabled    = isOn(onoff);
+    this.color      = $$.validateColor(color, "#ffffff");
+    this.radius     = +radius || 0;
+    this.brightness = brightness && (brightness.substr(1, brightness.length) / 100).clamp(0, 1) || $$.defaultBrightness || 0;
+  }
+}
+
+class TileBlock {
+  constructor(tileType, id, onoff, color, shape, xOffset, yOffset, blockWidth, blockHeight) {
+    this.tileType    = TileType[tileType];
+    this.id          = +id || 0;
+    this.enabled     = isOn(onoff);
+    this.color       = $$.validateColor(color, "#ffffff");
+    this.shape       = +shape || 0;
+    this.xOffset     = +xOffset || 0;
+    this.yOffset     = +yOffset || 0;
+    this.blockWidth  = +blockWidth || 0;
+    this.blockHeight = +blockHeight || 0;
+  }
+}
+
+const isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-9A-F]{8}$)/i; // a|A before # for additive lighting
 
 (function ($$) {
-  let isOn         = (x) => x.toLowerCase() === "on";
-  let isOff        = (x) => x.toLowerCase() === "off";
-  let isActivate   = (x) => x.toLowerCase() === "activate";
-  let isDeactivate = (x) => x.toLowerCase() === "deactivate";
-
-  // Map community light directions to polar angles (360 degrees)
-  const CLDirectionMap = {
-    0: undefined,       // auto
-    1: 3 * Math.PI / 2, // up
-    2: 2 * Math.PI,     // right
-    3: Math.PI / 2,     // down
-    4: Math.PI          // left
-  };
-
-  // Map RM directions to polar angles (360 degrees)
-  const RMDirectionMap = {
-    1: 3 * Math.PI / 4, // down-left
-    2: Math.PI / 2,     // down
-    3: Math.PI / 4,     // down-right
-    4: Math.PI,         // left
-    6: 2 * Math.PI,     // right
-    7: 5 * Math.PI / 4, // up-left
-    8: 3 * Math.PI / 2, // up
-    9: 7 * Math.PI / 4  // up-right
-  };
-
-  const TileType = {
-    Terrain: 1, terrain: 1, 1: 1,
-    Region:  2, region:  2, 2: 2
-  };
-
-  const LightType = {
-    Light     : 1, light     : 1, 1: 1,
-    Fire      : 2, fire      : 2, 2: 2,
-    Flashlight: 3, flashlight: 3, 3: 3,
-    Glow      : 4, glow      : 4, 4: 4
-  };
-
-  const TileLightType = {
-    tilelight:   [TileType.Terrain, LightType.Light],
-    tilefire:    [TileType.Terrain, LightType.Fire],
-    tileglow:    [TileType.Terrain, LightType.Glow],
-    regionlight: [TileType.Region,  LightType.Light],
-    regionfire:  [TileType.Region,  LightType.Fire],
-    regionglow:  [TileType.Region,  LightType.Glow],
-  };
-
-  const TileBlockType = {
-    tileblock:   TileType.Terrain,
-    regionblock: TileType.Region
-  };
-
-  class TileLight {
-    constructor(tileType, lightType, id, onoff, color, radius, brightness) {
-      this.tileType   = TileType[tileType];
-      this.lightType  = LightType[lightType];
-      this.id         = +id || 0;
-      this.enabled    = isOn(onoff);
-      this.color      = $$.validateColor(color, "#ffffff");
-      this.radius     = +radius || 0;
-      this.brightness = brightness && (brightness.substr(1, brightness.length) / 100).clamp(0, 1) || $$.defaultBrightness || 0;
-    }
-  }
-
-  class TileBlock {
-    constructor(tileType, id, onoff, color, shape, xOffset, yOffset, blockWidth, blockHeight) {
-      this.tileType    = TileType[tileType];
-      this.id          = +id || 0;
-      this.enabled     = isOn(onoff);
-      this.color       = $$.validateColor(color, "#ffffff");
-      this.shape       = +shape || 0;
-      this.xOffset     = +xOffset || 0;
-      this.yOffset     = +yOffset || 0;
-      this.blockWidth  = +blockWidth || 0;
-      this.blockHeight = +blockHeight || 0;
-    }
-  }
 
   class Mask_Bitmaps {
     constructor(width, height) {
@@ -1064,7 +1065,6 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
     }
   };
   let _Game_Interpreter_pluginCommand = Game_Interpreter.prototype.pluginCommand;
-
   /**
    *
    * @param {String} command
@@ -1094,13 +1094,44 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
     command = command.toLowerCase();
 
     const allCommands = {
-      tileblock: 'addTileBlock', regionblock: 'addTileBlock', tilelight: 'addTileLight', regionlight: 'addTileLight', tilefire: 'addTileLight', regionfire: 'addTileLight',
-      tileglow: 'addTileLight', regionglow: 'addTileLight', tint: 'tint', daynight: 'dayNight', flashlight: 'flashLight', setfire: 'setFire', fire: 'fire', light: 'light',
+      tileblock: 'addTileBlock', regionblock: 'addTileBlock', tilelight: 'addTileLight', regionlight: 'addTileLight',
+      tilefire: 'addTileLight', regionfire: 'addTileLight', tileglow: 'addTileLight', regionglow: 'addTileLight',
+      tint: 'tint', daynight: 'dayNight', flashlight: 'flashLight', setfire: 'setFire', fire: 'fire', light: 'light',
       script: 'scriptF', reload: 'reload', tintbattle: 'tintbattle'
     };
     const result = allCommands[command];
     if (result) this[result](command, args);
   };
+
+  if (isRMMZ()) { // RMMZ only command interface
+    let mapOnOff = a  => a.enabled === "true" ? "on" : "off";
+    let tileType = a  => (a.tileType === "terrain" ? "tile" : "region") + (a.lightType ? a.lightType : "block");
+    let tintType = () => $gameParty.inBattle() ? "tintbattle" : "tint";
+    let tintMode = a  => a.color ? "set" : "reset";
+    let mathMode = a  => a.mode === "set" ? "hour" : a.mode; // set, add, or subtract.
+    let showMode = a  => a.enabled.equalsIC("true") ? (a.showSeconds.equalsIC("true") ? "showseconds" : "show") : "hide";
+    let radMode  = a  => +a.fadeSpeed ? "radiusgrow" : "radius";
+
+    let r = PluginManager.registerCommand.bind(PluginManager, $$.name); // registar bound with first parameter.
+    let f = (c, a) => $gameMap._interpreter.communityLighting_Commands(c, a.filter(_ => _ !== "")); //command wrapper.
+
+    r("masterSwitch",       a  => f("script",     [mapOnOff(a)]));
+    r("tileBlock",          a  => f(tileType(a),  [a.id, mapOnOff(a), a.color, a.shape,  a.xOffset, a.yOffset, a.blockWidth, a.blockHeight]));
+    r("tileLight",          a  => f(tileType(a),  [a.id, mapOnOff(a), a.color, a.radius, a.brightness]));
+    r("setTint",            a  => f(tintType(),   [tintMode(a), a.color, a.fadeSpeed]));
+    r("setTimeSpeed",       a  => f("dayNight",   ["speed", a.speed]));
+    r("setTime",            a  => f("dayNight",   [mathMode(a), a.hours, a.minutes]));
+    r("setHoursInDay",      a  => f("dayNight",   ["hoursinday", a.hours]));
+    r("showTime",           a  => f("dayNight",   [showMode(a)]));
+    r("setHourColor",       a  => f("dayNight",   ["color", a.hour, a.color]));
+    r("flashlight",         a  => f("flashLight", [mapOnOff(a), a.beamLength, a.beamWidth, a.color, a.density]));
+    r("setFire",            a  => f("setFire",    [a.radiusShift, a.redYellowShift]));
+    r("playerLightRadius",  a  => f("light",      [radMode(a), a.radius, a.color, "B"+a.brightness, a.fadeSpeed]));
+    r("activateById",       a  => f("light",      [mapOnOff(a), a.id]));
+    r("lightColor",         a  => f("light",      ["color", a.id, a.color]));
+    r("resetLightSwitches", () => f("light",      ["switch", "reset"]));
+    r("resetBattleTint",    (a)  => f("tintbattle", ["reset",         a.fadeSpeed]));
+  }
 
   /**
    *
@@ -2025,8 +2056,8 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
       let distance = 3 * (flashlength * (flashlength - 1));
 
       // Compute spotlight radiuses
-      r1 = (flashlength - 1) * flashlightdensity;
-      r2 = (flashlength - 1) * flashwidth;
+      r1 = Math.max((flashlength - 1) * flashlightdensity, 0);
+      r2 = Math.max((flashlength - 1) * flashwidth, 0);
 
       // Compute beam left start coordinates
       let xLeftBeamStart = x1 - (r2 / 7) * Math.sin(dirAngle);
@@ -2130,7 +2161,7 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
         ctxMul.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
         ctxMul.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
       } else {
-        ctxAdd.shadowColor = "#000000"; // Clear shadow style inside of check as ctxAdd state changes are always guarded
+        ctxAdd.shadowColor = "#000000"; // Clear shadow style inside of check as ctxAdd state changes are conditional
         ctxAdd.shadowBlur = 0;
         ctxAdd.fillStyle = grad;
         ctxAdd.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2); // single call as to not blur things so much.
@@ -2219,14 +2250,14 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
   };
 
   Spriteset_Battle.prototype.createBattleLightmask = function () {
-    if ($gameVariables.GetScriptActive()) {             // If the script is active
-      if (lightInBattle) {                              // If is active during battles.
-        this._battleLightmask = new BattleLightmask();  // ... Create the light mask.
-        if (battleMaskPosition.equalsIC('Above')) {
-          this.addChild(this._battleLightmask);
-        } else if (battleMaskPosition.equalsIC('Between')) {
-          this._battleField.addChild(this._battleLightmask);
-        }
+    // If the script is active and configuration specifies light
+    // to be active during battle, then create the light mask.
+    if ($gameVariables.GetScriptActive() && lightInBattle) {
+      this._battleLightmask = new BattleLightmask();
+      if (battleMaskPosition.equalsIC('Above')) {
+        this.addChild(this._battleLightmask);
+      } else if (battleMaskPosition.equalsIC('Between')) {
+        this._battleField.addChild(this._battleLightmask);
       }
     }
   };
@@ -2245,7 +2276,7 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
     this._sprites = [];
     this._createBitmaps();
 
-    //Initialize the bitmap
+    // Initialize the bitmap
     this._addSprite(-lightMaskPadding, 0, this._maskBitmaps.multiply, PIXI.BLEND_MODES.MULTIPLY);
     this._addSprite(-lightMaskPadding, 0, this._maskBitmaps.additive, PIXI.BLEND_MODES.ADD);
 
