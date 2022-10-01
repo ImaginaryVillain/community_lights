@@ -2573,11 +2573,20 @@ class ColorDelta {
     Community_Lighting_Spriteset_Battle_createLowerLayer.call(this);
     if (battleMaskPosition.equalsIC('Above')) this.createBattleLightmask();
   };
-  let Community_Lighting_Spriteset_Battle_createBattleField = Spriteset_Battle.prototype.createBattleField;
-  Spriteset_Battle.prototype.createBattleField = function () {
-    Community_Lighting_Spriteset_Battle_createBattleField.call(this);
-    if (battleMaskPosition.equalsIC('Between')) this.createBattleLightmask();
-  };
+
+  if (isRMMV()) {
+    let Community_Lighting_Spriteset_Battle_createBattleback = Spriteset_Battle.prototype.createBattleback;
+    Spriteset_Battle.prototype.createBattleback = function () {
+      Community_Lighting_Spriteset_Battle_createBattleback.call(this);
+      if (battleMaskPosition.equalsIC('Between')) this.createBattleLightmask();
+    };
+  } else {
+    let Community_Lighting_Spriteset_Battle_createBattleField = Spriteset_Battle.prototype.createBattleField;
+    Spriteset_Battle.prototype.createBattleField = function () {
+      Community_Lighting_Spriteset_Battle_createBattleField.call(this);
+      if (battleMaskPosition.equalsIC('Between')) this.createBattleLightmask();
+    };
+  }
 
   Spriteset_Battle.prototype.createBattleLightmask = function () {
     // If the script is active and configuration specifies light
