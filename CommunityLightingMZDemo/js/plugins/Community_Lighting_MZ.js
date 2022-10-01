@@ -1937,9 +1937,6 @@ class ColorDelta {
   let options_lighting_on = true;
   let maxX = (Number(parameters['Screensize X']) || 816) + 2 * lightMaskPadding;
   let maxY = Number(parameters['Screensize Y']) || 624;
-  let battleMaxX = maxX;
-  let battleMaxY = maxY;
-  if (isRMMZ()) battleMaxY += 24; // Plus 24 for RMMZ Spriteset_Battle.prototype.battleFieldOffsetY
   let event_reload_counter = 0;
   let notetag_reg = RegExp("<" + noteTagKey + ":[ ]*([^>]+)>", "i");
   let radialColor2 = new VRGBA(useSmootherLights ? "#00000000" : "#000000");
@@ -2366,7 +2363,7 @@ class ColorDelta {
 
   //@method _createBitmaps
   Lightmask.prototype._createBitmaps = function () {
-    this._maskBitmaps = new Mask_Bitmaps(maxX + lightMaskPadding, maxY);
+    this._maskBitmaps = new Mask_Bitmaps(maxX, maxY);
   };
 
   let _Game_Map_prototype_setupEvents = Game_Map.prototype.setupEvents;
@@ -2436,8 +2433,8 @@ class ColorDelta {
     // ****** PLAYER LIGHTGLOBE ********
     let ctxMul = this._maskBitmaps.multiply.context;
     let ctxAdd = this._maskBitmaps.additive.context;
-    this._maskBitmaps.multiply.fillRect(0, 0, maxX + lightMaskPadding, maxY, '#000000');
-    this._maskBitmaps.additive.clearRect(0, 0, maxX + lightMaskPadding, maxY);
+    this._maskBitmaps.multiply.fillRect(0, 0, maxX, maxY, '#000000');
+    this._maskBitmaps.additive.clearRect(0, 0, maxX, maxY);
 
     ctxMul.globalCompositeOperation = 'lighter';
     ctxAdd.globalCompositeOperation = 'lighter';
@@ -2482,14 +2479,9 @@ class ColorDelta {
         playercolor.r = Math.max(0, playercolor.r - 50);
         playercolor.g = Math.max(0, playercolor.g - 50);
         playercolor.b = Math.max(0, playercolor.b - 50);
-
-        this._maskBitmaps.radialgradientFillRect(x1, y1, 0, iplayer_radius, playercolor, radialColor2, playerflicker,
-                                                 playerbrightness);
-      } else {
-        this._maskBitmaps.radialgradientFillRect(x1, y1, lightMaskPadding, iplayer_radius, playercolor, radialColor2,
-                                                 playerflicker, playerbrightness);
       }
-
+      this._maskBitmaps.radialgradientFillRect(x1, y1, 0, iplayer_radius, playercolor, radialColor2, playerflicker,
+                                               playerbrightness);
     }
 
     // *********************************** DAY NIGHT CYCLE TIMER **************************
@@ -2645,7 +2637,7 @@ class ColorDelta {
     // Compute tint for next frame
     let tintValue = $gameVariables.GetTintTarget().next().get();
     $gameVariables.SetTint(tintValue);
-    this._maskBitmaps.FillRect(-lightMaskPadding, 0, maxX + lightMaskPadding, maxY, tintValue);
+    this._maskBitmaps.FillRect(-lightMaskPadding, 0, maxX, maxY, tintValue); // offset to fill entire mask
 
     // reset drawmode to normal
     ctxMul.globalCompositeOperation = 'source-over';
@@ -3087,12 +3079,16 @@ class ColorDelta {
     this._sprites = [];
     this._createBitmaps();
 
-    //Initialize the bitmap
-    this._addSprite(-lightMaskPadding, 0, this._maskBitmaps.multiply, PIXI.BLEND_MODES.MULTIPLY);
-    this._addSprite(-lightMaskPadding, 0, this._maskBitmaps.additive, PIXI.BLEND_MODES.ADD);
+    // Initialize the bitmap
+    // +24 on Y to inverse RMMZ Spriteset_Battle.prototype.battleFieldOffsetY() math
+    // Graphics width/height adjustments to inverse Spriteset_Battle.prototype.createBattleField() offsets
+    let spriteXOffset = -lightMaskPadding - (Graphics.width - Graphics.boxWidth) / 2;
+    let spriteYOffset = (isRMMZ() ? 24 : 0) - (Graphics.height - Graphics.boxHeight) / 2;
+    this._addSprite(spriteXOffset, spriteYOffset, this._maskBitmaps.multiply, PIXI.BLEND_MODES.MULTIPLY);
+    this._addSprite(spriteXOffset, spriteYOffset, this._maskBitmaps.additive, PIXI.BLEND_MODES.ADD);
 
-    this._maskBitmaps.multiply.fillRect(0, 0, battleMaxX + lightMaskPadding, battleMaxY, '#000000');
-    this._maskBitmaps.additive.clearRect(0, 0, battleMaxX + lightMaskPadding, battleMaxY);
+    this._maskBitmaps.multiply.fillRect(0, 0, maxX, maxY, '#000000');
+    this._maskBitmaps.additive.clearRect(0, 0, maxX, maxY);
 
     // if we came from a map, script is active, configuration authorizes using lighting effects,
     // and there is lightsource on this map, then use the tint of the map, otherwise use full brightness
@@ -3117,19 +3113,19 @@ class ColorDelta {
 
     $gameTemp._BattleTintInitial = c;
     $gameTemp._BattleTintTarget = ColorDelta.createTint(c);
-    this._maskBitmaps.FillRect(-lightMaskPadding, 0, battleMaxX + lightMaskPadding, battleMaxY, c);
+    this._maskBitmaps.FillRect(-lightMaskPadding, 0, maxX, maxY, c); // offset to fill entire mask
     this._maskBitmaps.multiply._baseTexture.update(); // Required to update battle texture in RMMZ optional for RMMV
     this._maskBitmaps.additive._baseTexture.update(); // Required to update battle texture in RMMZ optional for RMMV
   };
 
   //@method _createBitmaps
   BattleLightmask.prototype._createBitmaps = function () {
-    this._maskBitmaps = new Mask_Bitmaps(battleMaxX + lightMaskPadding, battleMaxY);
+    this._maskBitmaps = new Mask_Bitmaps(maxX, maxY);
   };
 
   BattleLightmask.prototype.update = function () {
-    this._maskBitmaps.multiply.fillRect(0, 0, battleMaxX + lightMaskPadding, battleMaxY, '#000000');
-    this._maskBitmaps.additive.clearRect(0, 0, battleMaxX + lightMaskPadding, battleMaxY);
+    this._maskBitmaps.multiply.fillRect(0, 0, maxX, maxY, '#000000');
+    this._maskBitmaps.additive.clearRect(0, 0, maxX, maxY);
 
     // Prevent the battle scene from being too dark
     let c = $gameTemp._BattleTintTarget.next().get(); // get next color
@@ -3139,7 +3135,7 @@ class ColorDelta {
     }
 
     // Compute tint for next frame
-    this._maskBitmaps.FillRect(-lightMaskPadding, 0, battleMaxX + lightMaskPadding, battleMaxY, c);
+    this._maskBitmaps.FillRect(-lightMaskPadding, 0, maxX, maxY, c);
     this._maskBitmaps.multiply._baseTexture.update(); // Required to update battle texture in RMMZ optional for RMMV
     this._maskBitmaps.additive._baseTexture.update(); // Required to update battle texture in RMMZ optional for RMMV
   };
