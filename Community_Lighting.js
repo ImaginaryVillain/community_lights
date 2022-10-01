@@ -430,32 +430,36 @@ Imported[Community.Lighting.name] = true;
 * See the Plugin Commands section for more details.
 *
 * The following chart shows all supported properties:
-* --------------------------------------------------------------------------------------------------------------------
-* |   Property     |  Prefix   |        Format           | Examples          | Description                            |
-* |----------------|-----------|-------------------------|-------------------|----------------------------------------|
-* |     pause      |     p     |           pN            |    p0, p1, p20    | time period in cycles to pause after   |
-* |    duration    |           |                         |                   | transitioning for cycling lights       |
-* |----------------|-----------|-------------------------|-------------------|----------------------------------------|
-* |   transition   |     t     |           tN            |    t0, t1, t30    | time period to transition the          |
-* |    duration    |           |                         |                   | specified properties over              |
-* |----------------|-----------|-------------------------|-------------------|----------------------------------------|
-* |     color      |   #, #a   | <#|#a><RRGGBBAA|RRGGBB> | a#FFEEDD, #ffeedd | color or additive color                |
-* |----------------|-----------|-------------------------|-------------------|----------------------------------------|
-* |     angle      | a, +a, -a |       <a|+a|-a>N        |  a30, +a30, -a30  | flashlight angle in degrees. '+' moves |
-* |                |           |                         |                   | clockwise, '-' moves counterclockwise  |
-* |----------------|-----------|-------------------------|-------------------|----------------------------------------|
-* |   brightness   |     b     |           bN            |    b0, b1, b5     | brightness                             |
-* |----------------|-----------|-------------------------|-------------------|----------------------------------------|
-* |    x offset    |     x     |           xN            |     x2, x-2       | x offset                               |
-* |----------------|-----------|-------------------------|-------------------|----------------------------------------|
-* |    y offset    |     y     |           yN            |     y2, y-2       | y offset                               |
-* |----------------|-----------|-------------------------|-------------------|----------------------------------------|
-* |     radius     |     r     |           rN            |    r50, r150      | light radius                           |
-* |----------------|-----------|-------------------------|-------------------|----------------------------------------|
-* |   beam length  |     l     |           lN            |   l8, l9, l10     | flashlight beam length                 |
-* |----------------|-----------|-------------------------|-------------------|----------------------------------------|
-* |   beam width   |     w     |           wN            |  w12, w13, w14    | flashlight beam width                  |
-* --------------------------------------------------------------------------------------------------------------------
+* ---------------------------------------------------------------------------------------------------------------------
+* | Property    |  Prefix   |         Format*         |       Examples       |              Description               |
+* |-------------|-----------|-------------------------|----------------------|----------------------------------------|
+* |   pause     |     p     |           pN            |     p0, p1, p20      | time period in cycles to pause after   |
+* |  duration   |           |                         |                      | transitioning for cycling lights       |
+* |-------------|-----------|-------------------------|----------------------|----------------------------------------|
+* | transition  |     t     |           tN            |     t0, t1, t30      | time period to transition the          |
+* |  duration   |           |                         |                      | specified properties over              |
+* |-------------|-----------|-------------------------|----------------------|----------------------------------------|
+* |   color     |   #, #a   | <#|#a><RRGGBBAA|RRGGBB> | #, a#FFEEDD, #ffeedd | color or additive color                |
+* |-------------|-----------|-------------------------|----------------------|----------------------------------------|
+* |  enable     |     e     |         e<1|0>          |        e1, e0        | turns light on or off instantly        |
+* |-------------|-----------|-------------------------|----------------------|----------------------------------------|
+* |   angle     | a, +a, -a |       <a|+a|-a>N        |  a, a30, +a30, -a30  | flashlight angle in degrees. '+' moves |
+* |             |           |                         |                      | clockwise, '-' moves counterclockwise  |
+* |-------------|-----------|-------------------------|----------------------|----------------------------------------|
+* | brightness  |     b     |           bN            |    b, b0, b1, b5     | brightness                             |
+* |-------------|-----------|-------------------------|----------------------|----------------------------------------|
+* |  x offset   |     x     |           xN            |      x, x2, x-2      | x offset                               |
+* |-------------|-----------|-------------------------|----------------------|----------------------------------------|
+* |  y offset   |     y     |           yN            |      y, y2, y-2      | y offset                               |
+* |-------------|-----------|-------------------------|----------------------|----------------------------------------|
+* |   radius    |     r     |           rN            |     r, r50, r150     | light radius                           |
+* |-------------|-----------|-------------------------|----------------------|----------------------------------------|
+* | beam length |     l     |           lN            |    l, l8, l9, l10    | flashlight beam length                 |
+* |-------------|-----------|-------------------------|----------------------|----------------------------------------|
+* | beam width  |     w     |           wN            |   w, w12, w13, w14   | flashlight beam width                  |
+* |-------------|-----------|-------------------------|----------------------|----------------------------------------|
+* | * Omitting N or RBG value will reset the given property back to its initial state                                 |
+* ---------------------------------------------------------------------------------------------------------------------
 *
 * --------------------------------------------------------------------------
 * Easy hex color references
@@ -724,6 +728,8 @@ const M_PI_180 = Math.PI / 180; // cache PI/180 - this is faster
 
 Number.prototype.is           = function(...a)    { return a.includes(Number(this)); };
 Number.prototype.inRange      = function(min, max){ return this >= min && this <= max; };
+Number.prototype.clone        = function()        { return this; };
+Boolean.prototype.clone       = function()        { return this; };
 String.prototype.equalsIC     = function(...a)    { return a.map(s => s.toLowerCase()).includes(this.toLowerCase()); };
 String.prototype.startsWithIC = function(s)       { return this.toLowerCase().startsWith(s.toLowerCase()); };
 Math.minmax                   = (minOrMax, ...a) => minOrMax ? Math.min(...a) : Math.max(...a); // min if positive
@@ -873,7 +879,7 @@ class VRGBA {
   /**
    * Creates a copy of the VRGBA object.
    * @returns {VRGBA}
-   **/
+   */
   clone() {
     let that = new VRGBA();
     [that.v, that.r, that.g, that.b, that.a] = [this.v, this.r, this.g, this.b, this.a];
@@ -883,7 +889,7 @@ class VRGBA {
   /**
    * Creates an empty VRGBA object will all properties initialized to false and 0.
    * @returns {VRGBA}
-   **/
+   */
   static empty() {
     let that = new VRGBA();
     [that.v, that.r, that.g, that.b, that.a] = [false, 0, 0, 0, 0];
@@ -957,201 +963,206 @@ class VRGBA {
 }
 
 /**
- * Class representing conditional lighting which encapsulates all possible conditional parameters, provides the ability
- * to compute deltas between the current parameter values and the target values, and allows for current values to be
- * extracted.
- **/
-class ConditionalLight {
+ * Class representing conditional light properties that can be changed.
+ */
+class LightProperties {
   /**
-   * Creates a ConditionalLight object with the provided parameters
+   * Creates a LightProperties object with the provided parameters
    * @param {LightType} type
-   * @param {VRGBA}     currentColor
-   * @param {Number}    currentDirection
-   * @param {Number}    currentBrightness
-   * @param {Number}    currentXOffset
-   * @param {Number}    currentYOffset
-   * @param {Number}    currentRadius
-   * @param {Number}    currentBeamLength
-   * @param {Number}    currentBeamWidth
-   **/
-  constructor(type, currentColor, currentDirection, currentBrightness, currentXOffset, currentYOffset, currentRadius,
-              currentBeamLength, currentBeamWidth) {
-    if (arguments.length == 0) return;
+   * @param {VRGBA}     color
+   * @param {Boolean}   enable
+   * @param {Number}    direction
+   * @param {Number}    brightness
+   * @param {Number}    xOffset
+   * @param {Number}    yOffset
+   * @param {Number}    radius
+   * @param {Number}    beamLength
+   * @param {Number}    beamWidth
+   */
+  constructor(type, enable, color, direction, brightness, xOffset, yOffset, radius, beamLength, beamWidth) {
+    // Always define in case durations aren't passed to targets
     this.transitionDuration = 0;
     this.pauseDuration      = 0;
-    this.type               = type;
-    this.currentColor       = currentColor;
-    this.currentDirection   = this.isFlashlight() ? currentDirection  : void(0);
-    this.currentBrightness  = currentBrightness;
-    this.currentXOffset     = currentXOffset;
-    this.currentYOffset     = currentYOffset;
-    this.currentRadius      = this.isOtherLight() ? currentRadius     : void(0);
-    this.currentBeamLength  = this.isFlashlight() ? currentBeamLength : void(0);
-    this.currentBeamWidth   = this.isFlashlight() ? currentBeamWidth  : void(0);
+    this.updateFrame        = 0;
+    if (arguments.length == 0) return;
+    // shared properties
+    this.type       = type;
+    this.color      = color;
+    this.enable     = enable;
+    this.brightness = brightness;
+    this.xOffset    = xOffset;
+    this.yOffset    = yOffset;
+    // light type dependent properties
+    let isOL = this.isOtherLight();
+    let isFL = this.isFlashlight();
+    if (isOL) this.radius     = radius;
+    if (isFL) this.clockwise  = true;
+    if (isFL) this.direction  = direction;
+    if (isFL) this.beamLength = beamLength;
+    if (isFL) this.beamWidth  = beamWidth;
   }
 
   /**
-   * Creates a copy of the ConditionalLight object.
-   * @returns {ConditionalLight}
-   **/
+   * Returns true if the light type is a flashlight or null; otherwise false.
+   */
+  isFlashlight() { return this.type == null || this.type.is(LightType.Flashlight); }
+
+  /**
+   * Returns true if the light type is light, fire, glow, or null; otherwise false.
+   */
+  isOtherLight() { return this.type == null || this.type.is(LightType.Light, LightType.fire, LightType.Glow); }
+
+  /**
+   * Processes and sets properties from a string array.
+   * @param {String[]} properties
+   */
+  parseProps(properties) {
+    this.updateFrame = Graphics.frameCount; // set current frame as update frame
+    let isOL = this.isOtherLight();
+    let isFL = this.isFlashlight();
+    let hasTransitionDuration = false;
+    let haspauseDuration      = false;
+    // properties with no suffix 'clear' the target
+    properties.forEach((e) => {
+      // clear checks (back to initial value for the given property)
+      if      (        e.equalsIC('#'))        this.color      = void(0);
+      else if (        e.equalsIC('a#'))       this.color      = void(0);
+      else if (        e.equalsIC('e'))        this.enable     = void(0);
+      else if (        e.equalsIC('b'))        this.brightness = void(0);
+      else if (        e.equalsIC('x'))        this.xOffset    = void(0);
+      else if (        e.equalsIC('y'))        this.yOffset    = void(0);
+      else if (isOL && e.equalsIC('r'))        this.radius     = void(0);
+      else if (isFL && e.equalsIC('l'))        this.beamLength = void(0);
+      else if (isFL && e.equalsIC('w'))        this.beamWidth  = void(0);
+      else if (isFL && e.equalsIC('a'))        this.clockwise  = this.direction = void(0);
+      else if (isFL && e.equalsIC('+a'))       this.clockwise  = this.direction = void(0);
+      else if (isFL && e.equalsIC('-a'))       this.clockwise  = this.direction = void(0);
+      // on or off checks
+      // prefix checks
+      else if (        e.startsWithIC('t'))  { this.transitionDuration = orNaN(+e.slice(1), 0); hasTransitionDuration = true; }
+      else if (        e.startsWithIC('p'))  { this.pauseDuration      = orNaN(+e.slice(1), 0); haspauseDuration = true; }
+      else if (        e.startsWithIC('#'))    this.color      = new VRGBA(e);
+      else if (        e.startsWithIC('a#'))   this.color      = new VRGBA(e);
+      else if (        e.startsWithIC('e'))    this.enable     = Boolean(orNaN(+e.slice(1), 0));
+      else if (        e.startsWithIC('b'))    this.brightness = orNaN(+e.slice(1), 0);
+      else if (        e.startsWithIC('x'))    this.xOffset    = orNaN(+e.slice(1), 0);
+      else if (        e.startsWithIC('y'))    this.yOffset    = orNaN(+e.slice(1), 0);
+      else if (isOL && e.startsWithIC('r'))    this.radius     = orNaN(+e.slice(1), 0);
+      else if (isFL && e.startsWithIC('l'))    this.beamLength = orNaN(+e.slice(1), 0);
+      else if (isFL && e.startsWithIC('w'))    this.beamWidth  = orNaN(+e.slice(1), 0);
+      else if (isFL && e.startsWithIC('a'))  { this.clockwise  = true;  this.direction = M_PI_180 * orNaN(+e.slice(1), 0); }
+      else if (isFL && e.startsWithIC('+a')) { this.clockwise  = true;  this.direction = M_PI_180 * orNaN(+e.slice(2), 0); }
+      else if (isFL && e.startsWithIC('-a')) { this.clockwise  = false; this.direction = M_PI_180 * orNaN(+e.slice(2), 0); }
+    }, this);
+    if (!hasTransitionDuration) this.transitionDuration = 0;
+    if (!haspauseDuration)      this.pauseDuration = 0;
+  }
+
+  /**
+   * Creates a copy of the LightProperties object.
+   * @returns {LightDelta}
+   */
   clone() {
-    let that = new ConditionalLight();
-    // clone durations
+    let that = new LightProperties();
     if (this.transitionDuration != null) that.transitionDuration = this.transitionDuration;
     if (this.pauseDuration      != null) that.pauseDuration      = this.pauseDuration;
-    // clone type
+    if (this.updateFrame        != null) that.updateFrame        = this.updateFrame;
     if (this.type               != null) that.type               = this.type;
-    // clone currents
-    if (this.currentColor       != null) that.currentColor       = this.currentColor.clone();
-    if (this.currentDirection   != null) that.currentDirection   = this.currentDirection;
-    if (this.currentBrightness  != null) that.currentBrightness  = this.currentBrightness;
-    if (this.currentXOffset     != null) that.currentXOffset     = this.currentXOffset;
-    if (this.currentYOffset     != null) that.currentYOffset     = this.currentYOffset;
-    if (this.currentRadius      != null) that.currentRadius      = this.currentRadius;
-    if (this.currentBeamLength  != null) that.currentBeamLength  = this.currentBeamLength;
-    if (this.currentBeamWidth   != null) that.currentBeamWidth   = this.currentBeamWidth;
-    // clone targets
-    if (this.targetColor        != null) that.targetColor        = this.targetColor.clone();
-    if (this.targetDirection    != null) that.targetDirection    = this.targetDirection;
-    if (this.targetBrightness   != null) that.targetBrightness   = this.targetBrightness;
-    if (this.targetXOffset      != null) that.targetXOffset      = this.targetXOffset;
-    if (this.targetYOffset      != null) that.targetYOffset      = this.targetYOffset;
-    if (this.targetRadius       != null) that.targetRadius       = this.targetRadius;
-    if (this.targetBeamLength   != null) that.targetBeamLength   = this.targetBeamLength;
-    if (this.targetBeamWidth    != null) that.targetBeamWidth    = this.targetBeamWidth;
-    // clone deltas
-    if (this.deltaColor         != null) that.deltaColor         = this.deltaColor     .clone();
-    if (this.deltaDirection     != null) that.deltaDirection     = this.deltaDirection .clone();
-    if (this.deltaBrightness    != null) that.deltaBrightness    = this.deltaBrightness.clone();
-    if (this.deltaXOffset       != null) that.deltaXOffset       = this.deltaXOffset   .clone();
-    if (this.deltaYOffset       != null) that.deltaYOffset       = this.deltaYOffset   .clone();
-    if (this.deltaRadius        != null) that.deltaRadius        = this.deltaRadius    .clone();
-    if (this.deltaBeamLength    != null) that.deltaBeamLength    = this.deltaBeamLength.clone();
-    if (this.deltaBeamWidth     != null) that.deltaBeamWidth     = this.deltaBeamWidth .clone();
+    if (this.enable             != null) that.enable             = this.enable;
+    if (this.color              != null) that.color              = this.color     .clone();
+    if (this.brightness         != null) that.brightness         = this.brightness.clone();
+    if (this.xOffset            != null) that.xOffset            = this.xOffset   .clone();
+    if (this.yOffset            != null) that.yOffset            = this.yOffset   .clone();
+    if (this.radius             != null) that.radius             = this.radius    .clone();
+    if (this.clockwise          != null) that.clockwise          = this.clockwise .clone();
+    if (this.direction          != null) that.direction          = this.direction .clone();
+    if (this.beamLength         != null) that.beamLength         = this.beamLength.clone();
+    if (this.beamWidth          != null) that.beamWidth          = this.beamWidth .clone();
+    return that;
+  }
+}
+
+/**
+ * Class representing conditional light deltas that provides the ability to compute deltas between the
+ * current parameter values and the target values.
+ */
+class LightDelta {
+  /**
+   * Creates a LightDelta object with the provided LightProperties.
+   * @param {LightProperties} current
+   * @param {LightProperties} target
+   */
+  constructor(current, target, defaults) {
+    if (arguments.length == 0) return;
+    this.current = current;
+    this.target  = target;
+    this.defaults = defaults;
+    this.delta   = new LightProperties();
+    this.createDeltas();
+  }
+
+  /**
+   * Creates a copy of the LightDelta object.
+   * @returns {LightDelta}
+   */
+  clone() {
+    let that = new LightDelta();
+    // clone durations
+    if (this.current != null) that.current = this.current.clone();
+    if (this.target  != null) that.target  = this.target.clone();
+    if (this.delta   != null) that.delta   = this.delta.clone();
     return that;
   }
 
   /**
-   * Returns true if the light type is a flashlight; otherwise false.
-   */
-  isFlashlight() { return this.type.is(LightType.Flashlight); }
-
-  /**
-   * Returns true if the light type is light, fire, or glow; otherwise false.
-   */
-  isOtherLight() { return this.type.is(LightType.Light, LightType.fire, LightType.Glow); }
-
-  /**
-   * Sets up all supported targets.
-   * @param {VRGBA}  targetColor
-   * @param {Number} targetDirection
-   * @param {Number} targetBrightness
-   * @param {Number} targetXOffset
-   * @param {Number} targetYOffset
-   * @param {Number} targetRadius
-   * @param {Number} targetBeamLength
-   * @param {Number} targetBeamWidth
-   */
-  setTargets(targetColor, targetDirection, targetBrightness, targetXOffset, targetYOffset, targetRadius,
-             targetBeamLength, targetBeamWidth) {
-    if (targetColor       != null) this.targetColor      = targetColor;
-    if (targetDirection   != null) this.targetDirection  = this.isFlashlight() ? targetDirection  : void(0);
-    if (targetBrightness  != null) this.targetBrightness = targetBrightness;
-    if (targetXOffset     != null) this.targetXOffset    = targetXOffset;
-    if (targetYOffset     != null) this.targetYOffset    = targetYOffset;
-    if (targetRadius      != null) this.targetRadius     = this.isOtherLight() ? targetRadius     : void(0);
-    if (targetBeamLength  != null) this.targetBeamLength = this.isFlashlight() ? targetBeamLength : void(0);
-    if (targetBeamWidth   != null) this.targetBeamWidth  = this.isFlashlight() ? targetBeamWidth  : void(0);
-  }
-
-  /**
-   * Processes and sets target transition and pause duration properties from a string array.
-   * @param {String[]} properties
-   **/
-  parseDurationProps(properties) {
-    this.transitionDuration = properties.find((e) => (e.startsWithIC('t')));
-    this.pauseDuration      = properties.find((e) => (e.startsWithIC('p')));
-    this.transitionDuration = this.transitionDuration ? +this.transitionDuration.slice(1) : 0;
-    this.pauseDuration      = this.pauseDuration      ? +this.pauseDuration.slice(1)      : 0;
-  }
-
-  /**
-   * Processes and sets current properties from a string array.
-   * @param {String[]} properties
-   **/
-  parseCurrentProps(properties) {
-    properties.forEach((e) => {
-      if      (                       e.startsWithIC('#'))  this.currentColor      = new VRGBA(e);
-      else if (                       e.startsWithIC('a#')) this.currentColor      = new VRGBA(e);
-      else if (this.isFlashlight() && e.startsWithIC('a'))  this.currentDirection  = M_PI_180 * orNaN(+e.slice(1), 0);
-      else if (this.isFlashlight() && e.startsWithIC('+a')) this.currentDirection  = M_PI_180 * orNaN(+e.slice(2), 0);
-      else if (this.isFlashlight() && e.startsWithIC('-a')) this.currentDirection  = M_PI_180 * orNaN(+e.slice(2), 0);
-      else if (                       e.startsWithIC('b'))  this.currentBrightness = orNaN(+e.slice(1));
-      else if (                       e.startsWithIC('x'))  this.currentXOffset    = orNaN(+e.slice(1));
-      else if (                       e.startsWithIC('y'))  this.currentYOffset    = orNaN(+e.slice(1));
-      else if (this.isOtherLight() && e.startsWithIC('r'))  this.currentRadius     = orNaN(+e.slice(1));
-      else if (this.isFlashlight() && e.startsWithIC('l'))  this.currentBeamLength = orNaN(+e.slice(1));
-      else if (this.isFlashlight() && e.startsWithIC('w'))  this.currentBeamWidth  = orNaN(+e.slice(1));
-    }, this);
-  }
-
-  /**
-   * Processes and sets target properties from a string array.
-   * @param {String[]} properties
-   **/
-  parseTargetProps(properties) {
-    let normalizeAngle = (rads) => rads % (M_2PI) + (rads < 0) * M_2PI; // normalize between 0 & 2*Pi
-
-    let normalizeClockwiseMovement = (target) => {
-      this.currentDirection = normalizeAngle(this.currentDirection); // normalize already assigned current
-      this.targetDirection  = normalizeAngle(M_PI_180 * target);     // convert target to radians before normalization
-      if (this.currentDirection > this.targetDirection) this.targetDirection += M_2PI; // clockwise normalize
-    };
-    let normalizeCounterClockwiseMovement = (target) => {
-      this.currentDirection = normalizeAngle(this.currentDirection); // normalize already assigned current
-      this.targetDirection  = normalizeAngle(M_PI_180 * target);     // convert target to radians before normalization
-      if (this.currentDirection < this.targetDirection) this.targetDirection -= M_2PI; // c-clockwise normalize
-    };
-    properties.forEach((e) => {
-      if      (                       e.startsWithIC('#'))  this.targetColor = new VRGBA(e);
-      else if (                       e.startsWithIC('a#')) this.targetColor = new VRGBA(e);
-      else if (this.isFlashlight() && e.startsWithIC('a'))  normalizeClockwiseMovement(orNaN(+e.slice(1), 0));
-      else if (this.isFlashlight() && e.startsWithIC('+a')) normalizeClockwiseMovement(orNaN(+e.slice(2), 0));
-      else if (this.isFlashlight() && e.startsWithIC('-a')) normalizeCounterClockwiseMovement(orNaN(+e.slice(2), 0));
-      else if (                       e.startsWithIC('b'))  this.targetBrightness = orNaN(+e.slice(1));
-      else if (                       e.startsWithIC('x'))  this.targetXOffset    = orNaN(+e.slice(1));
-      else if (                       e.startsWithIC('y'))  this.targetYOffset    = orNaN(+e.slice(1));
-      else if (this.isOtherLight() && e.startsWithIC('r'))  this.targetRadius     = orNaN(+e.slice(1));
-      else if (this.isFlashlight() && e.startsWithIC('l'))  this.targetBeamLength = orNaN(+e.slice(1));
-      else if (this.isFlashlight() && e.startsWithIC('w'))  this.targetBeamWidth  = orNaN(+e.slice(1));
-    }, this);
-  }
-
-  /**
    * Create deltas from currents, targets, and transition duration.
-   **/
+   */
   createDeltas() {
+    // Helper functions
+    let normalizeAngle = (rads) => rads % (M_2PI) + (rads < 0) * M_2PI; // normalize between 0 & 2*Pi
+    let normalizeClockwiseMovement = () => {
+      this.current.direction = normalizeAngle(this.current.direction); // normalize already assigned current
+      this.target.direction  = normalizeAngle(this.target.direction);  // convert target to radians before normalization
+      if (this.current.direction > this.target.direction) this.target.direction += M_2PI; // clockwise normalize
+    };
+    let normalizeCounterClockwiseMovement = () => {
+      this.current.direction = normalizeAngle(this.current.direction); // normalize already assigned current
+      this.target.direction  = normalizeAngle(this.target.direction);  // convert target to radians before normalization
+      if (this.current.direction < this.target.direction) this.target.direction -= M_2PI; // c-clockwise normalize
+    };
     let createColor  = (...a) => !a.some(x => x == null) && ColorDelta.create(...a)  || void (0);
     let createNumber = (...a) => !a.some(x => x == null) && NumberDelta.create(...a) || void (0);
+
+    // set delta creation at current frame time
+    this.current.updateFrame = Graphics.frameCount;
+
+    // Enable or disable the current immediately based off of target value
+    this.current.enable = this.target.enable != null ? this.target.enable : this.defaults.enable;
+
+    // For currents (flashlights) check the movement direction and normalize the current and target
+    if      (this.current.direction != null && this.target.clockwise)  normalizeClockwiseMovement();
+    else if (this.current.direction != null && !this.target.clockwise) normalizeCounterClockwiseMovement();
+
     // assign deltas if current & targets exist
-    this.deltaColor      = createColor (this.currentColor,      this.targetColor,      this.transitionDuration);
-    this.deltaColor      = createColor (this.currentColor,      this.targetColor,      this.transitionDuration);
-    this.deltaDirection  = createNumber(this.currentDirection,  this.targetDirection,  this.transitionDuration);
-    this.deltaBrightness = createNumber(this.currentBrightness, this.targetBrightness, this.transitionDuration);
-    this.deltaXOffset    = createNumber(this.currentXOffset,    this.targetXOffset,    this.transitionDuration);
-    this.deltaYOffset    = createNumber(this.currentYOffset,    this.targetYOffset,    this.transitionDuration);
-    this.deltaRadius     = createNumber(this.currentRadius,     this.targetRadius,     this.transitionDuration);
-    this.deltaBeamLength = createNumber(this.currentBeamLength, this.targetBeamLength, this.transitionDuration);
-    this.deltaBeamWidth  = createNumber(this.currentBeamWidth,  this.targetBeamWidth,  this.transitionDuration);
-    // assign new currents for existing deltas (to propagate currents for duration = 0)
-    if (this.deltaColor      != null) this.currentColor      = this.deltaColor     .get();
-    if (this.deltaDirection  != null) this.currentDirection  = this.deltaDirection .get();
-    if (this.deltaBrightness != null) this.currentBrightness = this.deltaBrightness.get();
-    if (this.deltaXOffset    != null) this.currentXOffset    = this.deltaXOffset   .get();
-    if (this.deltaYOffset    != null) this.currentYOffset    = this.deltaYOffset   .get();
-    if (this.deltaRadius     != null) this.currentRadius     = this.deltaRadius    .get();
-    if (this.deltaBeamLength != null) this.currentBeamLength = this.deltaBeamLength.get();
-    if (this.deltaBeamWidth  != null) this.currentBeamWidth  = this.deltaBeamWidth .get();
+    this.delta.color      = createColor (this.current.color,      this.target.color,      this.current.transitionDuration);
+    this.delta.color      = createColor (this.current.color,      this.target.color,      this.current.transitionDuration);
+    this.delta.direction  = createNumber(this.current.direction,  this.target.direction,  this.current.transitionDuration);
+    this.delta.brightness = createNumber(this.current.brightness, this.target.brightness, this.current.transitionDuration);
+    this.delta.xOffset    = createNumber(this.current.xOffset,    this.target.xOffset,    this.current.transitionDuration);
+    this.delta.yOffset    = createNumber(this.current.yOffset,    this.target.yOffset,    this.current.transitionDuration);
+    this.delta.radius     = createNumber(this.current.radius,     this.target.radius,     this.current.transitionDuration);
+    this.delta.beamLength = createNumber(this.current.beamLength, this.target.beamLength, this.current.transitionDuration);
+    this.delta.beamWidth  = createNumber(this.current.beamWidth,  this.target.beamWidth,  this.current.transitionDuration);
+
+    // assign new currents for existing deltas to propagate currents for duration = 0 or target.<value> = null
+    this.current.color      = this.delta.color      != null  ? this.delta.color     .get() : this.defaults.color;
+    this.current.direction  = this.delta.direction  != null  ? this.delta.direction .get() : this.defaults.direction;
+    this.current.brightness = this.delta.brightness != null  ? this.delta.brightness.get() : this.defaults.brightness;
+    this.current.xOffset    = this.delta.xOffset    != null  ? this.delta.xOffset   .get() : this.defaults.xOffset;
+    this.current.yOffset    = this.delta.yOffset    != null  ? this.delta.yOffset   .get() : this.defaults.yOffset;
+    this.current.radius     = this.delta.radius     != null  ? this.delta.radius    .get() : this.defaults.radius;
+    this.current.beamLength = this.delta.beamLength != null  ? this.delta.beamLength.get() : this.defaults.beamLength;
+    this.current.beamWidth  = this.delta.beamWidth  != null  ? this.delta.beamWidth .get() : this.defaults.beamWidth;
   }
 
   /**
@@ -1159,19 +1170,23 @@ class ConditionalLight {
    * @returns {this}
    */
   next() {
+    // Compared the last time a delta has been generated to the last time the target has been updated
+    if (this.current.updateFrame < this.target.updateFrame) this.createDeltas();
+    // Check if transition and pause durations have reached zero
     if (this.finished()) return this;
-    if (this.transitionDuration > 0) { // only update if transition duration isn't 0 (finished)
-      if (this.deltaColor      != null) this.currentColor      = this.deltaColor     .next().get();
-      if (this.deltaDirection  != null) this.currentDirection  = this.deltaDirection .next().get();
-      if (this.deltaBrightness != null) this.currentBrightness = this.deltaBrightness.next().get();
-      if (this.deltaXOffset    != null) this.currentXOffset    = this.deltaXOffset   .next().get();
-      if (this.deltaYOffset    != null) this.currentYOffset    = this.deltaYOffset   .next().get();
-      if (this.deltaRadius     != null) this.currentRadius     = this.deltaRadius    .next().get();
-      if (this.deltaBeamLength != null) this.currentBeamLength = this.deltaBeamLength.next().get();
-      if (this.deltaBeamWidth  != null) this.currentBeamWidth  = this.deltaBeamWidth .next().get();
-      this.transitionDuration--;
+    // only update if transition duration isn't 0 (finished)
+    if (this.current.transitionDuration > 0) {
+      if (this.delta.color      != null) this.current.color      = this.delta.color     .next().get();
+      if (this.delta.direction  != null) this.current.direction  = this.delta.direction .next().get();
+      if (this.delta.brightness != null) this.current.brightness = this.delta.brightness.next().get();
+      if (this.delta.xOffset    != null) this.current.xOffset    = this.delta.xOffset   .next().get();
+      if (this.delta.yOffset    != null) this.current.yOffset    = this.delta.yOffset   .next().get();
+      if (this.delta.radius     != null) this.current.radius     = this.delta.radius    .next().get();
+      if (this.delta.beamLength != null) this.current.beamLength = this.delta.beamLength.next().get();
+      if (this.delta.beamWidth  != null) this.current.beamWidth  = this.delta.beamWidth .next().get();
+      this.current.transitionDuration--;
     } else
-      this.pauseDuration--;
+      this.current.pauseDuration--;
     return this;
   }
 
@@ -1179,12 +1194,12 @@ class ConditionalLight {
    * Returns whether all deltas are finished or not.
    * @returns {Boolean}
    */
-  finished() { return this.transitionDuration <= 0 && this.pauseDuration <= 0; }
+  finished() { return this.current.transitionDuration <= 0 && this.current.pauseDuration <= 0; }
 }
 
 /**
  * Class representing individual number deltas for providing number changes over time at different speeds.
- **/
+ */
 class NumberDelta {
   /**
    * Creates a number delta from the start number, target number, and duration.
@@ -1203,7 +1218,7 @@ class NumberDelta {
   /**
    * Creates a copy of the NumberDelta object.
    * @returns {NumberDelta}
-   **/
+   */
   clone() {
     let that = new NumberDelta();
     [that.current, that.target, that.duration, that.lazyEquals, that.delta] =
@@ -1235,7 +1250,7 @@ class NumberDelta {
   /**
    * Returns the current delta number.
    * @returns {Number}
-   **/
+   */
   get() { return this.current; }
 
   /**
@@ -1252,7 +1267,7 @@ class NumberDelta {
 
 /**
  * Class representing a color delta for providing color changes over time at different speeds.
- **/
+ */
 class ColorDelta {
   /**
    * Create a color delta from the start color, target color, fade duration, and
@@ -1280,7 +1295,7 @@ class ColorDelta {
   /**
    * Creates a copy of the ColorDelta object.
    * @returns {ColorDelta}
-   **/
+   */
   clone() {
     let that = new  ColorDelta();
     that.current      = this.current.clone();
@@ -1364,7 +1379,7 @@ class ColorDelta {
   /**
    * Returns the current delta color.
    * @returns {Number}
-   **/
+   */
   get() { return this.current.clone(); } // duplicate color so reference can't be messed with
 
   /**
@@ -1531,26 +1546,9 @@ class ColorDelta {
   };
 
   // Event note tag caching
-  Game_Event.prototype.resetLightData = function () {
-    this._clType        = undefined;
-    this._lastLightPage = undefined;
-    this._clRadius      = undefined;
-    this._clColor       = undefined;
-    this._clCycle       = undefined;
-    this._clBrightness  = undefined;
-    this._clSwitch      = undefined;
-    this._clDirection   = undefined;
-    this._clXOffset     = undefined;
-    this._clYOffset     = undefined;
-    this._clId          = undefined;
-    this._clBeamLength  = undefined;
-    this._clBeamWidth   = undefined;
-    this._clOnOff       = undefined;
-    this._clCondLight   = {};
-    this.initLightData();
-  };
   Game_Event.prototype.initLightData = function () {
-    this._lastLightPage = this._pageIndex;
+    this._cl = {};
+    this._cl.lastLightPage = this._pageIndex;
     let tagData = this.getCLTag().toLowerCase();
 
     // parse new cycle groups format within {} braces and extract from tag data for separate handling
@@ -1558,10 +1556,10 @@ class ColorDelta {
     let cycleGroups = [];
     tagData = tagData.replace(/\{(.*?)\}/g, (_, group) => ((cycleGroups.push(group.split(/\s+/)), '')));
     tagData = tagData.split(/\s+/);
-    this._clType = LightType[tagData.shift()];
+    this._cl.type = LightType[tagData.shift()];
     // Handle parsing of light, fire, and flashlight
-    if (this._clType) {
-      let isFL       = ()        => this._clType.is(LightType.Flashlight); // is flashlight
+    if (this._cl.type) {
+      let isFL       = ()        => this._cl.type.is(LightType.Flashlight); // is flashlight
       let isEq       = (e, ...a) => { for (let i of a) if (e.equalsIC(i)) return true; return false; };
       let isPre      = (e, ...a) => { for (let i of a) if (e.startsWithIC(i)) return true; return false; };
       let isNul      = (e)       => e == null;
@@ -1570,139 +1568,110 @@ class ColorDelta {
       let cycleIndex, hasCycle = false;
       tagData.forEach((e) => {
         let n = clip(e);
-        if      (!isFL() && !isNaN(+e)          && isNul(this._clRadius))     this._clRadius     = +e;
-        else if (isFL()  && !isNaN(+e)          && isNul(this._clBeamLength)) this._clBeamLength = +e;
-        else if (isFL()  && !isNaN(+e)          && isNul(this._clBeamWidth))  this._clBeamWidth  = +e;
-        else if (isFL()  && isPre(e, "l") && n  && isNul(this._clBeamLength)) this._clBeamLength = n;
-        else if (isFL()  && isPre(e, "w") && n  && isNul(this._clBeamWidth))  this._clBeamWidth  = n;
-        else if (           isEq(e, "cycle")    && isNul(this._clColor))      hasCycle           = true;
-        else if (           isPre(e, "#", "a#") && hasCycle)                  cycleIndex = cycleGroups.push([e]) - 2;
-        else if (           !isNaN(+e)          && cycleGroups[cycleIndex])   cycleGroups[cycleIndex].push('p' + e);
-        else if (           isPre(e, "#", "a#") && isNul(this._clColor))      this._clColor      = new VRGBA(e);
-        else if (           isOn(e)             && isNul(this._clOnOff))      this._clOnOff      = true;
-        else if (           isOff(e)            && isNul(this._clOnOff))      this._clOnOff      = false;
-        else if (           isDayNight(e)       && isNul(this._clSwitch))     this._clSwitch     = e;
-        else if (           isPre(e, "b") && n  && isNul(this._clBrightness)) this._clBrightness = (n / 100).clamp(0, 1);
-        else if (!isFL() && isPre(e, "d") && n  && isNul(this._clDirection))  this._clDirection  = n;
-        else if ( isFL() && !isNaN(+e)          && isNul(this._clDirection))  this._clDirection  = +e;
-        else if ( isFL() && isPre(e, "d") && n  && isNul(this._clDirection))  this._clDirection  = CLDirectionMap[n];
-        else if ( isFL() && isPre(e, "a") && n  && isNul(this._clDirection))  this._clDirection  = Math.PI / 180 * n;
-        else if (           isPre(e, "x") && n  && isNul(this._clXOffset))    this._clXOffset    = n;
-        else if (           isPre(e, "y") && n  && isNul(this._clYOffset))    this._clYOffset    = n;
-        else if (           e.length > 0        && isNul(this._clId))         this._clId         = e;
+        if      (!isFL() && !isNaN(+e)          && isNul(this._cl.radius))     this._cl.radius     = +e;
+        else if (isFL()  && !isNaN(+e)          && isNul(this._cl.beamLength)) this._cl.beamLength = +e;
+        else if (isFL()  && !isNaN(+e)          && isNul(this._cl.beamWidth))  this._cl.beamWidth  = +e;
+        else if (isFL()  && isPre(e, "l") && n  && isNul(this._cl.beamLength)) this._cl.beamLength = n;
+        else if (isFL()  && isPre(e, "w") && n  && isNul(this._cl.beamWidth))  this._cl.beamWidth  = n;
+        else if (           isEq(e, "cycle")    && isNul(this._cl.color))      hasCycle            = true;
+        else if (           isPre(e, "#", "a#") && hasCycle)                   cycleIndex = cycleGroups.push([e]) - 2;
+        else if (           !isNaN(+e)          && cycleGroups[cycleIndex])    cycleGroups[cycleIndex].push('p' + e);
+        else if (           isPre(e, "#", "a#") && isNul(this._cl.color))      this._cl.color      = new VRGBA(e);
+        else if (           isOn(e)             && isNul(this._cl.enable))      this._cl.enable    = true;
+        else if (           isOff(e)            && isNul(this._cl.enable))      this._cl.enable    = false;
+        else if (           isDayNight(e)       && isNul(this._cl.switch))     this._cl.switch     = e;
+        else if (           isPre(e, "b") && n  && isNul(this._cl.brightness)) this._cl.brightness = (n / 100).clamp(0, 1);
+        else if (!isFL() && isPre(e, "d") && n  && isNul(this._cl.direction))  this._cl.direction  = n;
+        else if ( isFL() && !isNaN(+e)          && isNul(this._cl.direction))  this._cl.direction  = +e;
+        else if ( isFL() && isPre(e, "d") && n  && isNul(this._cl.direction))  this._cl.direction  = CLDirectionMap[n];
+        else if ( isFL() && isPre(e, "a") && n  && isNul(this._cl.direction))  this._cl.direction  = Math.PI / 180 * n;
+        else if (           isPre(e, "x") && n  && isNul(this._cl.xOffset))    this._cl.xOffset    = n;
+        else if (           isPre(e, "y") && n  && isNul(this._cl.yOffset))    this._cl.yOffset    = n;
+        else if (           e.length > 0        && isNul(this._cl.id))         this._cl.id         = e;
         cycleIndex += 1; // increment index. Valid for 1 iteration after a cycle color is parsed before OOB.
       }, this);
 
       // normalize parameters
-      this._clRadius        = orNaN(this._clRadius, 0);
-      this._clColor         = orNullish(this._clColor, VRGBA.empty());
-      this._clBrightness    = orNaN(this._clBrightness, 0);
-      this._clDirection     = orNaN(this._clDirection, undefined); // must be undefined for later checks
-      this._clId            = orNullish(this._clId, 0); // Alphanumeric
-      this._clBeamLength    = orNaN(this._clBeamLength, 0);
-      this._clBeamWidth     = orNaN(this._clBeamWidth, 0);
-      this._clOnOff         = orBoolean(this._clOnOff, true);
-      this._clXOffset       = orNaN(this._clXOffset, 0);
-      this._clYOffset       = orNaN(this._clYOffset, 0);
-      this._clCycle         = this._clCycle || null;
+      this._cl.radius        = orNaN(this._cl.radius, 0);
+      this._cl.color         = orNullish(this._cl.color, VRGBA.empty());
+      this._cl.enable        = orBoolean(this._cl.enable, true);
+      this._cl.brightness    = orNaN(this._cl.brightness, 0);
+      this._cl.direction     = orNaN(this._cl.direction, undefined); // must be undefined for later checks
+      this._cl.id            = orNullish(this._cl.id, 0); // Alphanumeric
+      this._cl.beamLength    = orNaN(this._cl.beamLength, 0);
+      this._cl.beamWidth     = orNaN(this._cl.beamWidth, 0);
+      this._cl.xOffset       = orNaN(this._cl.xOffset, 0);
+      this._cl.yOffset       = orNaN(this._cl.yOffset, 0);
+      this._cl.cycle         = this._cl.cycle || null;
 
-      // Process cycle parameters
-      if (cycleGroups.length) {                                       // check if tag included color cycling
-        this._clCycle = [];                                           // only define if cycle exists
-        let args = [this._clColor, this._clDirection, this._clBrightness, this._clXOffset, this._clYOffset,
-                    this._clRadius, this._clBeamLength, this._clBeamWidth];
-        let condLight = new ConditionalLight(this._clType, ...args);  // create cond light with initial properties
-        cycleGroups.forEach((e, i, a) => {                            // ------ loop each group
-          condLight = condLight.clone();                              // - clone existing light (inherit properties)
-          let n = a[++i < cycleGroups.length ? i : 0];                // - get next element
-          condLight.parseDurationProps(n);                            // - parse durations
-          condLight.parseCurrentProps(e);                             // - parse for new properties
-          if (i == cycleGroups.length)                                // - last group targets initial properties
-            condLight.setTargets(...args);                            // -- setup targets based off non-cycle properties
-          condLight.parseTargetProps(n);                              // - parse for cycle target properties
-          condLight.createDeltas();                                   // - compute deltas
-          this._clCycle.push(condLight);                              // - push to list
-        }, this);                                                     // ------
-        condLight = this._clCycle.shift();                            // pop front
-        this._clCondLight = condLight.clone();                        // clone it to be the current cond light delta
-        this._clCycle.push(condLight);                                // push original on back of list
+      // Store initial light properties
+      let props = [this._cl.color, this._cl.enable, this._cl.direction, this._cl.brightness, this._cl.xOffset,
+                   this._cl.yOffset, this._cl.radius, this._cl.beamLength, this._cl.beamWidth];
+
+      // create initial properties
+      let startProps = new LightProperties(this._cl.type, ...props);
+
+      // Process cycle parameters - for each cycle group create currentProps and targetProps and cooresponding light
+      // delta. Then put the deltas into a list to loop/cycle through repeatedly
+      if (cycleGroups.length) { // check if tag included color cycling
+        this._cl.cycle = [];     // only define if cycle exists
+        let currentProps = startProps, targetProps, delta;
+        cycleGroups.forEach((e, i, a) => {                                  // ------ loop each group ------
+          let n = a[++i < a.length ? i : 0];                                // - get next element: OOB goes to first
+          currentProps = currentProps.clone();                              // - inherit existing props
+          currentProps.parseProps(e);                                       // - parse for new props
+          targetProps = i == a.length ? startProps : currentProps.clone();  // - create target props: last targets start
+          targetProps.parseProps(n);                                        // - parse for new props: last targets start
+          let delta = new LightDelta(currentProps, targetProps, this._cl);  // - create light delta object
+          this._cl.cycle.push(delta);                                       // - push conditional light delta to list
+        }, this);                                                           // -----------------------------
+        delta = this._cl.cycle.shift(); // pop front
+        this._cl.delta = delta.clone(); // clone front as the initial lightDelta state for this cond light
+        this._cl.cycle.push(delta);     // push original on back of list
       }
-
-      // Process conditional lighting
-      if (this._clId) {                                               // check for a conditional lighting ID
-        let args = [this._clColor, this._clDirection, this._clBrightness, this._clXOffset, this._clYOffset,
-                    this._clRadius, this._clBeamLength, this._clBeamWidth];
-        let condLight  = new ConditionalLight(this._clType, ...args); // create conditional light
-        condLight.setTargets(...args);                                // create matching targets
-        condLight.createDeltas();                                     // compute deltas (zeroes)
-        $gameVariables.GetLightArray()[this._clId] = condLight;
-        this._clCondLight = condLight;
+      // Process conditional lighting - for a cond light, currentProps are light specific and targets are shared by ID
+      // a target can be updated on the fly using commands and all lights with matching IDs will use the properties
+      else if (this._cl.id) { // check for a conditional lighting ID
+        let lightArray = $gameVariables.GetLightArray();                    // get target light Object
+        if (lightArray[this._cl.id] == null)                                // check if target exists since it's shared
+          lightArray[this._cl.id] = new LightProperties();                  // -- if not, create empty reference
+        let targetProps = lightArray[this._cl.id];                          // get target prop reference
+        this._cl.delta = new LightDelta(startProps, targetProps, this._cl); // create conditional light delta
+        console.log(this._cl.delta);
+      }
+      // Non-conditional light
+      else {
+        this._cl.delta = { current: this._cl };// really just a self reference
       }
     }
   };
   Game_Event.prototype.cycleLightingNext = function () {
     let cycleList = this.getLightCycle();
-    if (cycleList && this._clCondLight.finished()) {
-      let condLight = cycleList.shift();     // pop delta from front
-      this._clCondLight = condLight.clone(); // duplicate delta
-      cycleList.push(condLight);             // push delta on back
+    if (cycleList && this._cl.delta.finished()) {
+      let delta = cycleList.shift();  // pop delta from front
+      this._cl.delta = delta.clone(); // duplicate delta
+      cycleList.push(delta);          // push delta on back
     }
   };
   Game_Event.prototype.conditionalLightingNext = function () {
-    if (this._clType === undefined) this.initLightData();
-    if (this.getLightCycle() || this.getLightId()) this._clCondLight.next();
+    if (this.getLightCycle() || this.getLightId()) this._cl.delta.next();
   };
-  Game_Event.prototype.getLightType = function () {
-    if (this._clType === undefined) this.initLightData();
-    return this._clType;
+  Game_Event.prototype.getLightEnabled          = function () {
+    if (!this._cl.switch) return this._cl.delta.current.enable;
+    return (this._cl.switch.equalsIC("night") && $$.isNight()) ||
+           (this._cl.switch.equalsIC("day")   && !$$.isNight());
   };
-  Game_Event.prototype.getLightRadius = function () {
-    if (this._clType === undefined) this.initLightData();
-    return orNullish(this._clCondLight.currentRadius, this._clRadius);
-  };
-  Game_Event.prototype.getLightColor = function () {
-    if (this._clType === undefined) this.initLightData();
-    if (!this._clColor) this._clColor = VRGBA.empty();
-    return orNullish(this._clCondLight.currentColor, this._clColor.clone());
-  };
-  Game_Event.prototype.getLightBrightness = function () {
-    if (this._clType === undefined) this.initLightData();
-    return orNullish(this._clCondLight.currentBrightness, this._clBrightness);
-  };
-  Game_Event.prototype.getLightDirection = function () {
-    if (this._clType === undefined) this.initLightData();
-    return orNullish(this._clCondLight.currentDirection, this._clDirection);
-  };
-  Game_Event.prototype.getLightId = function () {
-    if (this._clType === undefined) this.initLightData();
-    return this._clId;
-  };
-  Game_Event.prototype.getLightFlashlightLength = function () {
-    if (this._clType === undefined) this.initLightData();
-    return orNullish(this._clCondLight.currentBeamLength, this._clBeamLength);
-  };
-  Game_Event.prototype.getLightFlashlightWidth = function () {
-    if (this._clType === undefined) this.initLightData();
-    return orNullish(this._clCondLight.currentBeamWidth, this._clBeamWidth);
-  };
-  Game_Event.prototype.getLightXOffset = function () {
-    if (this._clType === undefined) this.initLightData();
-    return orNullish(this._clCondLight.currentXOffset, this._clXOffset);
-  };
-  Game_Event.prototype.getLightYOffset = function () {
-    if (this._clType === undefined) this.initLightData();
-    return orNullish(this._clCondLight.currentYOffset, this._clYOffset);
-  };
-  Game_Event.prototype.getLightEnabled = function () {
-    if (!this._clSwitch) return orNullish(this._clCondLight.enabled, this._clOnOff);
-    return orNullish(this._clCondLight.enabled,
-                    (this._clSwitch.equalsIC("night") && $$.isNight()) ||
-                    (this._clSwitch.equalsIC("day")   && !$$.isNight()));
-  };
-  Game_Event.prototype.getLightCycle = function () {
-    if (this._clType === undefined) this.initLightData();
-    return this._clCycle;
-  };
+  Game_Event.prototype.getLightType             = function () { return this._cl.type; };
+  Game_Event.prototype.getLightRadius           = function () { return this._cl.delta.current.radius; };
+  Game_Event.prototype.getLightColor            = function () { return this._cl.delta.current.color.clone(); };
+  Game_Event.prototype.getLightBrightness       = function () { return this._cl.delta.current.brightness; };
+  Game_Event.prototype.getLightDirection        = function () { return this._cl.delta.current.direction; };
+  Game_Event.prototype.getLightId               = function () { return this._cl.id; };
+  Game_Event.prototype.getLightFlashlightLength = function () { return this._cl.delta.current.beamLength; };
+  Game_Event.prototype.getLightFlashlightWidth  = function () { return this._cl.delta.current.beamWidth; };
+  Game_Event.prototype.getLightXOffset          = function () { return this._cl.delta.current.xOffset; };
+  Game_Event.prototype.getLightYOffset          = function () { return this._cl.delta.current.yOffset; };
+  Game_Event.prototype.getLightCycle            = function () { return this._cl.cycle; };
 
   let _Game_Interpreter_pluginCommand = Game_Interpreter.prototype.pluginCommand;
   /**
@@ -2072,7 +2041,7 @@ class ColorDelta {
     for (let i = 0, len = eventObjId.length; i < len; i++) {
       let evid = event_id[i];
       let cur = $gameMap.events()[eventObjId[i]];
-      if (cur._lastLightPage !== cur._pageIndex) cur.resetLightData();
+      if (cur._cl == null || cur._cl.lastLightPage !== cur._pageIndex) cur.initLightData();
 
       let lightsOnRadius = $gameVariables.GetActiveRadius();
       if (lightsOnRadius > 0) {
@@ -2092,8 +2061,8 @@ class ColorDelta {
         let color          = cur.getLightColor();      // light color
         let direction      = cur.getLightDirection();  // direction
         let brightness     = cur.getLightBrightness(); // brightness
-        let xoffset        = cur.getLightXOffset() * $gameMap.tileWidth();
-        let yoffset        = cur.getLightYOffset() * $gameMap.tileHeight();
+        let xOffset        = cur.getLightXOffset() * $gameMap.tileWidth();
+        let yOffset        = cur.getLightYOffset() * $gameMap.tileHeight();
         let state          = cur.getLightEnabled();    // checks for on, off, day, and night
 
         // Set kill switch to ON if the conditional light is deactivated,
@@ -2116,8 +2085,8 @@ class ColorDelta {
           }
 
           // apply offsets
-          lx1 += +xoffset;
-          ly1 += +yoffset;
+          lx1 += +xOffset;
+          ly1 += +yOffset;
 
           if (lightType.is(LightType.Flashlight)) {
             let ldir = RMDirectionMap[$gameMap.events()[event_stacknumber[i]]._direction] || 0;
@@ -2946,36 +2915,33 @@ class ColorDelta {
 
     // *********************** TURN SPECIFIC LIGHT ON *********************
     else if (isOn(args[0])) {
-      let condLight = $gameVariables.GetLightArray()[args[1].toLowerCase()];
-      if (condLight) { condLight.enabled = true; }
+      let targetProps = $gameVariables.GetLightArray()[args[1].toLowerCase()];
+      if (targetProps) { targetProps.parseProps(["e1"]); }
     }
 
     // *********************** TURN SPECIFIC LIGHT OFF *********************
     else if (isOff(args[0])) {
-      let condLight = $gameVariables.GetLightArray()[args[1].toLowerCase()];
-      if (condLight) { condLight.enabled = false; }
+      let targetProps = $gameVariables.GetLightArray()[args[1].toLowerCase()];
+      if (targetProps) { targetProps.parseProps(["e0"]); }
     }
 
     // *********************** SET COLOR *********************
     else if (args[0].equalsIC('color')) {
-      let condLight = $gameVariables.GetLightArray()[args[1].toLowerCase()];
-      if (condLight) { condLight.currentColor = args[2] ? new VRGBA(args[2]) : null; } // null for no passed color
+      let targetProps = $gameVariables.GetLightArray()[args[1].toLowerCase()];
+      console.log(args[2]);
+      if (targetProps) targetProps.parseProps([args[2] != null ? args[2] : "#"]);
     }
 
     // *********************** SET CONDITIONAL LIGHT *********************
     else if (args[0].equalsIC('cond')) {
-      let condLight = $gameVariables.GetLightArray()[args[1].toLowerCase()];
-      if (condLight) {
-        let properties = args[2].split(/\s+/);
-        condLight.parseDurationProps(properties);
-        condLight.parseTargetProps(properties);
-        condLight.createDeltas();
-      }
+      let targetProps = $gameVariables.GetLightArray()[args[1].toLowerCase()];
+      if (targetProps) targetProps.parseProps(args[2] != null ? args[2].split(/\s+/) : ['']);
     }
 
     // **************************** RESET ALL SWITCHES ***********************
     else if (args[0].equalsIC('switch') && args[1].equalsIC('reset')) {
-      $gameVariables.SetLightArray({});
+      let lightArray = $gameVariables.GetLightArray();
+      for (let i in lightArray) lightArray[i].parseProps(['#', 'e', 'b', 'x', 'y', 'r', 'l', 'w', 'a']); // clear
     }
   };
 
@@ -3279,7 +3245,7 @@ Game_Variables.prototype.SetLightArray = function (value) {
 };
 Game_Variables.prototype.GetLightArray = function () {
   if (this._Community_Lighting_LightArray == null)
-    this._Community_Lighting_LightArray = { 0: {} };
+    this._Community_Lighting_LightArray = {};
   return this._Community_Lighting_LightArray;
 };
 Game_Variables.prototype.SetTileLightArray = function (value) {
