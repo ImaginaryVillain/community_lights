@@ -2292,13 +2292,23 @@ let isValidColorRegex = /(^[Aa]?#[0-9A-F]{6}$)|(^[Aa]?#[0-9A-F]{3}$)|(^[Aa]?#[0-
     }
   };
 
-  let Community_Lighting_Spriteset_Battle_createBattleField = Spriteset_Battle.prototype.createBattleField;
-  Spriteset_Battle.prototype.createBattleField = function () {
-    Community_Lighting_Spriteset_Battle_createBattleField.call(this);
-    if (battleMaskPosition.equalsIC('Between')) {
-      this.createBattleLightmask();
-    }
-  };
+  if (isRMMV()) {
+    let Community_Lighting_Spriteset_Battle_createBattleback = Spriteset_Battle.prototype.createBattleback;
+    Spriteset_Battle.prototype.createBattleback = function () {
+      Community_Lighting_Spriteset_Battle_createBattleback.call(this);
+      if (battleMaskPosition.equalsIC('Between')) {
+        this.createBattleLightmask();
+      }
+    };
+  } else {
+    let Community_Lighting_Spriteset_Battle_createBattleField = Spriteset_Battle.prototype.createBattleField;
+    Spriteset_Battle.prototype.createBattleField = function () {
+      Community_Lighting_Spriteset_Battle_createBattleField.call(this);
+      if (battleMaskPosition.equalsIC('Between')) {
+        this.createBattleLightmask();
+      }
+    };
+  }
 
   Spriteset_Battle.prototype.createBattleLightmask = function () {
     if ($gameVariables.GetScriptActive()) {             // If the script is active
