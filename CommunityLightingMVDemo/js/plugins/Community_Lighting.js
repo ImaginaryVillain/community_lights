@@ -1637,7 +1637,6 @@ class ColorDelta {
           lightArray[this._cl.id] = new LightProperties();                  // -- if not, create empty reference
         let targetProps = lightArray[this._cl.id];                          // get target prop reference
         this._cl.delta = new LightDelta(startProps, targetProps, this._cl); // create conditional light delta
-        console.log(this._cl.delta);
       }
       // Non-conditional light
       else {
@@ -2928,8 +2927,7 @@ class ColorDelta {
     // *********************** SET COLOR *********************
     else if (args[0].equalsIC('color')) {
       let targetProps = $gameVariables.GetLightArray()[args[1].toLowerCase()];
-      console.log(args[2]);
-      if (targetProps) targetProps.parseProps([args[2] != null ? args[2] : "#"]);
+      if (targetProps) targetProps.parseProps([(args[2] != null && !args[2].equalsIC("defaultcolor")) ? args[2] : "#"]);
     }
 
     // *********************** SET CONDITIONAL LIGHT *********************
