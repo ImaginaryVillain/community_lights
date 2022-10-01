@@ -1563,13 +1563,13 @@ class LightDelta {
    * @param {LightProperties} current
    * @param {LightProperties} target
    */
-  constructor(current, target, defaults) {
+  constructor(current, target, defaults, fade = true) {
     if (arguments.length == 0) return;
     this.current = current;
     this.target  = target;
     this.defaults = defaults;
     this.delta   = new LightProperties();
-    this.createDeltas();
+    this.createDeltas(fade);
   }
 
   /**
@@ -1586,9 +1586,12 @@ class LightDelta {
   }
 
   /**
-   * Create deltas from currents, targets, and transition duration.
+   * Create deltas from currents, targets, and transition duration. If fade is false, then the current will transition
+   * to the target values instantly.
+   *
+   * @param {Boolean} fade
    */
-  createDeltas() {
+  createDeltas(fade = true) {
     // Helper functions
     let normalizeAngle = (rads) => rads % (M_2PI) + (rads < 0) * M_2PI; // normalize between 0 & 2*Pi
     let normalizeClockwiseMovement = () => {
@@ -1606,6 +1609,10 @@ class LightDelta {
 
     // set delta creation at current frame time
     this.current.updateFrame = Graphics.frameCount;
+
+    // Set current durations or 0 if not fading
+    this.current.transitionDuration = fade ? this.target.transitionDuration : 0;
+    this.current.pauseDuration      = fade ? this.target.pauseDuration : 0;
 
     // Enable or disable the current immediately based off of target value
     this.current.enable = this.target.enable != null ? this.target.enable : this.defaults.enable;
@@ -2083,31 +2090,30 @@ class ColorDelta {
       let startProps = new LightProperties(this._cl.type, ...props);
 
       // Process cycle parameters - for each cycle group create currentProps and targetProps and cooresponding light
-      // delta. Then put the deltas into a list to loop/cycle through repeatedly
+      // delta. Then put the deltas into a list to loop/cycle through repeatedly. Note: Last cycle targets first.
       if (cycleGroups.length) { // check if tag included color cycling
         this._cl.cycle = [];     // only define if cycle exists
-        let currentProps = startProps, targetProps, delta;
-        cycleGroups.forEach((e, i, a) => {                                  // ------ loop each group ------
-          let n = a[++i < a.length ? i : 0];                                // - get next element: OOB goes to first
-          currentProps = currentProps.clone();                              // - inherit existing props
-          currentProps.parseProps(e);                                       // - parse for new props
-          targetProps = i == a.length ? startProps : currentProps.clone();  // - create target props: last targets start
-          targetProps.parseProps(n);                                        // - parse for new props: last targets start
-          let delta = new LightDelta(currentProps, targetProps, this._cl);  // - create light delta object
-          this._cl.cycle.push(delta);                                       // - push conditional light delta to list
-        }, this);                                                           // -----------------------------
-        delta = this._cl.cycle.shift(); // pop front
-        this._cl.delta = delta.clone(); // clone front as the initial lightDelta state for this cond light
-        this._cl.cycle.push(delta);     // push original on back of list
+        let currentProps = startProps, targetProps;
+        cycleGroups.forEach((e, i, a) => {                                          // ------ loop each group ------
+          let n = a[++i < a.length ? i : 0];                                        // - get next element
+          currentProps = currentProps.clone();                                      // - inherit existing props
+          currentProps.parseProps(e);                                               // - parse for new props
+          targetProps = i == a.length ? startProps : currentProps.clone();          // - create target props
+          targetProps.parseProps(n);                                                // - parse for new props
+          this._cl.cycle.push(new LightDelta(currentProps, targetProps, this._cl)); // - create light delta object
+        }, this);                                                                   // -----------------------------
+        let delta = this._cl.cycle.shift(); // pop front
+        this._cl.delta = delta.clone();     // clone front as the initial lightDelta state for this cond light
+        this._cl.cycle.push(delta);         // push original on back of list
       }
       // Process conditional lighting - for a cond light, currentProps are light specific and targets are shared by ID
       // a target can be updated on the fly using commands and all lights with matching IDs will use the properties
       else if (this._cl.id) { // check for a conditional lighting ID
-        let lightArray = $gameVariables.GetLightArray();                    // get target light Object
-        if (lightArray[this._cl.id] == null)                                // check if target exists since it's shared
-          lightArray[this._cl.id] = new LightProperties();                  // -- if not, create empty reference
-        let targetProps = lightArray[this._cl.id];                          // get target prop reference
-        this._cl.delta = new LightDelta(startProps, targetProps, this._cl); // create conditional light delta
+        let lightArray = $gameVariables.GetLightArray();                            // get target light Object
+        if (lightArray[this._cl.id] == null)                                        // check if shared target exists
+          lightArray[this._cl.id] = new LightProperties();                          // - if not, create empty reference
+        let targetProps = lightArray[this._cl.id];                                  // get target prop reference
+        this._cl.delta  = new LightDelta(startProps, targetProps, this._cl, false); // create light delta object
       }
       // Non-conditional light
       else {
