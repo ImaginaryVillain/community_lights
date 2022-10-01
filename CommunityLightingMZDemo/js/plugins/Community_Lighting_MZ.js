@@ -1450,7 +1450,7 @@ class LightProperties {
    * @param {Number}    beamLength
    * @param {Number}    beamWidth
    */
-  constructor(type, enable, color, direction, brightness, xOffset, yOffset, radius, beamLength, beamWidth) {
+  constructor(type, color, enable, direction, brightness, xOffset, yOffset, radius, beamLength, beamWidth) {
     // Always define in case durations aren't passed to targets
     this.transitionDuration = 0;
     this.pauseDuration      = 0;
@@ -2048,8 +2048,8 @@ class ColorDelta {
         else if (           isPre(e, "#", "a#") && hasCycle)                   cycleIndex = cycleGroups.push([e]) - 2;
         else if (           !isNaN(+e)          && cycleGroups[cycleIndex])    cycleGroups[cycleIndex].push('p' + e);
         else if (           isPre(e, "#", "a#") && isNul(this._cl.color))      this._cl.color      = new VRGBA(e);
-        else if (           isOn(e)             && isNul(this._cl.enable))      this._cl.enable    = true;
-        else if (           isOff(e)            && isNul(this._cl.enable))      this._cl.enable    = false;
+        else if (           isOn(e)             && isNul(this._cl.enable))     this._cl.enable    = true;
+        else if (           isOff(e)            && isNul(this._cl.enable))     this._cl.enable    = false;
         else if (           isDayNight(e)       && isNul(this._cl.switch))     this._cl.switch     = e;
         else if (           isPre(e, "b") && n  && isNul(this._cl.brightness)) this._cl.brightness = (n / 100).clamp(0, 1);
         else if (!isFL() && isPre(e, "d") && n  && isNul(this._cl.direction))  this._cl.direction  = n;
