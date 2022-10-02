@@ -1178,9 +1178,6 @@ function rgba(r, g, b, a) {
   let options_lighting_on = true;
   let maxX = (Number(parameters['Screensize X']) || 816) + 2 * lightMaskPadding;
   let maxY = Number(parameters['Screensize Y']) || 624;
-  let battleMaxX = maxX;
-  let battleMaxY = maxY;
-  if (isRMMZ()) battleMaxY += 24; // Plus 24 for RMMZ Spriteset_Battle.prototype.battleFieldOffsetY
   let tint_oldseconds = 0;
   let tint_timer = 0;
   let oldseconds = 0;
@@ -1672,7 +1669,7 @@ function rgba(r, g, b, a) {
 
   //@method _createBitmaps
   Lightmask.prototype._createBitmaps = function () {
-    this._maskBitmaps = new Mask_Bitmaps(maxX + lightMaskPadding, maxY);
+    this._maskBitmaps = new Mask_Bitmaps(maxX, maxY);
   };
 
   let _Game_Map_prototype_setupEvents = Game_Map.prototype.setupEvents;
@@ -1742,8 +1739,8 @@ function rgba(r, g, b, a) {
     // ****** PLAYER LIGHTGLOBE ********
     let ctxMul = this._maskBitmaps.multiply.context;
     let ctxAdd = this._maskBitmaps.additive.context;
-    this._maskBitmaps.multiply.fillRect(0, 0, maxX + lightMaskPadding, maxY, '#000000');
-    this._maskBitmaps.additive.clearRect(0, 0, maxX + lightMaskPadding, maxY);
+    this._maskBitmaps.multiply.fillRect(0, 0, maxX, maxY, '#000000');
+    this._maskBitmaps.additive.clearRect(0, 0, maxX, maxY);
 
     ctxMul.globalCompositeOperation = 'lighter';
     ctxAdd.globalCompositeOperation = 'lighter';
@@ -1790,15 +1787,11 @@ function rgba(r, g, b, a) {
         c.g = Math.max(0, c.g - 50);
         c.r = Math.max(0, c.r - 50);
         c.b = Math.max(0, c.b - 50);
-        let newcolor = add + rgba2hex(c.r, c.g, c.b, c.a);
-
-        this._maskBitmaps.radialgradientFillRect(x1, y1, 0, iplayer_radius, newcolor, radialColor2, playerflicker, playerbrightness);
-      } else {
-        this._maskBitmaps.radialgradientFillRect(x1, y1, lightMaskPadding, iplayer_radius, playercolor, radialColor2, playerflicker, playerbrightness);
+        playercolor = add + rgba2hex(c.r, c.g, c.b, c.a);
       }
-
+      this._maskBitmaps.radialgradientFillRect(x1, y1, 0, iplayer_radius, playercolor, radialColor2, playerflicker,
+                                               playerbrightness);
     }
-
 
     // *********************************** DAY NIGHT CYCLE TIMER **************************
 
@@ -2014,7 +2007,7 @@ function rgba(r, g, b, a) {
       }
       color1 = rgba2hex(c.r, c.g, c.b, c.a);
 
-      this._maskBitmaps.FillRect(-lightMaskPadding, 0, maxX + lightMaskPadding, maxY, add+color1);
+      this._maskBitmaps.FillRect(-lightMaskPadding, 0, maxX, maxY, add+color1);
     }
     // *********************************** TINT **************************
     else {
@@ -2077,7 +2070,7 @@ function rgba(r, g, b, a) {
       } else {
         tint_timer = 0;
       }
-      this._maskBitmaps.FillRect(-lightMaskPadding, 0, maxX + lightMaskPadding, maxY, tcolor);
+      this._maskBitmaps.FillRect(-lightMaskPadding, 0, maxX, maxY, tcolor);
     }
 
     // reset drawmode to normal
@@ -2120,9 +2113,7 @@ function rgba(r, g, b, a) {
     if (brightness) {
       if (!useSmootherLights) {
         let alpha = Math.floor(brightness * 100 * 2.55).toString(16);
-        if (alpha.length < 2) {
-          alpha = "0" + alpha;
-        }
+        if (alpha.length < 2) alpha = "0" + alpha;
         this.addColorStop(0, '#FFFFFF' + alpha);
       }
     }
@@ -2134,9 +2125,7 @@ function rgba(r, g, b, a) {
         let newGreen = c.g - (distanceFromCenter * 100 * 2.55);
         let newBlue  = c.b - (distanceFromCenter * 100 * 2.55);
         let newAlpha = 1 - distanceFromCenter;
-        if (brightness > 0) {
-          newAlpha = Math.max(0, brightness - distanceFromCenter);
-        }
+        if (brightness > 0) newAlpha = Math.max(0, brightness - distanceFromCenter);
         this.addColorStop(distanceFromCenter, rgba(~~newRed, ~~newGreen, ~~newBlue, newAlpha));
       }
     } else {
@@ -2531,30 +2520,23 @@ function rgba(r, g, b, a) {
   };
 
   // ALIASED Scene_Battle initialization: create the light mask.
-
   let Community_Lighting_Spriteset_Battle_createLowerLayer = Spriteset_Battle.prototype.createLowerLayer;
   Spriteset_Battle.prototype.createLowerLayer = function () {
     Community_Lighting_Spriteset_Battle_createLowerLayer.call(this);
-    if (battleMaskPosition.equalsIC('Above')) {
-      this.createBattleLightmask();
-    }
+    if (battleMaskPosition.equalsIC('Above')) this.createBattleLightmask();
   };
 
   if (isRMMV()) {
     let Community_Lighting_Spriteset_Battle_createBattleback = Spriteset_Battle.prototype.createBattleback;
     Spriteset_Battle.prototype.createBattleback = function () {
       Community_Lighting_Spriteset_Battle_createBattleback.call(this);
-      if (battleMaskPosition.equalsIC('Between')) {
-        this.createBattleLightmask();
-      }
+      if (battleMaskPosition.equalsIC('Between')) this.createBattleLightmask();
     };
   } else {
     let Community_Lighting_Spriteset_Battle_createBattleField = Spriteset_Battle.prototype.createBattleField;
     Spriteset_Battle.prototype.createBattleField = function () {
       Community_Lighting_Spriteset_Battle_createBattleField.call(this);
-      if (battleMaskPosition.equalsIC('Between')) {
-        this.createBattleLightmask();
-      }
+      if (battleMaskPosition.equalsIC('Between')) this.createBattleLightmask();
     };
   }
 
@@ -2571,13 +2553,10 @@ function rgba(r, g, b, a) {
     }
   };
 
-  function BattleLightmask() {
-    this.initialize.apply(this, arguments);
-  }
+  function BattleLightmask() { this.initialize.apply(this, arguments); }
 
   BattleLightmask.prototype = Object.create(PIXI.Container.prototype);
   BattleLightmask.prototype.constructor = BattleLightmask;
-
   BattleLightmask.prototype.initialize = function () {
     PIXI.Container.call(this);
     this._width = Graphics.width;
@@ -2586,11 +2565,15 @@ function rgba(r, g, b, a) {
     this._createBitmaps();
 
     // Initialize the bitmap
-    this._addSprite(-lightMaskPadding, 0, this._maskBitmaps.multiply, PIXI.BLEND_MODES.MULTIPLY);
-    this._addSprite(-lightMaskPadding, 0, this._maskBitmaps.additive, PIXI.BLEND_MODES.ADD);
+    // +24 on Y to inverse RMMZ Spriteset_Battle.prototype.battleFieldOffsetY() math
+    // Graphics width/height adjustments to inverse Spriteset_Battle.prototype.createBattleField() offsets
+    let spriteXOffset = -lightMaskPadding - (Graphics.width - Graphics.boxWidth) / 2;
+    let spriteYOffset = (isRMMZ() ? 24 : 0) - (Graphics.height - Graphics.boxHeight) / 2;
+    this._addSprite(spriteXOffset, spriteYOffset, this._maskBitmaps.multiply, PIXI.BLEND_MODES.MULTIPLY);
+    this._addSprite(spriteXOffset, spriteYOffset, this._maskBitmaps.additive, PIXI.BLEND_MODES.ADD);
 
-    this._maskBitmaps.multiply.fillRect(0, 0, maxX + lightMaskPadding, maxY, '#000000');
-    this._maskBitmaps.additive.clearRect(0, 0, maxX + lightMaskPadding, maxY);
+    this._maskBitmaps.multiply.fillRect(0, 0, maxX, maxY, '#000000');
+    this._maskBitmaps.additive.clearRect(0, 0, maxX, maxY);
 
     let redhex = $gameTemp._MapTint.substring(1, 3);
     let greenhex = $gameTemp._MapTint.substring(3, 5);
@@ -2613,19 +2596,20 @@ function rgba(r, g, b, a) {
       $$.tintbattle(data, true);
     }
 
-    this._maskBitmaps.FillRect(-lightMaskPadding, 0, battleMaxX + lightMaskPadding, battleMaxY, $gameTemp._BattleTint);
+    this._maskBitmaps.FillRect(-lightMaskPadding, 0, maxX, maxY, $gameTemp._BattleTint); // offset to fill entire mask
+    this._maskBitmaps.multiply._baseTexture.update(); // Required to update battle texture in RMMZ optional for RMMV
+    this._maskBitmaps.additive._baseTexture.update(); // Required to update battle texture in RMMZ optional for RMMV
     $gameTemp._BattleTintSpeed = 0;
   };
 
   //@method _createBitmaps
-
   BattleLightmask.prototype._createBitmaps = function () {
-    this._maskBitmaps = new Mask_Bitmaps(battleMaxX + lightMaskPadding, battleMaxY);
+    this._maskBitmaps = new Mask_Bitmaps(maxX, maxY);
   };
 
   BattleLightmask.prototype.update = function () {
-    this._maskBitmaps.multiply.fillRect(0, 0, maxX + lightMaskPadding, maxY, '#000000');
-    this._maskBitmaps.additive.clearRect(0, 0, maxX + lightMaskPadding, maxY);
+    this._maskBitmaps.multiply.fillRect(0, 0, maxX, maxY, '#000000');
+    this._maskBitmaps.additive.clearRect(0, 0, maxX, maxY);
 
     let color1 = $gameTemp._BattleTint;
     if ($gameTemp._BattleTintSpeed > 0) {
@@ -2689,7 +2673,7 @@ function rgba(r, g, b, a) {
       color1 = add + rgba2hex(r3, g3, b3, a3);
       $gameTemp._BattleTintFade = color1;
     }
-    this._maskBitmaps.FillRect(-lightMaskPadding, 0, battleMaxX + lightMaskPadding, battleMaxY, color1);
+    this._maskBitmaps.FillRect(-lightMaskPadding, 0, maxX, maxY, color1);
     this._maskBitmaps.multiply._baseTexture.update(); // Required to update battle texture in RMMZ optional for RMMV
     this._maskBitmaps.additive._baseTexture.update(); // Required to update battle texture in RMMZ optional for RMMV
   };
