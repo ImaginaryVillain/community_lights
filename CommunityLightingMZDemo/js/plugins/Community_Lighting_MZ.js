@@ -911,36 +911,43 @@ Imported[Community.Lighting.name] = true;
 * The 'light cond' command allows for conditional lights to be dynamically changed on demand.
 * See the Plugin Commands section for more details.
 *
-* The following chart shows all supported properties:
+* Ranges can be used if random values are desired. Cycle tags are statically generated at map
+* load. If dynamically random property values are desired, use the 'light cond' command instead.
+* See the table below for property specific formatting.
+*
+* The following table shows supported properties:
 * ---------------------------------------------------------------------------------------------------------------------
-* | Property    |  Prefix   |         Format*         |       Examples       |              Description               |
+* | Property    |  Prefix   |         Format*†        |       Examples       |              Description               |
 * |-------------|-----------|-------------------------|----------------------|----------------------------------------|
-* |   pause     |     p     |           pN            |     p0, p1, p20      | time period in cycles to pause after   |
-* |  duration   |           |                         |                      | transitioning for cycling lights       |
+* |   pause     |     p     |         p<N|N:N>        |     p0, p1, p20,     | time period in cycles to pause after   |
+* |  duration   |           |                         |    p0:20, p1:20      | transitioning for cycling lights       |
 * |-------------|-----------|-------------------------|----------------------|----------------------------------------|
-* | transition  |     t     |           tN            |     t0, t1, t30      | time period to transition the          |
-* |  duration   |           |                         |                      | specified properties over              |
+* | transition  |     t     |         t<N|N:N>        |     t0, t1, t30      | time period to transition the          |
+* |  duration   |           |                         |    t0:30, t1:30      | specified properties over              |
 * |-------------|-----------|-------------------------|----------------------|----------------------------------------|
-* |   color     |   #, #a   | <#|#a><RRGGBBAA|RRGGBB> | #, a#FFEEDD, #ffeedd | color or additive color                |
+* |   color     |   #, #a   |   <#|#a><hex|hex:hex>   | #, #FFEEDD, #ffeedd, | color or additive color                |
+* |             |           |                         |  a#000000:a#ffffff   |                                        |
 * |-------------|-----------|-------------------------|----------------------|----------------------------------------|
-* |  enable     |     e     |         e<1|0>          |        e1, e0        | turns light on or off instantly        |
+* |  enable     |     e     |        e<1|0|0:1>       |     e1, e0, e0:1     | turns light on or off instantly        |
 * |-------------|-----------|-------------------------|----------------------|----------------------------------------|
-* |   angle     | a, +a, -a |       <a|+a|-a>N        |  a, a30, +a30, -a30  | flashlight angle in degrees. '+' moves |
-* |             |           |                         |                      | clockwise, '-' moves counterclockwise  |
+* |   angle     | a, +a, -a |     <a|+a|-a><N|N:N>    |  a, a30, +a30, -a30  | flashlight angle in degrees. '+' moves |
+* |             |           |                         |    +a0:30, -a0:30    | clockwise, '-' moves counterclockwise  |
 * |-------------|-----------|-------------------------|----------------------|----------------------------------------|
-* | brightness  |     b     |           bN            |    b, b0, b1, b5     | brightness                             |
+* | brightness  |     b     |         b<N|N:N>        | b, b0, b1, b5, b1:5  | brightness                             |
 * |-------------|-----------|-------------------------|----------------------|----------------------------------------|
-* |  x offset   |     x     |           xN            |      x, x2, x-2      | x offset                               |
+* |  x offset   |     x     |         x<N|N:N>        |  x, x2, x-2, x-2:2   | x offset                               |
 * |-------------|-----------|-------------------------|----------------------|----------------------------------------|
-* |  y offset   |     y     |           yN            |      y, y2, y-2      | y offset                               |
+* |  y offset   |     y     |         y<N|N:N>        |  y, y2, y-2, y-2:2   | y offset                               |
 * |-------------|-----------|-------------------------|----------------------|----------------------------------------|
-* |   radius    |     r     |           rN            |     r, r50, r150     | light radius                           |
+* |   radius    |     r     |         r<N|N:N>        | r, r50, r150, r50:75 | light radius                           |
 * |-------------|-----------|-------------------------|----------------------|----------------------------------------|
-* | beam length |     l     |           lN            |    l, l8, l9, l10    | flashlight beam length                 |
+* | beam length |     l     |         l<N|N:N>        | l, l8, l9, l10, l7:9 | flashlight beam length                 |
 * |-------------|-----------|-------------------------|----------------------|----------------------------------------|
-* | beam width  |     w     |           wN            |   w, w12, w13, w14   | flashlight beam width                  |
+* | beam width  |     w     |         w<N|N:N>        |   w, w8, w14, w7:9   | flashlight beam width                  |
 * |-------------|-----------|-------------------------|----------------------|----------------------------------------|
-* | * Omitting N or RBG value will transition the given property back to its initial state                                 |
+* | * Omitting N or hex value will transition the given property back to its initial state                            |
+* |-------------------------------------------------------------------------------------------------------------------|
+* | † using the N:N or hex:hex format allows for a randomly generated value within the given range (inclusive)        |
 * ---------------------------------------------------------------------------------------------------------------------
 *
 * --------------------------------------------------------------------------
@@ -1512,34 +1519,54 @@ class LightProperties {
       // clear checks (back to initial value for the given property)
       if      (        e.equalsIC('t'))        this.transitionDuration = 0;
       else if (        e.equalsIC('p'))        this.pauseDuration      = 0;
-      else if (        e.equalsIC('#'))        this.color      = void(0);
-      else if (        e.equalsIC('a#'))       this.color      = void(0);
-      else if (        e.equalsIC('e'))        this.enable     = void(0);
-      else if (        e.equalsIC('b'))        this.brightness = void(0);
-      else if (        e.equalsIC('x'))        this.xOffset    = void(0);
-      else if (        e.equalsIC('y'))        this.yOffset    = void(0);
-      else if (isOL && e.equalsIC('r'))        this.radius     = void(0);
-      else if (isFL && e.equalsIC('l'))        this.beamLength = void(0);
-      else if (isFL && e.equalsIC('w'))        this.beamWidth  = void(0);
-      else if (isFL && e.equalsIC('a'))        this.clockwise  = this.direction = void(0);
-      else if (isFL && e.equalsIC('+a'))       this.clockwise  = this.direction = void(0);
-      else if (isFL && e.equalsIC('-a'))       this.clockwise  = this.direction = void(0);
-      // on or off checks
+      else if (        e.equalsIC('#'))        this.color      = void (0);
+      else if (        e.equalsIC('a#'))       this.color      = void (0);
+      else if (        e.equalsIC('e'))        this.enable     = void (0);
+      else if (        e.equalsIC('b'))        this.brightness = void (0);
+      else if (        e.equalsIC('x'))        this.xOffset    = void (0);
+      else if (        e.equalsIC('y'))        this.yOffset    = void (0);
+      else if (isOL && e.equalsIC('r'))        this.radius     = void (0);
+      else if (isFL && e.equalsIC('l'))        this.beamLength = void (0);
+      else if (isFL && e.equalsIC('w'))        this.beamWidth  = void (0);
+      else if (isFL && e.equalsIC('a'))        this.clockwise  = this.direction = void (0);
+      else if (isFL && e.equalsIC('+a'))       this.clockwise  = this.direction = void (0);
+      else if (isFL && e.equalsIC('-a'))       this.clockwise  = this.direction = void (0);
+
+      // parse suffix (individual & random ranges)
+      let suffix, rand = (min, max) => Math.random() * (max - min) + min;
+      if (!e.contains(':') && !e.contains('#')) {                               // single number
+        suffix = orNaN(+e.slice(1), +e.slice(2), 0);                            // - get number
+      } else if (!e.contains(':') && e.contains('#')) {                         // single color
+        suffix = new VRGBA(e);                                                  // - get color
+      } else if (!e.contains('#')) {                                            // number range
+        let eSplit = e.split(':');                                              // - explode range
+        let min = orNaN(+eSplit[0].slice(1), +eSplit[0].slice(2), 0);           // - get suffix (prefix size 1 or 2)
+        let max = orNaN(+eSplit[1], 0);                                         // - get suffix (no prefix)
+        suffix = e[0] != 'e' ? rand(min, max) : Math.floor(rand(min, max + 1)); // - for 'e' we need int ranges
+      } else {                                                                  // color range
+        let eSplit = e.split(':');                                              // - explode range
+        let min = new VRGBA(eSplit[0]);                                         // - get the whole hex value
+        let max = new VRGBA(eSplit[1]);                                         // - get the whole hex value
+        suffix = new VRGBA(Boolean(Math.floor(rand(min.v, max.v + 1))), Math.floor(rand(min.r, max.r + 1)),
+                                   Math.floor(rand(min.g, max.g + 1)),  Math.floor(rand(min.b, max.b + 1)),
+                                   Math.floor(rand(min.a, max.a + 1)));
+      }
+
       // prefix checks
-      else if (        e.startsWithIC('t'))  { this.transitionDuration = orNaN(+e.slice(1), 0); }
-      else if (        e.startsWithIC('p'))  { this.pauseDuration      = orNaN(+e.slice(1), 0); }
-      else if (        e.startsWithIC('#'))    this.color      = new VRGBA(e);
-      else if (        e.startsWithIC('a#'))   this.color      = new VRGBA(e);
-      else if (        e.startsWithIC('e'))    this.enable     = Boolean(orNaN(+e.slice(1), 0));
-      else if (        e.startsWithIC('b'))    this.brightness = orNaN(+e.slice(1), 0);
-      else if (        e.startsWithIC('x'))    this.xOffset    = orNaN(+e.slice(1), 0);
-      else if (        e.startsWithIC('y'))    this.yOffset    = orNaN(+e.slice(1), 0);
-      else if (isOL && e.startsWithIC('r'))    this.radius     = orNaN(+e.slice(1), 0);
-      else if (isFL && e.startsWithIC('l'))    this.beamLength = orNaN(+e.slice(1), 0);
-      else if (isFL && e.startsWithIC('w'))    this.beamWidth  = orNaN(+e.slice(1), 0);
-      else if (isFL && e.startsWithIC('a'))  { this.clockwise  = true;  this.direction = M_PI_180 * orNaN(+e.slice(1), 0); }
-      else if (isFL && e.startsWithIC('+a')) { this.clockwise  = true;  this.direction = M_PI_180 * orNaN(+e.slice(2), 0); }
-      else if (isFL && e.startsWithIC('-a')) { this.clockwise  = false; this.direction = M_PI_180 * orNaN(+e.slice(2), 0); }
+      if (             e.startsWithIC('t'))    this.transitionDuration = suffix;
+      else if (        e.startsWithIC('p'))    this.pauseDuration      = suffix;
+      else if (        e.startsWithIC('#'))    this.color      = suffix;
+      else if (        e.startsWithIC('a#'))   this.color      = suffix;
+      else if (        e.startsWithIC('e'))    this.enable     = Boolean(suffix);
+      else if (        e.startsWithIC('b'))    this.brightness = suffix;
+      else if (        e.startsWithIC('x'))    this.xOffset    = suffix;
+      else if (        e.startsWithIC('y'))    this.yOffset    = suffix;
+      else if (isOL && e.startsWithIC('r'))    this.radius     = suffix;
+      else if (isFL && e.startsWithIC('l'))    this.beamLength = suffix;
+      else if (isFL && e.startsWithIC('w'))    this.beamWidth  = suffix;
+      else if (isFL && e.startsWithIC('a'))  { this.clockwise  = true;  this.direction = M_PI_180 * suffix; }
+      else if (isFL && e.startsWithIC('+a')) { this.clockwise  = true;  this.direction = M_PI_180 * suffix; }
+      else if (isFL && e.startsWithIC('-a')) { this.clockwise  = false; this.direction = M_PI_180 * suffix; }
     }, this);
   }
 
@@ -2083,7 +2110,6 @@ class ColorDelta {
       let cycleIndex, hasCycle = false;
       tagData.forEach((e) => {
         let n = clipNum(e);
-        console.log()
         if      (!isFL() && isPreNum(e, 'r', n) && isNul(this._cl.radius))     this._cl.radius     = n;
         else if (!isFL() && !isNaN(+e)          && isNul(this._cl.radius))     this._cl.radius     = +e;
         else if (isFL()  && !isNaN(+e)          && isNul(this._cl.beamLength)) this._cl.beamLength = +e;
