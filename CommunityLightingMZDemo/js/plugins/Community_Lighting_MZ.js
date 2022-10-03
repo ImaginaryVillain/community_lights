@@ -782,11 +782,11 @@ Imported[Community.Lighting.name] = true;
 * --------------------------------------------------------------------------
 * Events
 * --------------------------------------------------------------------------
-* Light radius color [onoff] [day|night] [brightness] [direction] [x] [y] [id]
-* Light radius cycle <color [pauseDuration]>... [onoff] [day|night] [brightness] [direction] [x] [y] [id]
-* Light [radius] [color] [{CycleProps}...] [onoff] [day|night] [brightness] [direction] [x] [y] [id]
+* Light radius color [enable] [day|night] [brightness] [direction] [x] [y] [id]
+* Light radius cycle <color [pauseDuration]>... [enable] [day|night] [brightness] [direction] [x] [y] [id]
+* Light [radius] [color] [{CycleProps}...] [enable] [day|night] [brightness] [direction] [x] [y] [id]
 * - Light
-* - radius      100, 250, etc
+* - radius      Any number, optionally preceded by "R" or "r", so 100, R100, r100, etc.
 * - cycle       Allows any number of color + duration pairs to follow that will be cycled
 *               through before repeating from the beginning. See the examples below for usage.
 *               In Terrax Lighting, there was a hard limit of 4, but now there is no limit.
@@ -797,7 +797,8 @@ Imported[Community.Lighting.name] = true;
 *               Lighting section for more details. * Any non-cyclic properties are inherited
 *               unless overridden by the first cyclic properties [Optional]
 * - color       #ffffff, #ff0000, etc
-* - onoff:      Initial state:  0, 1, off, on (default). Ignored if day|night passed [optional]
+* - enable      Initial state: off, on (default). May optionally use 'E1|e1|E0|e0' syntax
+*               where 1 is on, and 0 is off. Ignored if day|night passed [optional]
 * - day         Causes the light to only come on during the day [optional]
 * - night       Causes the light to only come on during the night [optional]
 * - brightness  B50, B25, etc [optional]
@@ -808,20 +809,21 @@ Imported[Community.Lighting.name] = true;
 * - x           x offset [optional] (0.5: half tile, 1 = full tile, etc)
 * - y           y offset [optional]
 * - id          1, 2, potato, etc. An id (alphanumeric) for plugin commands [optional]
-*               These should not be in the format of 'aN', 'bN', dN', 'lN', 'wN' 'xN' or 'yN'
-*               where N is a number otherwise they will be mistaken for one of the previous
-*               optional parameters.
+*               These should not be in the format of '<a|b|d|e|l|w|x|y|A|B|D|E|L|W|X|Y>N'
+*               where N is a number following any supported optional parameter prefix
+*               otherwise it will be mistaken for one of the previous optional parameters.
+*               Generally, it is adviseable to avoid any single letter followed by a number.
 *
 * Fire ...params
 * - Same as Light params above, but adds a subtle flicker
 *
-* Flashlight bl bw color [onoff] [day|night] [sdir|angle] [x] [y] [id]
-* Flashlight bl bw cycle <color [pauseDuration]>... [onoff] [day|night] [sdir|angle] [x] [y] [id]
-* Flashlight [bl] [bw] [{CycleProps}...] [onoff] [day|night] [sdir|angle] [x] [y] [id]
+* Flashlight bl bw color [enable] [day|night] [sdir|angle] [x] [y] [id]
+* Flashlight bl bw cycle <color [pauseDuration]>... [enable] [day|night] [sdir|angle] [x] [y] [id]
+* Flashlight [bl] [bw] [{CycleProps}...] [enable] [day|night] [sdir|angle] [x] [y] [id]
 * - Sets the light as a flashlight with beam length (bl) beam width (bw) color (c),
 *      0|1 (onoff), and 1=up, 2=right, 3=down, 4=left for static direction (sdir)
-* - bl:         Beam length:  Any number, optionally preceded by "L", so 8, L8
-* - bw:         Beam width:  Any number, optionally preceded by "W", so 12, W12
+* - bl:         Beam length:  Any number, optionally preceded by "L" or "l", so 8, L8, l8, etc.
+* - bw:         Beam width:  Any number, optionally preceded by "W", or 'w', so 12, W12, w12, etc.
 * - cycle       Allows any number of color + duration pairs to follow that will be cycled
 *               through before repeating from the beginning. See the examples below for usage.
 *               In Terrax Lighting, there was a hard limit of 4, but now there is no limit.
@@ -832,19 +834,21 @@ Imported[Community.Lighting.name] = true;
 *               Lighting section for more details. * Any non-cyclic properties are inherited
 *               unless overridden by the first cyclic properties [Optional]
 * - color       #ffffff, #ff0000, etc
-* - onoff:      Initial state:  0, 1, off, on (default). Ignored if day|night passed [optional]
+* - enable      Initial state: off, on (default). May optionally use 'E1|e1|E0|e0' syntax
+*               where 1 is on, and 0 is off. Ignored if day|night passed [optional]
 * - day         Sets the event's light to only show during the day [optional]
 * - night       Sets the event's light to only show during night time [optional]
 * - sdir:       Forced direction (optional): 0:auto, 1:up, 2:right, 3:down, 4:left
-*               Can be preceded by "D", so D4.  If omitted, defaults to 0
-* - angle:      Forced direction in degrees (optional): must be preceded by "A". If
+*               Can be preceded by "D" or "d", so D4, d4, etc. If omitted, defaults to 0
+* - angle:      Forced direction in degrees (optional): must be preceded by "A" or "a". If
 *               omitted, sdir is used. [optional]
 * - x           x[offset] Work the same as regular light [optional]
 * - y           y[offset] [optional]
 * - id          1, 2, potato, etc. An id (alphanumeric) for plugin commands [optional]
-*               These should not be in the format of 'aN', 'bN', dN', 'lN', 'wN' 'xN' or 'yN'
-*               where N is a number otherwise they will be mistaken for one of the previous
-*               optional parameters.
+*               These should not be in the format of '<a|b|d|e|l|w|x|y|A|B|D|E|L|W|X|Y>N'
+*               where N is a number following any supported optional parameter prefix
+*               otherwise it will be mistaken for one of the previous optional parameters.
+*               Generally, it is adviseable to avoid any single letter followed by a number.
 *
 * Example note tags:
 *
@@ -852,10 +856,10 @@ Imported[Community.Lighting.name] = true;
 * Creates a basic light
 *
 * <cl: light 300 cycle #ff0000 15 #ffff00 15 #00ff00 15 #00ffff 15 #0000ff 15>
-* <cl: light 300 {#ff0000 p15} {#ffff00} {#00ff00} {#00ffff} {#0000ff}>
+* <cl: light r300 {#ff0000 p15} {#ffff00} {#00ff00} {#00ffff} {#0000ff}>
 * Creates a cycling light that rotates every 15 frames.  Great for parties!
 *
-* <cl: light 300 {#ff0000 t30 p60} {#ffff00} {#00ff00} {#00ffff}>
+* <cl: light r300 {#ff0000 t30 p60} {#ffff00} {#00ff00} {#00ffff}>
 * Creates a cycling light that stays on for 30 frames and transitions to the next color over 60 frames.
 *
 * <cl: light {#ff0000 t30 p60 r250} {#ffff00 r300} {#00ff00 r250} {#00ffff r300}>
@@ -884,7 +888,7 @@ Imported[Community.Lighting.name] = true;
 * in front of any color light color.
 *
 * Example note tags:
-* <cl: light 300 {a#990000 t15} {a#999900} {a#009900} {a#009999} {a#000099}>
+* <cl: light r300 {a#990000 t15} {a#999900} {a#009900} {a#009999} {a#000099}>
 * Creates a cycling volumetric light that rotates every 15 frames.
 *
 * <cl: Flashlight l8 w12 a#660000 on asdf>
@@ -2069,34 +2073,38 @@ class ColorDelta {
     this._cl.type = LightType[tagData.shift()];
     // Handle parsing of light, fire, and flashlight
     if (this._cl.type) {
-      let isFL       = ()        => this._cl.type.is(LightType.Flashlight); // is flashlight
-      let isEq       = (e, ...a) => { for (let i of a) if (e.equalsIC(i)) return true; return false; };
-      let isPre      = (e, ...a) => { for (let i of a) if (e.startsWithIC(i)) return true; return false; };
-      let isNul      = (e)       => e == null;
-      let isDayNight = (e)       => isEq(e, "night", "day");
-      let clip       = (e)       => orNaN(+e.slice(1)); // clip prefix & convert to number or undefined
+      let isFL       = ()          => this._cl.type.is(LightType.Flashlight); // is flashlight
+      let isEq       = (e, s0, s1) => s0 && e.equalsIC(s0)     || s1 && e.equalsIC(s1);
+      let isPre      = (e, p0, p1) => p0 && e.startsWithIC(p0) || p1 && e.startsWithIC(p1);
+      let isPreNum   = (e, p, n)   => p  && e.startsWithIC(p)  && !isNaN(n);
+      let isNul      = (e)         => e == null;
+      let isDayNight = (e)         => isEq(e, "night", "day");
+      let clipNum    = (e)         => orNaN(+e.slice(1)); // clip prefix & convert to number or undefined
       let cycleIndex, hasCycle = false;
       tagData.forEach((e) => {
-        let n = clip(e);
-        if      (!isFL() && !isNaN(+e)          && isNul(this._cl.radius))     this._cl.radius     = +e;
+        let n = clipNum(e);
+        console.log()
+        if      (!isFL() && isPreNum(e, 'r', n) && isNul(this._cl.radius))     this._cl.radius     = n;
+        else if (!isFL() && !isNaN(+e)          && isNul(this._cl.radius))     this._cl.radius     = +e;
         else if (isFL()  && !isNaN(+e)          && isNul(this._cl.beamLength)) this._cl.beamLength = +e;
         else if (isFL()  && !isNaN(+e)          && isNul(this._cl.beamWidth))  this._cl.beamWidth  = +e;
-        else if (isFL()  && isPre(e, "l") && n  && isNul(this._cl.beamLength)) this._cl.beamLength = n;
-        else if (isFL()  && isPre(e, "w") && n  && isNul(this._cl.beamWidth))  this._cl.beamWidth  = n;
-        else if (           isEq(e, "cycle")    && isNul(this._cl.color))      hasCycle            = true;
-        else if (           isPre(e, "#", "a#") && hasCycle)                   cycleIndex = cycleGroups.push([e]) - 2;
-        else if (           !isNaN(+e)          && cycleGroups[cycleIndex])    cycleGroups[cycleIndex].push('p' + e);
-        else if (           isPre(e, "#", "a#") && isNul(this._cl.color))      this._cl.color      = new VRGBA(e);
-        else if (           isOn(e)             && isNul(this._cl.enable))     this._cl.enable    = true;
-        else if (           isOff(e)            && isNul(this._cl.enable))     this._cl.enable    = false;
+        else if (isFL()  && isPreNum(e, 'l', n) && isNul(this._cl.beamLength)) this._cl.beamLength = n;
+        else if (isFL()  && isPreNum(e, 'w', n) && isNul(this._cl.beamWidth))  this._cl.beamWidth  = n;
+        else if (           isEq(e, 'cycle')    && isNul(this._cl.color))      hasCycle            = true;
+        else if (           isPre(e, '#', 'a#') && hasCycle)                   cycleIndex = cycleGroups.push([e]) - 2;
+        else if (           !isNaN(+e)          && cycleGroups[cycleIndex])    cycleGroups[cycleIndex] .push('p' + e);
+        else if (           isPre(e, '#', 'a#') && isNul(this._cl.color))      this._cl.color      = new VRGBA(e);
+        else if (           isPreNum(e, 'e', n) && isNul(this._cl.enable))     this._cl.enable     = Boolean(n);
+        else if (           isOn(e)             && isNul(this._cl.enable))     this._cl.enable     = true;
+        else if (           isOff(e)            && isNul(this._cl.enable))     this._cl.enable     = false;
         else if (           isDayNight(e)       && isNul(this._cl.switch))     this._cl.switch     = e;
-        else if (           isPre(e, "b") && n  && isNul(this._cl.brightness)) this._cl.brightness = (n / 100).clamp(0, 1);
-        else if (!isFL() && isPre(e, "d") && n  && isNul(this._cl.direction))  this._cl.direction  = n;
+        else if (           isPreNum(e, 'b', n) && isNul(this._cl.brightness)) this._cl.brightness = (n / 100).clamp(0, 1);
+        else if (!isFL() && isPreNum(e, 'd', n) && isNul(this._cl.direction))  this._cl.direction  = n;
         else if ( isFL() && !isNaN(+e)          && isNul(this._cl.direction))  this._cl.direction  = +e;
-        else if ( isFL() && isPre(e, "d") && n  && isNul(this._cl.direction))  this._cl.direction  = CLDirectionMap[n];
-        else if ( isFL() && isPre(e, "a") && n  && isNul(this._cl.direction))  this._cl.direction  = Math.PI / 180 * n;
-        else if (           isPre(e, "x") && n  && isNul(this._cl.xOffset))    this._cl.xOffset    = n;
-        else if (           isPre(e, "y") && n  && isNul(this._cl.yOffset))    this._cl.yOffset    = n;
+        else if ( isFL() && isPreNum(e, 'd', n) && isNul(this._cl.direction))  this._cl.direction  = CLDirectionMap[n];
+        else if ( isFL() && isPreNum(e, 'a', n) && isNul(this._cl.direction))  this._cl.direction  = Math.PI / 180 * n;
+        else if (           isPreNum(e, 'x', n) && isNul(this._cl.xOffset))    this._cl.xOffset    = n;
+        else if (           isPreNum(e, 'y', n) && isNul(this._cl.yOffset))    this._cl.yOffset    = n;
         else if (           e.length > 0        && isNul(this._cl.id))         this._cl.id         = e;
         cycleIndex += 1; // increment index. Valid for 1 iteration after a cycle color is parsed before OOB.
       }, this);
