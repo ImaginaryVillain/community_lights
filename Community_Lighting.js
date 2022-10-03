@@ -721,13 +721,13 @@ Imported[Community.Lighting.name] = true;
 const M_2PI    = 2 * Math.PI;   // cache 2PI - this is faster
 const M_PI_180 = Math.PI / 180; // cache PI/180 - this is faster
 
-Number.prototype.is           = function(...a)    { return a.includes(Number(this)); };
-Number.prototype.inRange      = function(min, max){ return this >= min && this <= max; };
-Number.prototype.clone        = function()        { return this; };
-Boolean.prototype.clone       = function()        { return this; };
-String.prototype.equalsIC     = function(...a)    { return a.map(s => s.toLowerCase()).includes(this.toLowerCase()); };
-String.prototype.startsWithIC = function(s)       { return this.toLowerCase().startsWith(s.toLowerCase()); };
-Math.minmax                   = (minOrMax, ...a) => minOrMax ? Math.min(...a) : Math.max(...a); // min if positive
+Number.prototype.is           = function(...a)     { return a.includes(Number(this)); };
+Number.prototype.inRange      = function(min, max) { return this >= min && this <= max; };
+Number.prototype.clone        = function()         { return this; };
+Boolean.prototype.clone       = function()         { return this; };
+String.prototype.equalsIC     = function(...a)     { return a.map(s => s.toLowerCase()).includes(this.toLowerCase()); };
+String.prototype.startsWithIC = function(s)        { return this.toLowerCase().startsWith(s.toLowerCase()); };
+Math.minmax                   = (minOrMax, ...a) =>  minOrMax ? Math.min(...a) : Math.max(...a); // min if positive
 
 let isRMMZ = () => Utils.RPGMAKER_NAME === "MZ";
 let isRMMV = () => Utils.RPGMAKER_NAME === "MV";
@@ -832,7 +832,7 @@ const isValidColorRegex = /^[Aa]?#[A-F\d]{8}$/i; // a|A before # for additive li
  * @param {Number} a
  * @returns {String}
  */
- function rgba(r, g, b, a) {
+function rgba(r, g, b, a) {
   return "rgba(" + r + "," + g + "," + b + "," + a + ")";
 }
 
@@ -2037,8 +2037,8 @@ class ColorDelta {
 
       let lightsOnRadius = $gameVariables.GetActiveRadius();
       if (lightsOnRadius > 0) {
-        let distpart = Math.round(Community.Lighting.distance($gamePlayer.x, $gamePlayer.y, cur._realX, cur._realY));
-        if (distpart > lightsOnRadius) {
+        let distanceApart = Math.round(Community.Lighting.distance($gamePlayer.x, $gamePlayer.y, cur._realX, cur._realY));
+        if (distanceApart > lightsOnRadius) {
           continue;
         }
       }
@@ -2198,7 +2198,7 @@ class ColorDelta {
   * @param {Number} brightness
   * @param {VRGBA} c1
   * @param {VRGBA} c2
-   */
+  */
   CanvasGradient.prototype.addTransparentColorStops = function (brightness, c1, c2) {
     if (brightness) {
       if (!useSmootherLights) {
