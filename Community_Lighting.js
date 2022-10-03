@@ -2085,9 +2085,9 @@ class ColorDelta {
             let flashlength = cur.getLightFlashlightLength();
             let flashwidth  = cur.getLightFlashlightWidth();
             if (!isNaN(direction)) ldir = direction;
-            this._maskBitmaps.radialgradientFlashlight(lx1, ly1, color, VRGBA.empty(), ldir, flashlength, flashwidth);
+            this._maskBitmaps.radialgradientFlashlight(lx1, ly1, color, VRGBA.minRGBA(), ldir, flashlength, flashwidth);
           } else if (lightType.is(LightType.Light, LightType.Fire)) {
-            this._maskBitmaps.radialgradientFillRect(lx1, ly1, 0, light_radius, color, VRGBA.empty(), objectflicker,
+            this._maskBitmaps.radialgradientFillRect(lx1, ly1, 0, light_radius, color, VRGBA.minRGBA(), objectflicker,
                                                      brightness, direction);
           }
         }
@@ -2119,7 +2119,7 @@ class ColorDelta {
         tile_color.b = Math.floor(tile_color.b + (60 - $gameTemp._glowAmount)).clamp(0, 255);
         tile_color.a = Math.floor(tile_color.a + (60 - $gameTemp._glowAmount)).clamp(0, 255);
       }
-      this._maskBitmaps.radialgradientFillRect(x1, y1, 0, tile.radius, tile_color, VRGBA.empty(), objectflicker,
+      this._maskBitmaps.radialgradientFillRect(x1, y1, 0, tile.radius, tile_color, VRGBA.minRGBA(), objectflicker,
                                                tile.brightness);
     });
 
@@ -2627,7 +2627,7 @@ class ColorDelta {
     // then use the tint of the map, otherwise use full brightness
     let c = (!DataManager.isBattleTest() && !DataManager.isEventTest() && $gameMap.mapId() >= 0 &&
              $gameVariables.GetScriptActive() && options_lighting_on && lightInBattle) ?
-            $gameVariables.GetTint() : new VRGBA("#ffffff");
+            $gameVariables.GetTint() : VRGBA.maxRGBA();
 
     let note = $$.getCLTag($$.getFirstComment($dataTroops[$gameTroop._troopId].pages[0]));
     if ((/^tintbattle\b/i).test(note)) {
@@ -3088,7 +3088,7 @@ Game_Variables.prototype.SetTint = function (value) {
   this._Community_Tint_Value = value.clone();
 };
 Game_Variables.prototype.GetTint = function () {
-  if (!this._Community_Tint_Value) this._Community_Tint_Value = VRGBA.empty();
+  if (!this._Community_Tint_Value) this._Community_Tint_Value = VRGBA.minRGBA();
   return this._Community_Tint_Value.clone();
 };
 Game_Variables.prototype.SetTintAtHour = function (hour, color) {
@@ -3101,7 +3101,7 @@ Game_Variables.prototype.GetTintByTime = function (inc = 0) {
   while (hours >= hoursinDay) hours -= hoursinDay;
   while (hours < 0) hours += hoursinDay;
   let result = this.GetDaynightColorArray()[hours];
-  return result ? result.color.clone() : VRGBA.empty();
+  return result ? result.color.clone() : VRGBA.minRGBA();
 };
 Game_Variables.prototype.SetTintTarget = function (delta) {
   this._Community_TintTarget = delta;
@@ -3141,7 +3141,7 @@ Game_Variables.prototype.SetPlayerColor = function (value) { // don't set if emp
   if (value) this._Community_Lighting_PlayerColor = new VRGBA(value);
 };
 Game_Variables.prototype.GetPlayerColor = function () {
-  if (!this._Community_Lighting_PlayerColor) this._Community_Lighting_PlayerColor = new VRGBA("#ffffff");
+  if (!this._Community_Lighting_PlayerColor) this._Community_Lighting_PlayerColor = VRGBA.maxRGBA();
   return this._Community_Lighting_PlayerColor.clone();
 };
 Game_Variables.prototype.SetPlayerBrightness = function (value) { // don't set if invalid.
@@ -3196,7 +3196,7 @@ Game_Variables.prototype.GetDaynightColorArray = function () {
   if (hoursInDay > result.length) { // lazy check bounds before returning and add colors if too small
     let origLength = result.length;
     result.length = hoursInDay;     // more efficient than a for loop
-    result.fill({ "color": new VRGBA("#ffffff"), "isNight": false }, origLength);
+    result.fill({ "color": VRGBA.maxRGBA(), "isNight": false }, origLength);
   }
   this._Community_Lighting_DayNightColorArray = result; // assign reference
   return result;
