@@ -1427,10 +1427,12 @@ class ColorDelta {
     }
   }
 
+  let ReloadMapEventsRequired = false;
   let colorcycle_count = [1000];
   let colorcycle_timer = [1000];
   let eventObjId = [];
   let event_id = [];
+  let events;
   let event_stacknumber = [];
   let event_eventcount = 0;
   let light_tiles = [];
@@ -1484,7 +1486,6 @@ class ColorDelta {
   let options_lighting_on = true;
   let maxX = (Number(parameters['Screensize X']) || 816) + 2 * lightMaskPadding;
   let maxY = Number(parameters['Screensize Y']) || 624;
-  let event_reload_counter = 0;
   let notetag_reg = RegExp("<" + noteTagKey + ":[ ]*([^>]+)>", "i");
   let radialColor2 = new VRGBA(useSmootherLights ? "#00000000" : "#000000");
   $$.getFirstComment = function (page) {
@@ -1516,14 +1517,6 @@ class ColorDelta {
     }
     else result = note.trim();
     return result;
-  };
-  Game_Event.prototype.getCLTag = function () {
-    let result;
-    let pageNote = noteTagKey ? $$.getFirstComment(this.page()) : null;
-    let note = this.event().note;
-    if (pageNote) result = $$.getCLTag(pageNote);
-    if (!result) result = $$.getCLTag(note);
-    return result || "";
   };
   $$.getDayNightList = function () {
     return dayNightList;
@@ -1567,8 +1560,27 @@ class ColorDelta {
     return (this[index] = value, true);
   };
 
-  // Event note tag caching
-  Game_Event.prototype.initLightData = function () {
+  let _Game_Event_setupPage = Game_Event.prototype.setupPage;
+  Game_Event.prototype.setupPage = function () { // Hook Game_Event.setupPage() to detect page changes
+    _Game_Event_setupPage.call(this);
+    ReloadMapEventsRequired = true; // force refresh
+  };
+  let _Game_Map_setupEvents = Game_Map.prototype.setupEvents;
+  Game_Map.prototype.setupEvents = function () { // hook $GameMap.setupEvents() and _events to detect event changes.
+    _Game_Map_setupEvents.call(this);
+    this._events = new Proxy(this._events, { // called on events pop, push, splice, assign
+      set: function (...a) { ReloadMapEventsRequired = true; return Reflect.set(...a); }
+    }); // force refresh
+  };
+  Game_Event.prototype.getCLTag = function () {
+    let result;
+    let pageNote = noteTagKey ? $$.getFirstComment(this.page()) : null;
+    let note = this.event().note;
+    if (pageNote) result = $$.getCLTag(pageNote);
+    if (!result) result = $$.getCLTag(note);
+    return result || "";
+  };
+  Game_Event.prototype.initLightData = function () {   // Event note tag caching
     this._cl = {};
     this._cl.lastLightPage = this._pageIndex;
     let tagData = this.getCLTag().toLowerCase();
@@ -1937,19 +1949,15 @@ class ColorDelta {
       $$.ReloadMapEvents();  // reload map events on map change
     }
 
-    // reload mapevents if event_data has changed (deleted or spawned events/saves)
-    if (event_eventcount != $gameMap.events().length) $$.ReloadMapEvents();
-
     // remove all old sprites
     for (let i = 0, len = this._sprites.length; i < len; i++) this._removeSprite();
 
     // No lighting on maps less than 1 || Plugin deactivated in options || Plugin deactivated by plugin command
     if (map_id <= 0 || !options_lighting_on || !$gameVariables.GetScriptActive()) return;
 
-    // reload map events every 200 cycles just in case or when a refresh is requested
-    event_reload_counter++;
-    if (event_reload_counter > 200) {
-      event_reload_counter = 0;
+    // reload map when a refresh is requested (event erase, page change, or _events object change)
+    if (ReloadMapEventsRequired) {
+      ReloadMapEventsRequired = false;
       $$.ReloadMapEvents();
     }
 
@@ -2055,8 +2063,8 @@ class ColorDelta {
     // ********** OTHER LIGHTSOURCES **************
     for (let i = 0, len = eventObjId.length; i < len; i++) {
       let evid = event_id[i];
-      let cur = $gameMap.events()[eventObjId[i]];
-      if (cur._cl == null || cur._cl.lastLightPage !== cur._pageIndex) cur.initLightData();
+      let cur  = events[eventObjId[i]];
+      if (cur._cl == null) cur.initLightData();
 
       let lightsOnRadius = $gameVariables.GetActiveRadius();
       if (lightsOnRadius > 0) {
@@ -2093,10 +2101,10 @@ class ColorDelta {
         }
         // show light
         if (state === true) {
-          let lx1 = $gameMap.events()[event_stacknumber[i]].screenX();
-          let ly1 = $gameMap.events()[event_stacknumber[i]].screenY() - 24;
+          let lx1 = events[event_stacknumber[i]].screenX();
+          let ly1 = events[event_stacknumber[i]].screenY() - 24;
           if (!shift_lights_with_events) {
-            ly1 += $gameMap.events()[event_stacknumber[i]].shiftY();
+            ly1 += events[event_stacknumber[i]].shiftY();
           }
 
           // apply offsets
@@ -2104,7 +2112,7 @@ class ColorDelta {
           ly1 += +yOffset;
 
           if (lightType.is(LightType.Flashlight)) {
-            let ldir = RMDirectionMap[$gameMap.events()[event_stacknumber[i]]._direction] || 0;
+            let ldir = RMDirectionMap[events[event_stacknumber[i]]._direction] || 0;
             let flashlength = cur.getLightFlashlightLength();
             let flashwidth  = cur.getLightFlashlightWidth();
             if (!isNaN(direction)) ldir = direction;
@@ -2773,19 +2781,20 @@ class ColorDelta {
     //**********************fill up new map-array *************************
     eventObjId = [];
     event_id = [];
+    events = $gameMap.events(); // cache because events() API calls filter for each call
     event_stacknumber = [];
-    event_eventcount = $gameMap.events().length;
+    event_eventcount = events.length;
 
     for (let i = 0; i < event_eventcount; i++) {
-      if ($gameMap.events()[i]) {
-        if ($gameMap.events()[i].event() && !$gameMap.events()[i]._erased) {
-          let note = $gameMap.events()[i].getCLTag();
+      if (events[i]) {
+        if (events[i].event() && !events[i]._erased) {
+          let note = events[i].getCLTag();
 
           let note_args = note.split(" ");
           let note_command = LightType[note_args.shift().toLowerCase()];
           if (note_command) {
             eventObjId.push(i);
-            event_id.push($gameMap.events()[i]._eventId);
+            event_id.push(events[i]._eventId);
             event_stacknumber.push(i);
 
           }
