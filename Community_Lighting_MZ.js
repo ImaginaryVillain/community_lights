@@ -934,7 +934,7 @@ Imported[Community.Lighting.name] = true;
 * |-------------|-----------|-------------------------|----------------------|----------------------------------------|
 * | beam width  |     w     |           wN            |   w, w12, w13, w14   | flashlight beam width                  |
 * |-------------|-----------|-------------------------|----------------------|----------------------------------------|
-* | * Omitting N or RBG value will reset the given property back to its initial state                                 |
+* | * Omitting N or RBG value will transition the given property back to its initial state                                 |
 * ---------------------------------------------------------------------------------------------------------------------
 *
 * --------------------------------------------------------------------------
@@ -1606,13 +1606,13 @@ class LightDelta {
     let normalizeAngle = (rads) => rads % (M_2PI) + (rads < 0) * M_2PI; // normalize between 0 & 2*Pi
     let normalizeClockwiseMovement = () => {
       this.current.direction = normalizeAngle(this.current.direction); // normalize already assigned current
-      this.target.direction  = normalizeAngle(this.target.direction);  // convert target to radians before normalization
-      if (this.current.direction > this.target.direction) this.target.direction += M_2PI; // clockwise normalize
+      target.direction  = normalizeAngle(target.direction);  // convert target to radians before normalization
+      if (this.current.direction > target.direction) target.direction += M_2PI; // clockwise normalize
     };
     let normalizeCounterClockwiseMovement = () => {
       this.current.direction = normalizeAngle(this.current.direction); // normalize already assigned current
-      this.target.direction  = normalizeAngle(this.target.direction);  // convert target to radians before normalization
-      if (this.current.direction < this.target.direction) this.target.direction -= M_2PI; // c-clockwise normalize
+      target.direction  = normalizeAngle(target.direction);  // convert target to radians before normalization
+      if (this.current.direction < target.direction) target.direction -= M_2PI; // c-clockwise normalize
     };
     let createColor  = (...a) => !a.some(x => x == null) && ColorDelta.create(...a)  || void (0);
     let createNumber = (...a) => !a.some(x => x == null) && NumberDelta.create(...a) || void (0);
@@ -1620,37 +1620,50 @@ class LightDelta {
     // set delta creation at current frame time
     this.current.updateFrame = Graphics.frameCount;
 
+    // Duplicate target so that any target normalization is local to this LightDelta instance
+    let target = this.target.clone();
+
     // Set current durations or 0 if not fading
-    this.current.transitionDuration = fade ? this.target.transitionDuration : 0;
-    this.current.pauseDuration      = fade ? this.target.pauseDuration : 0;
+    this.current.transitionDuration = fade ? target.transitionDuration : 0;
+    this.current.pauseDuration      = fade ? target.pauseDuration : 0;
 
     // Enable or disable the current immediately based off of target value
-    this.current.enable = this.target.enable != null ? this.target.enable : this.defaults.enable;
+    this.current.enable = target.enable != null ? target.enable : this.defaults.enable;
 
     // For currents (flashlights) check the movement direction and normalize the current and target
-    if      (this.current.direction != null && this.target.clockwise)  normalizeClockwiseMovement();
-    else if (this.current.direction != null && !this.target.clockwise) normalizeCounterClockwiseMovement();
+    if      (this.current.direction != null && target.clockwise)  normalizeClockwiseMovement();
+    else if (this.current.direction != null && !target.clockwise) normalizeCounterClockwiseMovement();
+
+    // Set any null targets to default (normalization for nulls) (allows defaults to gradually transition)
+    if(target.color == null)      target.color      = this.defaults.color;
+    if(target.direction == null)  target.direction  = this.defaults.direction;
+    if(target.brightness == null) target.brightness = this.defaults.brightness;
+    if(target.xOffset == null)    target.xOffset    = this.defaults.xOffset;
+    if(target.yOffset == null)    target.yOffset    = this.defaults.yOffset;
+    if(target.radius == null)     target.radius     = this.defaults.radius;
+    if(target.beamLength == null) target.beamLength = this.defaults.beamLength;
+    if(target.beamWidth == null)  target.beamWidth  = this.defaults.beamWidth;
 
     // assign deltas if current & targets exist
-    this.delta.color      = createColor (this.current.color,      this.target.color,      this.current.transitionDuration);
-    this.delta.color      = createColor (this.current.color,      this.target.color,      this.current.transitionDuration);
-    this.delta.direction  = createNumber(this.current.direction,  this.target.direction,  this.current.transitionDuration);
-    this.delta.brightness = createNumber(this.current.brightness, this.target.brightness, this.current.transitionDuration);
-    this.delta.xOffset    = createNumber(this.current.xOffset,    this.target.xOffset,    this.current.transitionDuration);
-    this.delta.yOffset    = createNumber(this.current.yOffset,    this.target.yOffset,    this.current.transitionDuration);
-    this.delta.radius     = createNumber(this.current.radius,     this.target.radius,     this.current.transitionDuration);
-    this.delta.beamLength = createNumber(this.current.beamLength, this.target.beamLength, this.current.transitionDuration);
-    this.delta.beamWidth  = createNumber(this.current.beamWidth,  this.target.beamWidth,  this.current.transitionDuration);
+    this.delta.color      = createColor (this.current.color,      target.color,      this.current.transitionDuration);
+    this.delta.color      = createColor (this.current.color,      target.color,      this.current.transitionDuration);
+    this.delta.direction  = createNumber(this.current.direction,  target.direction,  this.current.transitionDuration);
+    this.delta.brightness = createNumber(this.current.brightness, target.brightness, this.current.transitionDuration);
+    this.delta.xOffset    = createNumber(this.current.xOffset,    target.xOffset,    this.current.transitionDuration);
+    this.delta.yOffset    = createNumber(this.current.yOffset,    target.yOffset,    this.current.transitionDuration);
+    this.delta.radius     = createNumber(this.current.radius,     target.radius,     this.current.transitionDuration);
+    this.delta.beamLength = createNumber(this.current.beamLength, target.beamLength, this.current.transitionDuration);
+    this.delta.beamWidth  = createNumber(this.current.beamWidth,  target.beamWidth,  this.current.transitionDuration);
 
-    // assign new currents for existing deltas to propagate currents for duration = 0 or target.<value> = null
-    this.current.color      = this.delta.color      != null  ? this.delta.color     .get() : this.defaults.color;
-    this.current.direction  = this.delta.direction  != null  ? this.delta.direction .get() : this.defaults.direction;
-    this.current.brightness = this.delta.brightness != null  ? this.delta.brightness.get() : this.defaults.brightness;
-    this.current.xOffset    = this.delta.xOffset    != null  ? this.delta.xOffset   .get() : this.defaults.xOffset;
-    this.current.yOffset    = this.delta.yOffset    != null  ? this.delta.yOffset   .get() : this.defaults.yOffset;
-    this.current.radius     = this.delta.radius     != null  ? this.delta.radius    .get() : this.defaults.radius;
-    this.current.beamLength = this.delta.beamLength != null  ? this.delta.beamLength.get() : this.defaults.beamLength;
-    this.current.beamWidth  = this.delta.beamWidth  != null  ? this.delta.beamWidth .get() : this.defaults.beamWidth;
+    // assign new currents for existing deltas to propagate currents for duration = 0
+    if(this.delta.color != null)      this.current.color      = this.delta.color     .get();
+    if(this.delta.direction != null)  this.current.direction  = this.delta.direction .get();
+    if(this.delta.brightness != null) this.current.brightness = this.delta.brightness.get();
+    if(this.delta.xOffset != null)    this.current.xOffset    = this.delta.xOffset   .get();
+    if(this.delta.yOffset != null)    this.current.yOffset    = this.delta.yOffset   .get();
+    if(this.delta.radius != null)     this.current.radius     = this.delta.radius    .get();
+    if(this.delta.beamLength != null) this.current.beamLength = this.delta.beamLength.get();
+    if(this.delta.beamWidth != null)  this.current.beamWidth  = this.delta.beamWidth .get();
   }
 
   /**
