@@ -882,12 +882,22 @@ class VRGBA {
   }
 
   /**
-   * Creates an empty VRGBA object will all properties initialized to false and 0.
+   * Creates an VRGBA object will r,g,b,a = 0 and v = false.
    * @returns {VRGBA}
    */
-  static empty() {
+  static minRGBA() {
     let that = new VRGBA();
     [that.v, that.r, that.g, that.b, that.a] = [false, 0, 0, 0, 0];
+    return that;
+  }
+
+  /**
+   * Creates an VRGBA object will r,g,b,a = 255 and v = false.
+   * @returns {VRGBA}
+   */
+  static maxRGBA() {
+    let that = new VRGBA();
+    [that.v, that.r, that.g, that.b, that.a] = [false, 255, 255, 255, 255];
     return that;
   }
 
@@ -1440,7 +1450,7 @@ class ColorDelta {
     catch (e) {
       let CL = Community.Lighting;
       console.log(`${CL.name} - Night Hours and/or DayNight Colors contain invalid JSON data - cannot parse.`);
-      result = new Array(24).fill(undefined).map(() => ({ "color": VRGBA.empty(), "isNight": false }));
+      result = new Array(24).fill(undefined).map(() => ({ "color": VRGBA.minRGBA(), "isNight": false }));
     }
     return result;
   })(parameters["DayNight Colors"], parameters["Night Hours"]);
@@ -1592,7 +1602,7 @@ class ColorDelta {
 
       // normalize parameters
       this._cl.radius        = orNaN(this._cl.radius, 0);
-      this._cl.color         = orNullish(this._cl.color, VRGBA.empty());
+      this._cl.color         = orNullish(this._cl.color, VRGBA.minRGBA());
       this._cl.enable        = orBoolean(this._cl.enable, true);
       this._cl.brightness    = orNaN(this._cl.brightness, 0);
       this._cl.direction     = orNaN(this._cl.direction, undefined); // must be undefined for later checks
@@ -3098,8 +3108,8 @@ Game_Variables.prototype.SetTintAtHour = function (hour, color) {
 Game_Variables.prototype.GetTintByTime = function (inc = 0) {
   let hours = Community.Lighting.hours() + inc; // increment from current hour
   let hoursinDay = this.GetDaynightHoursinDay();
-  while (hours >= hoursinDay) hours -= hoursinDay;
-  while (hours < 0) hours += hoursinDay;
+  hours %= hoursinDay; // clamp to within total hours in day
+  if (hours < 0) hours += hoursinDay;
   let result = this.GetDaynightColorArray()[hours];
   return result ? result.color.clone() : VRGBA.minRGBA();
 };

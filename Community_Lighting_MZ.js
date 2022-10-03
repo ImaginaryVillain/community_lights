@@ -3584,8 +3584,8 @@ Game_Variables.prototype.SetTintAtHour = function (hour, color) {
 Game_Variables.prototype.GetTintByTime = function (inc = 0) {
   let hours = Community.Lighting.hours() + inc; // increment from current hour
   let hoursinDay = this.GetDaynightHoursinDay();
-  while (hours >= hoursinDay) hours -= hoursinDay;
-  while (hours < 0) hours += hoursinDay;
+  hours %= hoursinDay; // clamp to within total hours in day
+  if (hours < 0) hours += hoursinDay;
   let result = this.GetDaynightColorArray()[hours];
   return result ? result.color.clone() : VRGBA.minRGBA();
 };
