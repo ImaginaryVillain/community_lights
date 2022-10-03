@@ -852,13 +852,13 @@ Imported[Community.Lighting.name] = true;
 * Creates a basic light
 *
 * <cl: light 300 cycle #ff0000 15 #ffff00 15 #00ff00 15 #00ffff 15 #0000ff 15>
-* <cl: light 300 {#ff0000 p15} {#ffff00 p15} {#00ff00 p15} {#00ffff p15} {#0000ff p15}>
+* <cl: light 300 {#ff0000 p15} {#ffff00} {#00ff00} {#00ffff} {#0000ff}>
 * Creates a cycling light that rotates every 15 frames.  Great for parties!
 *
-* <cl: light 300 {#ff0000 t30 p60} {#ffff00 t30 p60} {#00ff00 t30 p60} {#00ffff t30 p60}>
+* <cl: light 300 {#ff0000 t30 p60} {#ffff00} {#00ff00} {#00ffff}>
 * Creates a cycling light that stays on for 30 frames and transitions to the next color over 60 frames.
 *
-* <cl: light {#ff0000 t30 p60 r250} {#ffff00 t30 p60 r300} {#00ff00 t30 p60 r250} {#00ffff t30 p60 r300}>
+* <cl: light {#ff0000 t30 p60 r250} {#ffff00 r300} {#00ff00 r250} {#00ffff r300}>
 * Creates a cycling light that grows and shrink between radius sizes of 250 and 300, stays on for 30 frames,
 * and transitions to the next color and size over 60 frames.
 *
@@ -874,7 +874,7 @@ Imported[Community.Lighting.name] = true;
 * plugin commands.
 *
 * <cl: Flashlight l8 w12 cycle #f00 15 #ff0 15 #0f0 15>
-* <cl: Flashlight l8 w12 {#f00 p15} {#ff0 p15} {#0f0 p15}>
+* <cl: Flashlight l8 w12 {#f00 p15} {#ff0} {#0f0}>
 * Creates a flashlight beam that rotates every 15 frames.
 *
 * --------------------------------------------------------------------------
@@ -884,7 +884,7 @@ Imported[Community.Lighting.name] = true;
 * in front of any color light color.
 *
 * Example note tags:
-* <cl: light 300 {a#990000 t15} {a#999900 t15} {a#009900 t15} {a#009999 t15} {a#000099 t15}>
+* <cl: light 300 {a#990000 t15} {a#999900} {a#009900} {a#009999} {a#000099}>
 * Creates a cycling volumetric light that rotates every 15 frames.
 *
 * <cl: Flashlight l8 w12 a#660000 on asdf>
@@ -897,6 +897,8 @@ Imported[Community.Lighting.name] = true;
 * Conditional Lighting allows light properties to be changed either cyclically or
 * dynamically over time via properties that consist of a prefix followed by a property
 * value. This is useful for creating any number of transitional lighting effects.
+* Properties will hold their given value until a change or reset (including pause and
+* transition durations).
 *
 * The properties are supported in light tags or via the 'light cond' command. Light tags
 * support any number of light properties wrapped in {} brackets See the example note tags
@@ -1501,12 +1503,12 @@ class LightProperties {
     this.updateFrame = Graphics.frameCount; // set current frame as update frame
     let isOL = this.isOtherLight();
     let isFL = this.isFlashlight();
-    let hasTransitionDuration = false;
-    let haspauseDuration      = false;
     // properties with no suffix 'clear' the target
     properties.forEach((e) => {
       // clear checks (back to initial value for the given property)
-      if      (        e.equalsIC('#'))        this.color      = void(0);
+      if      (        e.equalsIC('t'))        this.transitionDuration = 0;
+      else if (        e.equalsIC('p'))        this.pauseDuration      = 0;
+      else if (        e.equalsIC('#'))        this.color      = void(0);
       else if (        e.equalsIC('a#'))       this.color      = void(0);
       else if (        e.equalsIC('e'))        this.enable     = void(0);
       else if (        e.equalsIC('b'))        this.brightness = void(0);
@@ -1520,8 +1522,8 @@ class LightProperties {
       else if (isFL && e.equalsIC('-a'))       this.clockwise  = this.direction = void(0);
       // on or off checks
       // prefix checks
-      else if (        e.startsWithIC('t'))  { this.transitionDuration = orNaN(+e.slice(1), 0); hasTransitionDuration = true; }
-      else if (        e.startsWithIC('p'))  { this.pauseDuration      = orNaN(+e.slice(1), 0); haspauseDuration = true; }
+      else if (        e.startsWithIC('t'))  { this.transitionDuration = orNaN(+e.slice(1), 0); }
+      else if (        e.startsWithIC('p'))  { this.pauseDuration      = orNaN(+e.slice(1), 0); }
       else if (        e.startsWithIC('#'))    this.color      = new VRGBA(e);
       else if (        e.startsWithIC('a#'))   this.color      = new VRGBA(e);
       else if (        e.startsWithIC('e'))    this.enable     = Boolean(orNaN(+e.slice(1), 0));
@@ -1535,8 +1537,6 @@ class LightProperties {
       else if (isFL && e.startsWithIC('+a')) { this.clockwise  = true;  this.direction = M_PI_180 * orNaN(+e.slice(2), 0); }
       else if (isFL && e.startsWithIC('-a')) { this.clockwise  = false; this.direction = M_PI_180 * orNaN(+e.slice(2), 0); }
     }, this);
-    if (!hasTransitionDuration) this.transitionDuration = 0;
-    if (!haspauseDuration)      this.pauseDuration = 0;
   }
 
   /**
@@ -3450,7 +3450,7 @@ class ColorDelta {
     // **************************** RESET ALL SWITCHES ***********************
     else if (args[0].equalsIC('switch') && args[1].equalsIC('reset')) {
       let lightArray = $gameVariables.GetLightArray();
-      for (let i in lightArray) lightArray[i].parseProps(['#', 'e', 'b', 'x', 'y', 'r', 'l', 'w', 'a']); // clear
+      for (let i in lightArray) lightArray[i].parseProps(['t', 'p', '#', 'e', 'b', 'x', 'y', 'r', 'l', 'w', 'a']); // clear
     }
   };
 

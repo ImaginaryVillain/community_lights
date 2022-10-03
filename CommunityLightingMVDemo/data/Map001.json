@@ -12151,7 +12151,7 @@
     {
       "id": 3,
       "name": "EV003",
-      "note": "<cl: light 75 {a#00ff0066 t120} {a#ffffff66 t120}>",
+      "note": "<cl: light 75 {a#00ff0066 t120} {a#ffffff66}>",
       "pages": [
         {
           "conditions": {
@@ -12600,7 +12600,7 @@
     {
       "id": 7,
       "name": "",
-      "note": "<CL: Light 100 {a#ff6666bb t120 X-0.5 Y0.2} {a#66ff66bb t120 x0 y0.5} {a#ff00ffbb t120 X0.5 Y0.2} {a#ff6666bb t120 X0.5 Y-0.2} {a#66ff66bb t120 x0 y-0.5} {a#ff00ffbb t120 X-0.5 Y-0.2}>",
+      "note": "<CL: Light 100 {a#ff6666bb t120 X-0.5 Y0.2} {a#66ff66bb x0 y0.5} {a#ff00ffbb X0.5 Y0.2} {a#ff6666bb X0.5 Y-0.2} {a#66ff66bb x0 y-0.5} {a#ff00ffbb X-0.5 Y-0.2}>",
       "pages": [
         {
           "conditions": {
@@ -13731,7 +13731,7 @@
     {
       "id": 13,
       "name": "EV013",
-      "note": "<cl: light {a#ff009966 r75 t120 p60} {a#ff009999 r85 t120 p60}>",
+      "note": "<cl: light {a#ff009966 r75 t120 p60} {a#ff009999 r85}>",
       "pages": [
         {
           "conditions": {
