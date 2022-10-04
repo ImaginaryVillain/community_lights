@@ -1677,9 +1677,10 @@ class LightDelta {
     // Enable or disable the current immediately based off of target value
     this.current.enable = target.enable != null ? target.enable : this.defaults.enable;
 
-    // For currents (flashlights) check the movement direction and normalize the current and target
-    if      (this.current.direction != null && target.clockwise)  normalizeClockwiseMovement();
-    else if (this.current.direction != null && !target.clockwise) normalizeCounterClockwiseMovement();
+    // For flashlights check the movement direction and normalize the current and target
+    if (this.current.direction != null && target.direction != null && target.clockwise != null) {
+      void (target.clockwise ? normalizeClockwiseMovement() : normalizeCounterClockwiseMovement());
+    }
 
     // Set any null targets to default (normalization for nulls) (allows defaults to gradually transition)
     if(target.color == null)      target.color      = this.defaults.color;
