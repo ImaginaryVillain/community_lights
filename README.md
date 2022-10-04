@@ -120,18 +120,23 @@ You can post your questions on the related thread on rpgmakerweb: https://forums
 	* --------------------------------------------------------------------------
 	* Events
 	* --------------------------------------------------------------------------
-	* DayNight
-	* - Activates day/night cycle.  Put in map note or event note
-	*
-	* Light radius [cycle] color [day|night] [brightness] [direction] [x] [y] [id]
+	* Light radius color [enable] [day|night] [brightness] [direction] [x] [y] [id]
+	* Light radius cycle <color [pauseDuration]>... [enable] [day|night] [brightness] [direction] [x] [y] [id]
+	* Light [radius] [color] [{CycleProps}...] [enable] [day|night] [brightness] [direction] [x] [y] [id]
 	* - Light
-	* - radius      100, 250, etc
-	* - cycle       Allows any number of color + duration pairs to follow that will be
-	*               cycled through before repeating from the beginning:
-	*               <cl: light 100 cycle #f00 15 #0f0 15 #00f 15 ...etc>
-	*               In Terrax Lighting, there was a hard limit of 4, but now you can use
-	*               as many as you want. [optional]
+	* - radius      Any number, optionally preceded by "R" or "r", so 100, R100, r100, etc.
+	* - cycle       Allows any number of color + duration pairs to follow that will be cycled
+	*               through before repeating from the beginning. See the examples below for usage.
+	*               In Terrax Lighting, there was a hard limit of 4, but now there is no limit.
+	*               To cycle any light property or for fade transitions, use the cycleProps
+	*               format instead. [optional]
+	* - cycleProps  Cyclic conditional lighting properties can be specified within {} brackets.
+	*               The can be used to create transitioning light patterns See the Conditional
+	*               Lighting section for more details. * Any non-cyclic properties are inherited
+	*               unless overridden by the first cyclic properties [Optional]
 	* - color       #ffffff, #ff0000, etc
+	* - enable      Initial state: off, on (default). May optionally use 'E1|e1|E0|e0' syntax
+	*               where 1 is on, and 0 is off. Ignored if day|night passed [optional]
 	* - day         Causes the light to only come on during the day [optional]
 	* - night       Causes the light to only come on during the night [optional]
 	* - brightness  B50, B25, etc [optional]
@@ -141,32 +146,47 @@ You can post your questions on the related thread on rpgmakerweb: https://forums
 	*               D11 s.-w. corner, D12 n.-w. corner  [optional]
 	* - x           x offset [optional] (0.5: half tile, 1 = full tile, etc)
 	* - y           y offset [optional]
-	* - id          1, 2, 2345, etc--an id number for plugin commands [optional]
+	* - id          1, 2, potato, etc. An id (alphanumeric) for plugin commands [optional]
+	*               These should not be in the format of '<a|b|d|e|l|w|x|y|A|B|D|E|L|W|X|Y>N'
+	*               where N is a number following any supported optional parameter prefix
+	*               otherwise it will be mistaken for one of the previous optional parameters.
+	*               Generally, it is adviseable to avoid any single letter followed by a number.
 	*
 	* Fire ...params
 	* - Same as Light params above, but adds a subtle flicker
 	*
-	* Flashlight [bl] [bw] [c] [onoff] [sdir|angle] [x] [y] [id]
+	* Flashlight bl bw color [enable] [day|night] [sdir|angle] [x] [y] [id]
+	* Flashlight bl bw cycle <color [pauseDuration]>... [enable] [day|night] [sdir|angle] [x] [y] [id]
+	* Flashlight [bl] [bw] [{CycleProps}...] [enable] [day|night] [sdir|angle] [x] [y] [id]
 	* - Sets the light as a flashlight with beam length (bl) beam width (bw) color (c),
 	*      0|1 (onoff), and 1=up, 2=right, 3=down, 4=left for static direction (sdir)
-	* - bl:       Beam length:  Any number, optionally preceded by "L", so 8, L8
-	* - bw:       Beam width:  Any number, optionally preceded by "W", so 12, W12
-	* - cycle     Allows any number of color + duration pairs to follow that will be
-	*             cycled through before repeating from the beginning:
-	*             <cl: Flashlight l8 w12 cycle #f00 15 #ff0 15 #0f0 15 on someId d3>
-	*             There's no limit to how many colors can be cycled. [optional]
-	* - onoff:    Initial state:  0, 1, off, on
-	* - sdir:     Forced direction (optional): 0:auto, 1:up, 2:right, 3:down, 4:left
-	*             Can be preceded by "D", so D4.  If omitted, defaults to 0
-	* - angle:    Forced direction in degrees (optional): must be preceded by "A". If
-	*             omitted, sdir is used.
-	* - x         x[offset] Work the same as regular light [optional]
-	* - y         y[offset] [optional]
-	* - day       Sets the event's light to only show during the day [optional]
-	* - night     Sets the event's light to only show during night time [optional]
-	* - id        1, 2, potato, etc. An id (alphanumeric) for plugin commands [optional]
-	*             Those should not begin with 'a', 'd', 'x' or 'y' otherwise
-	*             they will be mistaken for one of the previous optional parameters.
+	* - bl:         Beam length:  Any number, optionally preceded by "L" or "l", so 8, L8, l8, etc.
+	* - bw:         Beam width:  Any number, optionally preceded by "W", or 'w', so 12, W12, w12, etc.
+	* - cycle       Allows any number of color + duration pairs to follow that will be cycled
+	*               through before repeating from the beginning. See the examples below for usage.
+	*               In Terrax Lighting, there was a hard limit of 4, but now there is no limit.
+	*               To cycle any light property or for fade transitions, use the cycleProps
+	*               format instead. [optional]
+	* - cycleProps  Cyclic conditional lighting properties can be specified within {} brackets.
+	*               The can be used to create transitioning light patterns See the Conditional
+	*               Lighting section for more details. * Any non-cyclic properties are inherited
+	*               unless overridden by the first cyclic properties [Optional]
+	* - color       #ffffff, #ff0000, etc
+	* - enable      Initial state: off, on (default). May optionally use 'E1|e1|E0|e0' syntax
+	*               where 1 is on, and 0 is off. Ignored if day|night passed [optional]
+	* - day         Sets the event's light to only show during the day [optional]
+	* - night       Sets the event's light to only show during night time [optional]
+	* - sdir:       Forced direction (optional): 0:auto, 1:up, 2:right, 3:down, 4:left
+	*               Can be preceded by "D" or "d", so D4, d4, etc. If omitted, defaults to 0
+	* - angle:      Forced direction in degrees (optional): must be preceded by "A" or "a". If
+	*               omitted, sdir is used. [optional]
+	* - x           x[offset] Work the same as regular light [optional]
+	* - y           y[offset] [optional]
+	* - id          1, 2, potato, etc. An id (alphanumeric) for plugin commands [optional]
+	*               These should not be in the format of '<a|b|d|e|l|w|x|y|A|B|D|E|L|W|X|Y>N'
+	*               where N is a number following any supported optional parameter prefix
+	*               otherwise it will be mistaken for one of the previous optional parameters.
+	*               Generally, it is adviseable to avoid any single letter followed by a number.
 	*
 	* Example note tags:
 	*
@@ -174,7 +194,15 @@ You can post your questions on the related thread on rpgmakerweb: https://forums
 	* Creates a basic light
 	*
 	* <cl: light 300 cycle #ff0000 15 #ffff00 15 #00ff00 15 #00ffff 15 #0000ff 15>
+	* <cl: light r300 {#ff0000 p15} {#ffff00} {#00ff00} {#00ffff} {#0000ff}>
 	* Creates a cycling light that rotates every 15 frames.  Great for parties!
+	*
+	* <cl: light r300 {#ff0000 t30 p60} {#ffff00} {#00ff00} {#00ffff}>
+	* Creates a cycling light that stays on for 30 frames and transitions to the next color over 60 frames.
+	*
+	* <cl: light {#ff0000 t30 p60 r250} {#ffff00 r300} {#00ff00 r250} {#00ffff r300}>
+	* Creates a cycling light that grows and shrink between radius sizes of 250 and 300, stays on for 30 frames,
+	* and transitions to the next color and size over 60 frames.
 	*
 	* <cl: fire 150 #ff8800 b15 night>
 	* Creates a fire that only lights up at night.
@@ -182,6 +210,14 @@ You can post your questions on the related thread on rpgmakerweb: https://forums
 	* <cl: Flashlight l8 w12 #ff0000 on asdf>
 	* Creates a flashlight beam with id asdf which can be turned on or off via
 	* plugin commands.
+	*
+	* <cl: Flashlight l8 w12 #ff0000 on asdf>
+	* Creates a flashlight beam with id asdf which can be turned on or off via
+	* plugin commands.
+	*
+	* <cl: Flashlight l8 w12 cycle #f00 15 #ff0 15 #0f0 15>
+	* <cl: Flashlight l8 w12 {#f00 p15} {#ff0} {#0f0}>
+	* Creates a flashlight beam that rotates every 15 frames.
 	*
 	* --------------------------------------------------------------------------
 	* Additive Lighting Effects
@@ -197,6 +233,62 @@ You can post your questions on the related thread on rpgmakerweb: https://forums
 	* <cl: Flashlight l8 w12 a#660000 on asdf>
 	* Creates a red volumetric flashlight beam with id asdf which can be turned on or off
 	* via plugin commands.
+	*
+	* --------------------------------------------------------------------------
+	* Conditional Lighting
+	* --------------------------------------------------------------------------
+	* Conditional Lighting allows light properties to be changed either cyclically or
+	* dynamically over time via properties that consist of a prefix followed by a property
+	* value. This is useful for creating any number of transitional lighting effects.
+	* Properties will hold their given value until a change or reset (including pause and
+	* transition durations).
+	*
+	* The properties are supported in light tags or via the 'light cond' command. Light tags
+	* support any number of light properties wrapped in {} brackets See the example note tags
+	* above.
+	*
+	* The 'light cond' command allows for conditional lights to be dynamically changed on demand.
+	* See the Plugin Commands section for more details.
+	*
+	* Ranges can be used if random values are desired. Cycle tags are statically generated at map
+	* load. If dynamic random property values are desired, use the 'light cond' command instead in
+	* combination with the 'light wait' command.
+	* See the table below for property specific formatting.
+	*
+	* The following table shows supported properties:
+	* ---------------------------------------------------------------------------------------------------------------------
+	* | Property    |  Prefix   |         Format*†        |       Examples       |              Description               |
+	* |-------------|-----------|-------------------------|----------------------|----------------------------------------|
+	* |   pause     |     p     |         p<N|N:N>        |     p0, p1, p20,     | time period in cycles to pause after   |
+	* |  duration   |           |                         |    p0:20, p1:20      | transitioning for cycling lights       |
+	* |-------------|-----------|-------------------------|----------------------|----------------------------------------|
+	* | transition  |     t     |         t<N|N:N>        |     t0, t1, t30      | time period to transition the          |
+	* |  duration   |           |                         |    t0:30, t1:30      | specified properties over              |
+	* |-------------|-----------|-------------------------|----------------------|----------------------------------------|
+	* |   color     |   #, #a   |   <#|#a><hex|hex:hex>   | #, #FFEEDD, #ffeedd, | color or additive color                |
+	* |             |           |                         |  a#000000:a#ffffff   |                                        |
+	* |-------------|-----------|-------------------------|----------------------|----------------------------------------|
+	* |  enable     |     e     |        e<1|0|0:1>       |     e1, e0, e0:1     | turns light on or off instantly        |
+	* |-------------|-----------|-------------------------|----------------------|----------------------------------------|
+	* |   angle     | a, +a, -a |     <a|+a|-a><N|N:N>    |  a, a30, +a30, -a30  | flashlight angle in degrees. '+' moves |
+	* |             |           |                         |    +a0:30, -a0:30    | clockwise, '-' moves counterclockwise  |
+	* |-------------|-----------|-------------------------|----------------------|----------------------------------------|
+	* | brightness  |     b     |         b<N|N:N>        | b, b0, b1, b5, b1:5  | brightness                             |
+	* |-------------|-----------|-------------------------|----------------------|----------------------------------------|
+	* |  x offset   |     x     |         x<N|N:N>        |  x, x2, x-2, x-2:2   | x offset                               |
+	* |-------------|-----------|-------------------------|----------------------|----------------------------------------|
+	* |  y offset   |     y     |         y<N|N:N>        |  y, y2, y-2, y-2:2   | y offset                               |
+	* |-------------|-----------|-------------------------|----------------------|----------------------------------------|
+	* |   radius    |     r     |         r<N|N:N>        | r, r50, r150, r50:75 | light radius                           |
+	* |-------------|-----------|-------------------------|----------------------|----------------------------------------|
+	* | beam length |     l     |         l<N|N:N>        | l, l8, l9, l10, l7:9 | flashlight beam length                 |
+	* |-------------|-----------|-------------------------|----------------------|----------------------------------------|
+	* | beam width  |     w     |         w<N|N:N>        |   w, w8, w14, w7:9   | flashlight beam width                  |
+	* |-------------|-----------|-------------------------|----------------------|----------------------------------------|
+	* | * Omitting N or hex value will transition the given property back to its initial state                            |
+	* |-------------------------------------------------------------------------------------------------------------------|
+	* | † using the N:N or hex:hex format allows for a randomly generated value within the given range (inclusive)        |
+	* ---------------------------------------------------------------------------------------------------------------------
 	*
 	* --------------------------------------------------------------------------
 	* Easy hex color references
@@ -215,7 +307,26 @@ You can post your questions on the related thread on rpgmakerweb: https://forums
 	* Migrating from Khas Ultra Lights
 	* -------------------------------------------------------------------------------
 	* Using the smooth lights options make it look extremely close.
-	* The default light radius that Khas appears to be around 122.
+	* The default light radius that Khas appears to be around 122. Smooth lights
+	* need to be turned on to get similar effects.
+	*
+	* All [light_size] tags should be combined with the initial light radius tag.
+	*
+	* Eg.
+	* Original:
+	* [light cyan]
+	* [light size 75]
+	*
+	* Replacement:
+	* <cl: light 75 #00FFFF>
+	*
+	* All [region_light] tags need to be replaced with <cl: region light> tags.
+	* Eg.
+	* Original:
+	* [region_light 5 red]
+	*
+	* Replacement:
+	* <cl: RegionLight 5 #FF0000 122>
 	* -------------------------------------------------------------------------------
 	* Maps
 	* -------------------------------------------------------------------------------
@@ -249,7 +360,7 @@ You can post your questions on the related thread on rpgmakerweb: https://forums
 	* Tint daylight
 	* - Sets the tint based on the current hour.
 	* -------------------------------------------------------------------------------
-	* Plugin Commands
+	* Plugin Commands (for MZ these use the new plugin interface)
 	* -------------------------------------------------------------------------------
 	* Light deactivate|activate
 	* - Completely disables the lighting effects of this plugin
@@ -259,6 +370,17 @@ You can post your questions on the related thread on rpgmakerweb: https://forums
 	*
 	* Light off id
 	* - Turn off light with matching id number
+	*
+	* Light cond id [tN] [pN] [<#|#a><RRGGBBAA|RRGGBB>] [<a|+a|-a>N] [bN] [xN] [yN] [rN] [lN] [wN]
+	* - transitions a conditional light to the specified properties over the the given
+	* - time period in cycles. Supported propreties are color, flashlight angle (a),
+	* - brightness (b), x offset (x), y offset (y), radius (r), flashlight beam length (l),
+	* - flashlight beam width (w). Must use the specified prefixes. Unsupported prefixes are
+	* - ignored. See the Conditional Light section for more detail on each property.
+	*
+	* Light wait id
+	* - wait for the conditional light to finish both transitioning and pausing before continuing
+	* - the event script.
 	*
 	* Light color id c
 	* - Change the color (c) of lightsource with id (id)
@@ -287,20 +409,27 @@ You can post your questions on the related thread on rpgmakerweb: https://forums
 	* Flashlight off
 	* - Turn off the flashlight.  yup.
 	*
+	* DayNight on|off [fade]
+	* - Activates or deactivates the day/night cycle. Specifying 'fade' will gradually
+	*   transition the tint to that of the next hour.
+	*
 	* Daynight speed n
 	* - Changes the speed by which hours pass in game in relation to real life seconds
 	*
-	* Daynight hour h m
-	* - Sets the in game time to hh:mm
+	* Daynight hour h m [fade]
+	* - Sets the in game time to hh:mm. Specifying 'fade' will gradually transition the
+	*   tint to that of the next hour.
 	*
 	* Daynight color h c
 	* - Sets the hour (h) to use color (c)
 	*
-	* Daynight add h m
-	* - Adds the specified hours (h) and minutes (m) to the in game clock
+	* Daynight add h m [fade]
+	* - Adds the specified hours (h) and minutes (m) to the in game clock. Specifying
+	*   'fade' will gradually transition the tint to that of the next hour.
 	*
-	* Daynight subtract h m
-	* - Subtracts the specified hours (h) and minutes (m) from the in game clock
+	* Daynight subtract h m [fade]
+	* - Subtracts the specified hours (h) and minutes (m) from the in game clock.
+	*   Specifying  'fade' will gradually transition the tint to that of the next hour.
 	*
 	* Daynight show
 	* - Shows the current time of day in the upper right corner of the map screen (h:mm)
@@ -311,8 +440,9 @@ You can post your questions on the related thread on rpgmakerweb: https://forums
 	* Daynight hide
 	* - Hides the current time of day mini-window
 	*
-	* Daynight hoursinday h
-	* - Sets the number of hours in a day to [h] (set hour colors  if doing this)
+	* Daynight hoursinday h [fade]
+	* - Sets the number of hours in a day to [h] (set hour colors if doing this).
+	*   Specifying 'fade' will gradually transition the tint to that of the next hour.
 	*
 	* Tint set c [s]
 	* Tint fade c [s]

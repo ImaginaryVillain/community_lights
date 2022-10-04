@@ -267,6 +267,14 @@ Imported[Community.Lighting.name] = true;
 * @off Off
 * @default true
 *
+* @arg fade
+* @text Fade tint over hour
+* @desc If set to "on" the tint will gradually transition to that of the next hour.
+* @type boolean
+* @on On
+* @off Off
+* @default false
+*
 * @----------------------------
 *
 * @command resetLightSwitches
@@ -290,6 +298,34 @@ Imported[Community.Lighting.name] = true;
 * @on On
 * @off Off
 * @default true
+*
+* @----------------------------
+*
+* @command condLight
+* @text Set Conditional Lighting
+* @desc Supports transition & pause durations, on & off, color, angle, brightness, x offset, y offset, radius, beam length & width.
+*
+* @arg id
+* @text Event ID
+* @desc This is an ID you assigned via note tag, as in <cl: light 150 #fff myIdHere> not an event's id number
+* @type text
+*
+* @arg properties
+* @text properties
+* @desc Format: [tN] [pN] [<#|#a><RRGGBBAA|RRGGBB>] [on|off] [<a|+a|-a>N] [bN] [xN] [yN] [rN] [lN] [wN]
+* @type text
+* @default t5 #ffffff on -a90 b0 x0 y0 r150 l12 w12
+*
+* @----------------------------
+*
+* @command condLightWait
+* @text Wait on Conditional Lighting
+* @desc Wait for the conditional light to finish both transitioning and pausing before continuing the event script.
+*
+* @arg id
+* @text Event ID
+* @desc This is an ID you assigned via note tag, as in <cl: light 150 #fff myIdHere> not an event's id number
+* @type text
 *
 * @----------------------------
 *
@@ -437,6 +473,14 @@ Imported[Community.Lighting.name] = true;
 * @value subtract
 * @default set
 *
+* @arg fade
+* @text Fade tint over hour
+* @desc If set to "on" the tint will gradually transition to that of the next hour.
+* @type boolean
+* @on On
+* @off Off
+* @default false
+*
 * @----------------------------
 *
 * @command setHourColor
@@ -454,6 +498,14 @@ Imported[Community.Lighting.name] = true;
 * @type text
 * @default #ffffff
 *
+* @arg fade
+* @text Fade tint over hour
+* @desc If set to "on" the tint will gradually transition to that of the next hour.
+* @type boolean
+* @on On
+* @off Off
+* @default false
+*
 * @----------------------------
 *
 * @command setHoursInDay
@@ -465,6 +517,14 @@ Imported[Community.Lighting.name] = true;
 * @type number
 * @min 0
 * @default 24
+*
+* @arg fade
+* @text Fade tint over hour
+* @desc If set to "on" the tint will gradually transition to that of the next hour.
+* @type boolean
+* @on On
+* @off Off
+* @default false
 *
 * @----------------------------
 *
@@ -510,9 +570,9 @@ Imported[Community.Lighting.name] = true;
 *
 * @----------------------------
 *
-* @command resetBattleTint
-* @text Reset Battle Tint
-* @desc Reset the battle screen to its original color
+* @command resetTint
+* @text Reset Tint
+* @desc Reset the current map tint to the next hour color, or the battle tint to its original color if in battle
 *
 * @arg fadeSpeed
 * @text Fade Speed
@@ -733,18 +793,23 @@ Imported[Community.Lighting.name] = true;
 * --------------------------------------------------------------------------
 * Events
 * --------------------------------------------------------------------------
-* DayNight
-* - Activates day/night cycle.  Put in map note or event note
-*
-* Light radius [cycle] color [day|night] [brightness] [direction] [x] [y] [id]
+* Light radius color [enable] [day|night] [brightness] [direction] [x] [y] [id]
+* Light radius cycle <color [pauseDuration]>... [enable] [day|night] [brightness] [direction] [x] [y] [id]
+* Light [radius] [color] [{CycleProps}...] [enable] [day|night] [brightness] [direction] [x] [y] [id]
 * - Light
-* - radius      100, 250, etc
-* - cycle       Allows any number of color + duration pairs to follow that will be
-*               cycled through before repeating from the beginning:
-*               <cl: light 100 cycle #f00 15 #0f0 15 #00f 15 ...etc>
-*               In Terrax Lighting, there was a hard limit of 4, but now you can use
-*               as many as you want. [optional]
+* - radius      Any number, optionally preceded by "R" or "r", so 100, R100, r100, etc.
+* - cycle       Allows any number of color + duration pairs to follow that will be cycled
+*               through before repeating from the beginning. See the examples below for usage.
+*               In Terrax Lighting, there was a hard limit of 4, but now there is no limit.
+*               To cycle any light property or for fade transitions, use the cycleProps
+*               format instead. [optional]
+* - cycleProps  Cyclic conditional lighting properties can be specified within {} brackets.
+*               The can be used to create transitioning light patterns See the Conditional
+*               Lighting section for more details. * Any non-cyclic properties are inherited
+*               unless overridden by the first cyclic properties [Optional]
 * - color       #ffffff, #ff0000, etc
+* - enable      Initial state: off, on (default). May optionally use 'E1|e1|E0|e0' syntax
+*               where 1 is on, and 0 is off. Ignored if day|night passed [optional]
 * - day         Causes the light to only come on during the day [optional]
 * - night       Causes the light to only come on during the night [optional]
 * - brightness  B50, B25, etc [optional]
@@ -754,32 +819,47 @@ Imported[Community.Lighting.name] = true;
 *               D11 s.-w. corner, D12 n.-w. corner  [optional]
 * - x           x offset [optional] (0.5: half tile, 1 = full tile, etc)
 * - y           y offset [optional]
-* - id          1, 2, 2345, etc--an id number for plugin commands [optional]
+* - id          1, 2, potato, etc. An id (alphanumeric) for plugin commands [optional]
+*               These should not be in the format of '<a|b|d|e|l|w|x|y|A|B|D|E|L|W|X|Y>N'
+*               where N is a number following any supported optional parameter prefix
+*               otherwise it will be mistaken for one of the previous optional parameters.
+*               Generally, it is adviseable to avoid any single letter followed by a number.
 *
 * Fire ...params
 * - Same as Light params above, but adds a subtle flicker
 *
-* Flashlight [bl] [bw] [c] [onoff] [sdir|angle] [x] [y] [id]
+* Flashlight bl bw color [enable] [day|night] [sdir|angle] [x] [y] [id]
+* Flashlight bl bw cycle <color [pauseDuration]>... [enable] [day|night] [sdir|angle] [x] [y] [id]
+* Flashlight [bl] [bw] [{CycleProps}...] [enable] [day|night] [sdir|angle] [x] [y] [id]
 * - Sets the light as a flashlight with beam length (bl) beam width (bw) color (c),
 *      0|1 (onoff), and 1=up, 2=right, 3=down, 4=left for static direction (sdir)
-* - bl:       Beam length:  Any number, optionally preceded by "L", so 8, L8
-* - bw:       Beam width:  Any number, optionally preceded by "W", so 12, W12
-* - cycle     Allows any number of color + duration pairs to follow that will be
-*             cycled through before repeating from the beginning:
-*             <cl: Flashlight l8 w12 cycle #f00 15 #ff0 15 #0f0 15 on someId d3>
-*             There's no limit to how many colors can be cycled. [optional]
-* - onoff:    Initial state:  0, 1, off, on
-* - sdir:     Forced direction (optional): 0:auto, 1:up, 2:right, 3:down, 4:left
-*             Can be preceded by "D", so D4.  If omitted, defaults to 0
-* - angle:    Forced direction in degrees (optional): must be preceded by "A". If
-*             omitted, sdir is used.
-* - x         x[offset] Work the same as regular light [optional]
-* - y         y[offset] [optional]
-* - day       Sets the event's light to only show during the day [optional]
-* - night     Sets the event's light to only show during night time [optional]
-* - id        1, 2, potato, etc. An id (alphanumeric) for plugin commands [optional]
-*             Those should not begin with 'a', 'd', 'x' or 'y' otherwise
-*             they will be mistaken for one of the previous optional parameters.
+* - bl:         Beam length:  Any number, optionally preceded by "L" or "l", so 8, L8, l8, etc.
+* - bw:         Beam width:  Any number, optionally preceded by "W", or 'w', so 12, W12, w12, etc.
+* - cycle       Allows any number of color + duration pairs to follow that will be cycled
+*               through before repeating from the beginning. See the examples below for usage.
+*               In Terrax Lighting, there was a hard limit of 4, but now there is no limit.
+*               To cycle any light property or for fade transitions, use the cycleProps
+*               format instead. [optional]
+* - cycleProps  Cyclic conditional lighting properties can be specified within {} brackets.
+*               The can be used to create transitioning light patterns See the Conditional
+*               Lighting section for more details. * Any non-cyclic properties are inherited
+*               unless overridden by the first cyclic properties [Optional]
+* - color       #ffffff, #ff0000, etc
+* - enable      Initial state: off, on (default). May optionally use 'E1|e1|E0|e0' syntax
+*               where 1 is on, and 0 is off. Ignored if day|night passed [optional]
+* - day         Sets the event's light to only show during the day [optional]
+* - night       Sets the event's light to only show during night time [optional]
+* - sdir:       Forced direction (optional): 0:auto, 1:up, 2:right, 3:down, 4:left
+*               Can be preceded by "D" or "d", so D4, d4, etc. If omitted, defaults to 0
+* - angle:      Forced direction in degrees (optional): must be preceded by "A" or "a". If
+*               omitted, sdir is used. [optional]
+* - x           x[offset] Work the same as regular light [optional]
+* - y           y[offset] [optional]
+* - id          1, 2, potato, etc. An id (alphanumeric) for plugin commands [optional]
+*               These should not be in the format of '<a|b|d|e|l|w|x|y|A|B|D|E|L|W|X|Y>N'
+*               where N is a number following any supported optional parameter prefix
+*               otherwise it will be mistaken for one of the previous optional parameters.
+*               Generally, it is adviseable to avoid any single letter followed by a number.
 *
 * Example note tags:
 *
@@ -787,7 +867,15 @@ Imported[Community.Lighting.name] = true;
 * Creates a basic light
 *
 * <cl: light 300 cycle #ff0000 15 #ffff00 15 #00ff00 15 #00ffff 15 #0000ff 15>
+* <cl: light r300 {#ff0000 p15} {#ffff00} {#00ff00} {#00ffff} {#0000ff}>
 * Creates a cycling light that rotates every 15 frames.  Great for parties!
+*
+* <cl: light r300 {#ff0000 t30 p60} {#ffff00} {#00ff00} {#00ffff}>
+* Creates a cycling light that stays on for 30 frames and transitions to the next color over 60 frames.
+*
+* <cl: light {#ff0000 t30 p60 r250} {#ffff00 r300} {#00ff00 r250} {#00ffff r300}>
+* Creates a cycling light that grows and shrink between radius sizes of 250 and 300, stays on for 30 frames,
+* and transitions to the next color and size over 60 frames.
 *
 * <cl: fire 150 #ff8800 b15 night>
 * Creates a fire that only lights up at night.
@@ -796,6 +884,14 @@ Imported[Community.Lighting.name] = true;
 * Creates a flashlight beam with id asdf which can be turned on or off via
 * plugin commands.
 *
+* <cl: Flashlight l8 w12 #ff0000 on asdf>
+* Creates a flashlight beam with id asdf which can be turned on or off via
+* plugin commands.
+*
+* <cl: Flashlight l8 w12 cycle #f00 15 #ff0 15 #0f0 15>
+* <cl: Flashlight l8 w12 {#f00 p15} {#ff0} {#0f0}>
+* Creates a flashlight beam that rotates every 15 frames.
+*
 * --------------------------------------------------------------------------
 * Additive Lighting Effects
 * --------------------------------------------------------------------------
@@ -803,12 +899,68 @@ Imported[Community.Lighting.name] = true;
 * in front of any color light color.
 *
 * Example note tags:
-* <cl: light 300 cycle a#990000 15 a#999900 15 a#009900 15 a#009999 15 a#000099 15>
+* <cl: light r300 {a#990000 t15} {a#999900} {a#009900} {a#009999} {a#000099}>
 * Creates a cycling volumetric light that rotates every 15 frames.
 *
 * <cl: Flashlight l8 w12 a#660000 on asdf>
 * Creates a red volumetric flashlight beam with id asdf which can be turned on or off
 * via plugin commands.
+*
+* --------------------------------------------------------------------------
+* Conditional Lighting
+* --------------------------------------------------------------------------
+* Conditional Lighting allows light properties to be changed either cyclically or
+* dynamically over time via properties that consist of a prefix followed by a property
+* value. This is useful for creating any number of transitional lighting effects.
+* Properties will hold their given value until a change or reset (including pause and
+* transition durations).
+*
+* The properties are supported in light tags or via the 'light cond' command. Light tags
+* support any number of light properties wrapped in {} brackets See the example note tags
+* above.
+*
+* The 'light cond' command allows for conditional lights to be dynamically changed on demand.
+* See the Plugin Commands section for more details.
+*
+* Ranges can be used if random values are desired. Cycle tags are statically generated at map
+* load. If dynamic random property values are desired, use the 'light cond' command instead in
+* combination with the 'light wait' command.
+* See the table below for property specific formatting.
+*
+* The following table shows supported properties:
+* ---------------------------------------------------------------------------------------------------------------------
+* | Property    |  Prefix   |         Format*†        |       Examples       |              Description               |
+* |-------------|-----------|-------------------------|----------------------|----------------------------------------|
+* |   pause     |     p     |         p<N|N:N>        |     p0, p1, p20,     | time period in cycles to pause after   |
+* |  duration   |           |                         |    p0:20, p1:20      | transitioning for cycling lights       |
+* |-------------|-----------|-------------------------|----------------------|----------------------------------------|
+* | transition  |     t     |         t<N|N:N>        |     t0, t1, t30      | time period to transition the          |
+* |  duration   |           |                         |    t0:30, t1:30      | specified properties over              |
+* |-------------|-----------|-------------------------|----------------------|----------------------------------------|
+* |   color     |   #, #a   |   <#|#a><hex|hex:hex>   | #, #FFEEDD, #ffeedd, | color or additive color                |
+* |             |           |                         |  a#000000:a#ffffff   |                                        |
+* |-------------|-----------|-------------------------|----------------------|----------------------------------------|
+* |  enable     |     e     |        e<1|0|0:1>       |     e1, e0, e0:1     | turns light on or off instantly        |
+* |-------------|-----------|-------------------------|----------------------|----------------------------------------|
+* |   angle     | a, +a, -a |     <a|+a|-a><N|N:N>    |  a, a30, +a30, -a30  | flashlight angle in degrees. '+' moves |
+* |             |           |                         |    +a0:30, -a0:30    | clockwise, '-' moves counterclockwise  |
+* |-------------|-----------|-------------------------|----------------------|----------------------------------------|
+* | brightness  |     b     |         b<N|N:N>        | b, b0, b1, b5, b1:5  | brightness                             |
+* |-------------|-----------|-------------------------|----------------------|----------------------------------------|
+* |  x offset   |     x     |         x<N|N:N>        |  x, x2, x-2, x-2:2   | x offset                               |
+* |-------------|-----------|-------------------------|----------------------|----------------------------------------|
+* |  y offset   |     y     |         y<N|N:N>        |  y, y2, y-2, y-2:2   | y offset                               |
+* |-------------|-----------|-------------------------|----------------------|----------------------------------------|
+* |   radius    |     r     |         r<N|N:N>        | r, r50, r150, r50:75 | light radius                           |
+* |-------------|-----------|-------------------------|----------------------|----------------------------------------|
+* | beam length |     l     |         l<N|N:N>        | l, l8, l9, l10, l7:9 | flashlight beam length                 |
+* |-------------|-----------|-------------------------|----------------------|----------------------------------------|
+* | beam width  |     w     |         w<N|N:N>        |   w, w8, w14, w7:9   | flashlight beam width                  |
+* |-------------|-----------|-------------------------|----------------------|----------------------------------------|
+* | * Omitting N or hex value will transition the given property back to its initial state                            |
+* |-------------------------------------------------------------------------------------------------------------------|
+* | † using the N:N or hex:hex format allows for a randomly generated value within the given range (inclusive)        |
+* ---------------------------------------------------------------------------------------------------------------------
 *
 * --------------------------------------------------------------------------
 * Easy hex color references
@@ -891,6 +1043,17 @@ Imported[Community.Lighting.name] = true;
 * Light off id
 * - Turn off light with matching id number
 *
+* Light cond id [tN] [pN] [<#|#a><RRGGBBAA|RRGGBB>] [<a|+a|-a>N] [bN] [xN] [yN] [rN] [lN] [wN]
+* - transitions a conditional light to the specified properties over the the given
+* - time period in cycles. Supported propreties are color, flashlight angle (a),
+* - brightness (b), x offset (x), y offset (y), radius (r), flashlight beam length (l),
+* - flashlight beam width (w). Must use the specified prefixes. Unsupported prefixes are
+* - ignored. See the Conditional Light section for more detail on each property.
+*
+* Light wait id
+* - wait for the conditional light to finish both transitioning and pausing before continuing
+* - the event script.
+*
 * Light color id c
 * - Change the color (c) of lightsource with id (id)
 * - Work even if the associated light is currently off.
@@ -925,17 +1088,20 @@ Imported[Community.Lighting.name] = true;
 * Daynight speed n
 * - Changes the speed by which hours pass in game in relation to real life seconds
 *
-* Daynight hour h m
-* - Sets the in game time to hh:mm
+* Daynight hour h m [fade]
+* - Sets the in game time to hh:mm. Specifying 'fade' will gradually transition the
+*   tint to that of the next hour.
 *
 * Daynight color h c
 * - Sets the hour (h) to use color (c)
 *
-* Daynight add h m
-* - Adds the specified hours (h) and minutes (m) to the in game clock
+* Daynight add h m [fade]
+* - Adds the specified hours (h) and minutes (m) to the in game clock. Specifying
+*   'fade' will gradually transition the tint to that of the next hour.
 *
-* Daynight subtract h m
-* - Subtracts the specified hours (h) and minutes (m) from the in game clock
+* Daynight subtract h m [fade]
+* - Subtracts the specified hours (h) and minutes (m) from the in game clock.
+*   Specifying  'fade' will gradually transition the tint to that of the next hour.
 *
 * Daynight show
 * - Shows the current time of day in the upper right corner of the map screen (h:mm)
@@ -946,8 +1112,9 @@ Imported[Community.Lighting.name] = true;
 * Daynight hide
 * - Hides the current time of day mini-window
 *
-* Daynight hoursinday h
-* - Sets the number of hours in a day to [h] (set hour colors  if doing this)
+* Daynight hoursinday h [fade]
+* - Sets the number of hours in a day to [h] (set hour colors if doing this).
+*   Specifying 'fade' will gradually transition the tint to that of the next hour.
 *
 * Tint set c [s]
 * Tint fade c [s]
@@ -1061,6 +1228,8 @@ const M_PI_180 = Math.PI / 180; // cache PI/180 - this is faster
 
 Number.prototype.is           = function(...a)     { return a.includes(Number(this)); };
 Number.prototype.inRange      = function(min, max) { return this >= min && this <= max; };
+Number.prototype.clone        = function()         { return this; };
+Boolean.prototype.clone       = function()         { return this; };
 String.prototype.equalsIC     = function(...a)     { return a.map(s => s.toLowerCase()).includes(this.toLowerCase()); };
 String.prototype.startsWithIC = function(s)        { return this.toLowerCase().startsWith(s.toLowerCase()); };
 Math.minmax                   = (minOrMax, ...a) =>  minOrMax ? Math.min(...a) : Math.max(...a); // min if positive
@@ -1218,12 +1387,22 @@ class VRGBA {
   }
 
   /**
-   * Creates an empty VRGBA object will all properties initialized to false and 0.
+   * Creates an VRGBA object will r,g,b,a = 0 and v = false.
    * @returns {VRGBA}
    */
-  static empty() {
+  static minRGBA() {
     let that = new VRGBA();
     [that.v, that.r, that.g, that.b, that.a] = [false, 0, 0, 0, 0];
+    return that;
+  }
+
+  /**
+   * Creates an VRGBA object will r,g,b,a = 255 and v = false.
+   * @returns {VRGBA}
+   */
+  static maxRGBA() {
+    let that = new VRGBA();
+    [that.v, that.r, that.g, that.b, that.a] = [false, 255, 255, 255, 255];
     return that;
   }
 
@@ -1293,6 +1472,475 @@ class VRGBA {
   toWebHex(override) { return this.toHex(true, override); }
 }
 
+/**
+ * Class representing conditional light properties that can be changed.
+ */
+class LightProperties {
+  /**
+   * Creates a LightProperties object with the provided parameters
+   * @param {LightType} type
+   * @param {VRGBA}     color
+   * @param {Boolean}   enable
+   * @param {Number}    direction
+   * @param {Number}    brightness
+   * @param {Number}    xOffset
+   * @param {Number}    yOffset
+   * @param {Number}    radius
+   * @param {Number}    beamLength
+   * @param {Number}    beamWidth
+   */
+  constructor(type, color, enable, direction, brightness, xOffset, yOffset, radius, beamLength, beamWidth) {
+    // Always define in case durations aren't passed to targets
+    this.transitionDuration = 0;
+    this.pauseDuration      = 0;
+    this.updateFrame        = 0;
+    if (arguments.length == 0) return;
+    // shared properties
+    this.type       = type;
+    this.color      = color;
+    this.enable     = enable;
+    this.brightness = brightness;
+    this.xOffset    = xOffset;
+    this.yOffset    = yOffset;
+    // light type dependent properties
+    let isOL = this.isOtherLight();
+    let isFL = this.isFlashlight();
+    if (isOL) this.radius     = radius;
+    if (isFL) this.clockwise  = true;
+    if (isFL) this.direction  = direction;
+    if (isFL) this.beamLength = beamLength;
+    if (isFL) this.beamWidth  = beamWidth;
+  }
+
+  /**
+   * Returns true if the light type is a flashlight or null; otherwise false.
+   */
+  isFlashlight() { return this.type == null || this.type.is(LightType.Flashlight); }
+
+  /**
+   * Returns true if the light type is light, fire, glow, or null; otherwise false.
+   */
+  isOtherLight() { return this.type == null || this.type.is(LightType.Light, LightType.fire, LightType.Glow); }
+
+  /**
+   * Processes and sets properties from a string array.
+   * @param {String[]} properties
+   */
+  parseProps(properties) {
+    this.updateFrame = Graphics.frameCount; // set current frame as update frame
+    let isOL = this.isOtherLight();
+    let isFL = this.isFlashlight();
+    // properties with no suffix 'clear' the target
+    properties.forEach((e) => {
+      // clear checks (back to initial value for the given property)
+      if      (        e.equalsIC('t'))  { this.transitionDuration = 0; return; }
+      else if (        e.equalsIC('p'))  { this.pauseDuration      = 0; return; }
+      else if (        e.equalsIC('#'))  { this.color      = void (0); return; }
+      else if (        e.equalsIC('a#')) { this.color      = void (0); return; }
+      else if (        e.equalsIC('e'))  { this.enable     = void (0); return; }
+      else if (        e.equalsIC('b'))  { this.brightness = void (0); return; }
+      else if (        e.equalsIC('x'))  { this.xOffset    = void (0); return; }
+      else if (        e.equalsIC('y'))  { this.yOffset    = void (0); return; }
+      else if (isOL && e.equalsIC('r'))  { this.radius     = void (0); return; }
+      else if (isFL && e.equalsIC('l'))  { this.beamLength = void (0); return; }
+      else if (isFL && e.equalsIC('w'))  { this.beamWidth  = void (0); return; }
+      else if (isFL && e.equalsIC('a'))  { this.clockwise  = this.direction = void (0); return; }
+      else if (isFL && e.equalsIC('+a')) { this.clockwise  = this.direction = void (0); return; }
+      else if (isFL && e.equalsIC('-a')) { this.clockwise  = this.direction = void (0); return; }
+
+      // parse suffix (individual & random ranges)
+      let suffix, rand = (min, max) => Math.random() * (max - min) + min;
+      if (!e.contains(':') && !e.contains('#')) {                               // single number
+        suffix = orNaN(+e.slice(1), +e.slice(2), 0);                            // - get number
+      } else if (!e.contains(':') && e.contains('#')) {                         // single color
+        suffix = new VRGBA(e);                                                  // - get color
+      } else if (!e.contains('#')) {                                            // number range
+        let eSplit = e.split(':');                                              // - explode range
+        let min = orNaN(+eSplit[0].slice(1), +eSplit[0].slice(2), 0);           // - get suffix (prefix size 1 or 2)
+        let max = orNaN(+eSplit[1], 0);                                         // - get suffix (no prefix)
+        suffix = e[0] != 'e' ? rand(min, max) : Math.floor(rand(min, max + 1)); // - for 'e' we need int ranges
+      } else {                                                                  // color range
+        let eSplit = e.split(':');                                              // - explode range
+        let min = new VRGBA(eSplit[0]);                                         // - get the whole hex value
+        let max = new VRGBA(eSplit[1]);                                         // - get the whole hex value
+        suffix = new VRGBA(Boolean(Math.floor(rand(min.v, max.v + 1))), Math.floor(rand(min.r, max.r + 1)),
+                                   Math.floor(rand(min.g, max.g + 1)),  Math.floor(rand(min.b, max.b + 1)),
+                                   Math.floor(rand(min.a, max.a + 1)));
+      }
+
+      // prefix checks
+      if (             e.startsWithIC('t'))    this.transitionDuration = suffix;
+      else if (        e.startsWithIC('p'))    this.pauseDuration      = suffix;
+      else if (        e.startsWithIC('#'))    this.color      = suffix;
+      else if (        e.startsWithIC('a#'))   this.color      = suffix;
+      else if (        e.startsWithIC('e'))    this.enable     = Boolean(suffix);
+      else if (        e.startsWithIC('b'))    this.brightness = suffix;
+      else if (        e.startsWithIC('x'))    this.xOffset    = suffix;
+      else if (        e.startsWithIC('y'))    this.yOffset    = suffix;
+      else if (isOL && e.startsWithIC('r'))    this.radius     = suffix;
+      else if (isFL && e.startsWithIC('l'))    this.beamLength = suffix;
+      else if (isFL && e.startsWithIC('w'))    this.beamWidth  = suffix;
+      else if (isFL && e.startsWithIC('a'))  { this.clockwise  = true;  this.direction = M_PI_180 * suffix; }
+      else if (isFL && e.startsWithIC('+a')) { this.clockwise  = true;  this.direction = M_PI_180 * suffix; }
+      else if (isFL && e.startsWithIC('-a')) { this.clockwise  = false; this.direction = M_PI_180 * suffix; }
+    }, this);
+  }
+
+  /**
+   * Creates a copy of the LightProperties object.
+   * @returns {LightDelta}
+   */
+  clone() {
+    let that = new LightProperties();
+    if (this.transitionDuration != null) that.transitionDuration = this.transitionDuration;
+    if (this.pauseDuration      != null) that.pauseDuration      = this.pauseDuration;
+    if (this.updateFrame        != null) that.updateFrame        = this.updateFrame;
+    if (this.type               != null) that.type               = this.type;
+    if (this.enable             != null) that.enable             = this.enable;
+    if (this.color              != null) that.color              = this.color     .clone();
+    if (this.brightness         != null) that.brightness         = this.brightness.clone();
+    if (this.xOffset            != null) that.xOffset            = this.xOffset   .clone();
+    if (this.yOffset            != null) that.yOffset            = this.yOffset   .clone();
+    if (this.radius             != null) that.radius             = this.radius    .clone();
+    if (this.clockwise          != null) that.clockwise          = this.clockwise .clone();
+    if (this.direction          != null) that.direction          = this.direction .clone();
+    if (this.beamLength         != null) that.beamLength         = this.beamLength.clone();
+    if (this.beamWidth          != null) that.beamWidth          = this.beamWidth .clone();
+    return that;
+  }
+}
+
+/**
+ * Class representing conditional light deltas that provides the ability to compute deltas between the
+ * current parameter values and the target values.
+ */
+class LightDelta {
+  /**
+   * Creates a LightDelta object with the provided LightProperties.
+   * @param {LightProperties} current
+   * @param {LightProperties} target
+   */
+  constructor(current, target, defaults, fade = true) {
+    if (arguments.length == 0) return;
+    this.current = current;
+    this.target  = target;
+    this.defaults = defaults;
+    this.delta   = new LightProperties();
+    this.createDeltas(fade);
+  }
+
+  /**
+   * Creates a copy of the LightDelta object.
+   * @returns {LightDelta}
+   */
+  clone() {
+    let that = new LightDelta();
+    // clone durations
+    if (this.current != null) that.current = this.current.clone();
+    if (this.target  != null) that.target  = this.target.clone();
+    if (this.delta   != null) that.delta   = this.delta.clone();
+    return that;
+  }
+
+  /**
+   * Create deltas from currents, targets, and transition duration. If fade is false, then the current will transition
+   * to the target values instantly.
+   *
+   * @param {Boolean} fade
+   */
+  createDeltas(fade = true) {
+    // Helper functions
+    let normalizeAngle = (rads) => rads % (M_2PI) + (rads < 0) * M_2PI; // normalize between 0 & 2*Pi
+    let normalizeClockwiseMovement = () => {
+      this.current.direction = normalizeAngle(this.current.direction); // normalize already assigned current
+      target.direction  = normalizeAngle(target.direction);  // convert target to radians before normalization
+      if (this.current.direction > target.direction) target.direction += M_2PI; // clockwise normalize
+    };
+    let normalizeCounterClockwiseMovement = () => {
+      this.current.direction = normalizeAngle(this.current.direction); // normalize already assigned current
+      target.direction  = normalizeAngle(target.direction);  // convert target to radians before normalization
+      if (this.current.direction < target.direction) target.direction -= M_2PI; // c-clockwise normalize
+    };
+    let createColor  = (...a) => !a.some(x => x == null) && ColorDelta.create(...a)  || void (0);
+    let createNumber = (...a) => !a.some(x => x == null) && NumberDelta.create(...a) || void (0);
+
+    // set delta creation at current frame time
+    this.current.updateFrame = Graphics.frameCount;
+
+    // Duplicate target so that any target normalization is local to this LightDelta instance
+    let target = this.target.clone();
+
+    // Set current durations or 0 if not fading
+    this.current.transitionDuration = fade ? target.transitionDuration : 0;
+    this.current.pauseDuration      = fade ? target.pauseDuration : 0;
+
+    // Enable or disable the current immediately based off of target value
+    this.current.enable = target.enable != null ? target.enable : this.defaults.enable;
+
+    // For currents (flashlights) check the movement direction and normalize the current and target
+    if      (this.current.direction != null && target.clockwise)  normalizeClockwiseMovement();
+    else if (this.current.direction != null && !target.clockwise) normalizeCounterClockwiseMovement();
+
+    // Set any null targets to default (normalization for nulls) (allows defaults to gradually transition)
+    if(target.color == null)      target.color      = this.defaults.color;
+    if(target.direction == null)  target.direction  = this.defaults.direction;
+    if(target.brightness == null) target.brightness = this.defaults.brightness;
+    if(target.xOffset == null)    target.xOffset    = this.defaults.xOffset;
+    if(target.yOffset == null)    target.yOffset    = this.defaults.yOffset;
+    if(target.radius == null)     target.radius     = this.defaults.radius;
+    if(target.beamLength == null) target.beamLength = this.defaults.beamLength;
+    if(target.beamWidth == null)  target.beamWidth  = this.defaults.beamWidth;
+
+    // assign deltas if current & targets exist
+    this.delta.color      = createColor (this.current.color,      target.color,      this.current.transitionDuration);
+    this.delta.color      = createColor (this.current.color,      target.color,      this.current.transitionDuration);
+    this.delta.direction  = createNumber(this.current.direction,  target.direction,  this.current.transitionDuration);
+    this.delta.brightness = createNumber(this.current.brightness, target.brightness, this.current.transitionDuration);
+    this.delta.xOffset    = createNumber(this.current.xOffset,    target.xOffset,    this.current.transitionDuration);
+    this.delta.yOffset    = createNumber(this.current.yOffset,    target.yOffset,    this.current.transitionDuration);
+    this.delta.radius     = createNumber(this.current.radius,     target.radius,     this.current.transitionDuration);
+    this.delta.beamLength = createNumber(this.current.beamLength, target.beamLength, this.current.transitionDuration);
+    this.delta.beamWidth  = createNumber(this.current.beamWidth,  target.beamWidth,  this.current.transitionDuration);
+
+    // assign new currents for existing deltas to propagate currents for duration = 0
+    if(this.delta.color != null)      this.current.color      = this.delta.color     .get();
+    if(this.delta.direction != null)  this.current.direction  = this.delta.direction .get();
+    if(this.delta.brightness != null) this.current.brightness = this.delta.brightness.get();
+    if(this.delta.xOffset != null)    this.current.xOffset    = this.delta.xOffset   .get();
+    if(this.delta.yOffset != null)    this.current.yOffset    = this.delta.yOffset   .get();
+    if(this.delta.radius != null)     this.current.radius     = this.delta.radius    .get();
+    if(this.delta.beamLength != null) this.current.beamLength = this.delta.beamLength.get();
+    if(this.delta.beamWidth != null)  this.current.beamWidth  = this.delta.beamWidth .get();
+  }
+
+  /**
+   * Computes the next deltas in between the current parameters and target parameters.
+   * @returns {this}
+   */
+  next() {
+    // Compared the last time a delta has been generated to the last time the target has been updated
+    if (this.current.updateFrame < this.target.updateFrame) this.createDeltas();
+    // Check if transition and pause durations have reached zero
+    if (this.finished()) return this;
+    // only update if transition duration isn't 0 (finished)
+    if (this.current.transitionDuration > 0) {
+      if (this.delta.color      != null) this.current.color      = this.delta.color     .next().get();
+      if (this.delta.direction  != null) this.current.direction  = this.delta.direction .next().get();
+      if (this.delta.brightness != null) this.current.brightness = this.delta.brightness.next().get();
+      if (this.delta.xOffset    != null) this.current.xOffset    = this.delta.xOffset   .next().get();
+      if (this.delta.yOffset    != null) this.current.yOffset    = this.delta.yOffset   .next().get();
+      if (this.delta.radius     != null) this.current.radius     = this.delta.radius    .next().get();
+      if (this.delta.beamLength != null) this.current.beamLength = this.delta.beamLength.next().get();
+      if (this.delta.beamWidth  != null) this.current.beamWidth  = this.delta.beamWidth .next().get();
+      this.current.transitionDuration--;
+    } else
+      this.current.pauseDuration--;
+    return this;
+  }
+
+  /**
+   * Returns whether the light has finished transitioning and pausing.
+   * @returns {Boolean}
+   */
+  finished() { return this.current.transitionDuration <= 0 && this.current.pauseDuration <= 0; }
+}
+
+/**
+ * Class representing individual number deltas for providing number changes over time at different speeds.
+ */
+class NumberDelta {
+  /**
+   * Creates a number delta from the start number, target number, and duration.
+   * @param {VRGBA}  start
+   * @param {VRGBA}  target
+   * @param {Number} duration
+   * @returns {NumberDelta}
+   */
+  constructor(start, target, duration) {
+    if (arguments.length == 0) return;
+    let delta = target == start ? 0 : (target - start) / duration;
+    [this.current, this.target, this.duration, this.lazyEquals, this.delta] = [start, target, duration, false, delta];
+    this.finished(); // check for duration = 0
+  }
+
+  /**
+   * Creates a copy of the NumberDelta object.
+   * @returns {NumberDelta}
+   */
+  clone() {
+    let that = new NumberDelta();
+    [that.current, that.target, that.duration, that.lazyEquals, that.delta] =
+    [this.current, this.target, this.duration, this.lazyEquals, this.delta];
+    return that;
+  }
+
+  /**
+   * Creates a number delta from the start number, target number, and duration.
+   * @param {VRGBA}  start
+   * @param {VRGBA}  target
+   * @param {Number} duration
+   * @returns {NumberDelta}
+   */
+  static create(start, target, duration) { return new NumberDelta(start, target, duration); }
+
+  /**
+   * Computes the next delta number in between the current number and target number.
+   * @returns {this}
+   */
+  next() {
+    if (this.finished()) return this; // lazy-short-circuit
+    if (this.current != this.target) this.current = Math.minmax(this.delta > 0, this.current + this.delta, this.target);
+    this.duration -= 1;
+    this.finished();
+    return this;
+  }
+
+  /**
+   * Returns the current delta number.
+   * @returns {Number}
+   */
+  get() { return this.current; }
+
+  /**
+   * Returns true if the current number is equal to the target number; otherwise false.
+   * @returns {Boolean}
+   */
+  finished() {
+    if (this.lazyEquals) return true; // lazy-short-circuit comparison followed by real comparison
+    if ((this.lazyEquals = this.duration <= 0))
+      return (this.current = this.target, true); // set cur to refer to target on match
+    return false;
+  }
+}
+
+/**
+ * Class representing a color delta for providing color changes over time at different speeds.
+ */
+class ColorDelta {
+  /**
+   * Create a color delta from the start color, target color, fade duration, and
+   * whether to consider the remaining ticks or not for speed purposes.
+   * @param {VRGBA}  start
+   * @param {VRGBA}  target
+   * @param {Number} fadeDuration
+   * @param {Number} useTicksRemaining
+   * @returns {ColorDelta}
+   */
+  constructor(start, target = start, fadeDuration = 0, useTicksRemaining = false) {
+    if (arguments.length == 0) return;
+    this.current       = start.clone();           // - deep copy
+    this.target        = target.clone();          // - deep copy
+    this.fadeDuration  = orNaN(fadeDuration, 0);  // - use the remaining time (of the hour) or total fade duration
+    this.fadeDuration -= (useTicksRemaining ? Community.Lighting.ticks() : 0);
+    this.lazyEqual     = false;                   // - true when current value == target value
+    this.delta         = new VRGBA(this.target.v, // - divide by zero is +inf or -inf so deltas work for speed = 0
+                                  (this.target.r - this.current.r) / this.fadeDuration,
+                                  (this.target.g - this.current.g) / this.fadeDuration,
+                                  (this.target.b - this.current.b) / this.fadeDuration,
+                                  (this.target.a - this.current.a) / this.fadeDuration);
+    this.finished(); // check for duration = 0
+  }
+  /**
+   * Creates a copy of the ColorDelta object.
+   * @returns {ColorDelta}
+   */
+  clone() {
+    let that = new  ColorDelta();
+    that.current      = this.current.clone();
+    that.target       = this.target.clone();
+    that.fadeDuration = this.fadeDuration;
+    that.lazyEquals   = this.lazyEquals;
+    that.delta        = this.delta.clone();
+    return that;
+  }
+
+  /**
+   * Creates a light delta from the start color, target color, and fade duration.
+   * @param {VRGBA}  start
+   * @param {VRGBA}  target
+   * @param {Number} fadeDuration
+   * @returns {ColorDelta}
+   */
+  static create(start, target, fadeDuration) {
+    return new ColorDelta(start, target, fadeDuration, false /* don't use remaining ticks */);
+  }
+
+  /**
+   * Creates a map color delta from the current map tint, target tint, and fade duration.
+   * @param {VRGBA}  targetTint
+   * @param {Number} fadeDuration
+   * @returns {ColorDelta}
+   */
+  static createTint(targetTint, fadeDuration = 0) {
+    return new ColorDelta($gameVariables.GetTint(), targetTint, fadeDuration);
+  }
+
+  /**
+   * Creates a battle color delta from the current battle tint, target tint, and fade duration.
+   * @param {VRGBA}  targetTint
+   * @param {Number} fadeDuration
+   * @returns {ColorDelta}
+   */
+  static createBattleTint(targetTint, fadeDuration = 0) {
+    return new ColorDelta($gameTemp._BattleTintTarget.current, targetTint, fadeDuration);
+  }
+
+  /**
+   * Creates a time color delta from the current time and speed. useCurrentTint specifies whether to
+   * fade from the current color to the target or to have the start color be the color it would
+   * normally be at the given time interval (difference between current hour and next).
+   * @param {Boolean} useCurrentTint
+   * @returns {ColorDelta}
+   */
+  static createTimeTint(useCurrentTint = true) {
+    let fadeDuration = 60 * $gameVariables.GetDaynightSpeed(); // fade duration
+    if (useCurrentTint) { // delta should fade from current color to target
+      return new ColorDelta($gameVariables.GetTint(), $gameVariables.GetTintByTime(1), fadeDuration, true);
+    } else {              // start color should be the color it would normally be at the given time
+      let CL = Community.Lighting; // reference CL
+      let ticks    = fadeDuration == 0 ? CL.minutes() * 60 + CL.seconds() : CL.ticks();
+      fadeDuration = fadeDuration == 0 ? 60 * 60 : fadeDuration; // dur = 0 needs a ref speed to compute the start color
+      let delta = new ColorDelta($gameVariables.GetTintByTime(), $gameVariables.GetTintByTime(1), fadeDuration);
+      delta.next(ticks); // get current color based off of ticks elapsed in hour
+      return delta;
+    }
+  }
+
+  /**
+   * Computes the next delta color in between the current color and target color.
+   * Scale is used to scale the delta increment by a factor of the scale amount.
+   * @param {Number} scale
+   * @returns {this}
+   */
+  next(scale = 1) {
+    if (this.finished()) return this; // lazy-short-circuit
+    let current = this.current, target = this.target, delta = this.delta; // reference
+    if(current.v != target.v) current.v = target.v;  // Compute next step & clamp to target, check to avoid recomputing
+    if(current.r != target.r) current.r = Math.minmax(delta.r > 0, current.r + scale * delta.r, target.r);
+    if(current.g != target.g) current.g = Math.minmax(delta.g > 0, current.g + scale * delta.g, target.g);
+    if(current.b != target.b) current.b = Math.minmax(delta.b > 0, current.b + scale * delta.b, target.b);
+    if(current.a != target.a) current.a = Math.minmax(delta.a > 0, current.a + scale * delta.a, target.a);
+    this.fadeDuration -= 1;
+    return this;
+  }
+
+  /**
+   * Returns the current delta color.
+   * @returns {Number}
+   */
+  get() { return this.current.clone(); } // duplicate color so reference can't be messed with
+
+  /**
+   * Returns true if the current color is equal to the target; otherwise false.
+   * @returns {Boolean}
+   */
+  finished() {
+    if (this.lazyEquals) return true; // lazy-short-circuit comparison followed by real comparison
+    if ((this.lazyEquals = this.fadeDuration <= 0)) return (this.current = this.target, true);
+    return false;
+   }
+}
+
 (function ($$) {
 
   class Mask_Bitmaps {
@@ -1302,10 +1950,12 @@ class VRGBA {
     }
   }
 
+  let ReloadMapEventsRequired = false;
   let colorcycle_count = [1000];
   let colorcycle_timer = [1000];
   let eventObjId = [];
   let event_id = [];
+  let events;
   let event_stacknumber = [];
   let event_eventcount = 0;
   let light_tiles = [];
@@ -1338,7 +1988,7 @@ class VRGBA {
     catch (e) {
       let CL = Community.Lighting;
       console.log(`${CL.name} - Night Hours and/or DayNight Colors contain invalid JSON data - cannot parse.`);
-      result = new Array(24).fill(undefined).map(() => ({ "color": VRGBA.empty(), "isNight": false }));
+      result = new Array(24).fill(undefined).map(() => ({ "color": VRGBA.minRGBA(), "isNight": false }));
     }
     return result;
   })(parameters["DayNight Colors"], parameters["Night Hours"]);
@@ -1359,9 +2009,6 @@ class VRGBA {
   let options_lighting_on = true;
   let maxX = (Number(parameters['Screensize X']) || 816) + 2 * lightMaskPadding;
   let maxY = Number(parameters['Screensize Y']) || 624;
-  let tint_oldseconds = 0;
-  let tint_timer = 0;
-  let event_reload_counter = 0;
   let notetag_reg = RegExp("<" + noteTagKey + ":[ ]*([^>]+)>", "i");
   let radialColor2 = new VRGBA(useSmootherLights ? "#00000000" : "#000000");
   $$.getFirstComment = function (page) {
@@ -1393,14 +2040,6 @@ class VRGBA {
     }
     else result = note.trim();
     return result;
-  };
-  Game_Event.prototype.getCLTag = function () {
-    let result;
-    let pageNote = noteTagKey ? $$.getFirstComment(this.page()) : null;
-    let note = this.event().note;
-    if (pageNote) result = $$.getCLTag(pageNote);
-    if (!result) result = $$.getCLTag(note);
-    return result || "";
   };
   $$.getDayNightList = function () {
     return dayNightList;
@@ -1444,184 +2083,154 @@ class VRGBA {
     return (this[index] = value, true);
   };
 
-  // Event note tag caching
-  Game_Event.prototype.resetLightData = function () {
-    this._clType = undefined;
-    this._lastLightPage = undefined;
-    this._clRadius = undefined;
-    this._clColor = undefined;
-    this._clCycle = undefined;
-    this._clBrightness = undefined;
-    this._clSwitch = undefined;
-    this._clDirection = undefined;
-    this._clXOffset = undefined;
-    this._clYOffset = undefined;
-    this._clId = undefined;
-    this._clBeamColor = undefined;
-    this._clBeamLength = undefined;
-    this._clBeamWidth = undefined;
-    this._clFlashlightDirection = undefined;
-    this._clOnOff = undefined;
-    this._clCycleTimer = undefined;
-    this._clCycleIndex = undefined;
-    this.initLightData();
+  let _Game_Event_setupPage = Game_Event.prototype.setupPage;
+  Game_Event.prototype.setupPage = function () { // Hook Game_Event.setupPage() to detect page changes
+    _Game_Event_setupPage.call(this);
+    ReloadMapEventsRequired = true; // force refresh
   };
-  Game_Event.prototype.initLightData = function () {
-    this._lastLightPage = this._pageIndex;
-    let tagData = this.getCLTag().toLowerCase().split(/\s+/);
-    let needsCycleDuration = false;
-    this._clType = LightType[tagData.shift()];
+  let _Game_Map_setupEvents = Game_Map.prototype.setupEvents;
+  Game_Map.prototype.setupEvents = function () { // hook $GameMap.setupEvents() and _events to detect event changes.
+    _Game_Map_setupEvents.call(this);
+    this._events = new Proxy(this._events, { // called on events pop, push, splice, assign
+      set: function (...a) { ReloadMapEventsRequired = true; return Reflect.set(...a); }
+    }); // force refresh
+  };
+  Game_Event.prototype.getCLTag = function () {
+    let result;
+    let pageNote = noteTagKey ? $$.getFirstComment(this.page()) : null;
+    let note = this.event().note;
+    if (pageNote) result = $$.getCLTag(pageNote);
+    if (!result) result = $$.getCLTag(note);
+    return result || "";
+  };
+  Game_Event.prototype.initLightData = function () {   // Event note tag caching
+    this._cl = {};
+    this._cl.lastLightPage = this._pageIndex;
+    let tagData = this.getCLTag().toLowerCase();
 
-    // Handle parsing of light and fire
-    if (this._clType && this._clType.is(LightType.Light, LightType.Fire)) {
-      this._clRadius = undefined;
-      for (let x of tagData) {
-        if (!isNaN(+x) && this._clRadius === undefined) this._clRadius = +x;
-        else if (x.equalsIC("cycle") && this._clColor === undefined) this._clCycle = [];
-        else if (this._clCycle && !needsCycleDuration && (x[0].equalsIC("#") || x.slice(0, 2).equalsIC("a#"))) {
-          this._clCycle.push({ "color": new VRGBA(x), "duration": 1 });
-          needsCycleDuration = true;
-        }
-        else if (this._clCycle && needsCycleDuration && !isNaN(+x)) {
-          this._clCycle[this._clCycle.length - 1].duration = +x || 1;
-          needsCycleDuration = false;
-        }
-        else if ((x[0].equalsIC("#") || x.slice(0, 2).equalsIC("a#")) &&
-                  this._clColor === undefined) this._clColor = new VRGBA(x);
-        else if (x[0].equalsIC("b") && this._clBrightness === undefined) {
-          this._clBrightness = Number(+(x.substr(1, x.length)) / 100).clamp(0, 1);
-        }
-        else if (x.equalsIC("night", "day") && this._clSwitch === undefined) this._clSwitch = x;
-        else if (x[0].equalsIC("d") && this._clDirection === undefined) this._clDirection = +(x.substr(1, x.length));
-        else if (x[0].equalsIC("x") && this._clXOffset === undefined) this._clXOffset = +(x.substr(1, x.length));
-        else if (x[0].equalsIC("y") && this._clYOffset === undefined) this._clYOffset = +(x.substr(1, x.length));
-        else if (x.length > 0 && this._clId === undefined) this._clId = x;
+    // parse new cycle groups format within {} braces and extract from tag data for separate handling
+    // old cycle groups are parsed in tagData loop below and are converted to the new group format
+    let cycleGroups = [];
+    tagData = tagData.replace(/\{(.*?)\}/g, (_, group) => ((cycleGroups.push(group.split(/\s+/)), '')));
+    tagData = tagData.split(/\s+/);
+    this._cl.type = LightType[tagData.shift()];
+    // Handle parsing of light, fire, and flashlight
+    if (this._cl.type) {
+      let isFL       = ()          => this._cl.type.is(LightType.Flashlight); // is flashlight
+      let isEq       = (e, s0, s1) => s0 && e.equalsIC(s0)     || s1 && e.equalsIC(s1);
+      let isPre      = (e, p0, p1) => p0 && e.startsWithIC(p0) || p1 && e.startsWithIC(p1);
+      let isPreNum   = (e, p, n)   => p  && e.startsWithIC(p)  && !isNaN(n);
+      let isNul      = (e)         => e == null;
+      let isDayNight = (e)         => isEq(e, "night", "day");
+      let clipNum    = (e)         => orNaN(+e.slice(1)); // clip prefix & convert to number or undefined
+      let cycleIndex, hasCycle = false;
+      tagData.forEach((e) => {
+        let n = clipNum(e);
+        if      (!isFL() && isPreNum(e, 'r', n) && isNul(this._cl.radius))     this._cl.radius     = n;
+        else if (!isFL() && !isNaN(+e)          && isNul(this._cl.radius))     this._cl.radius     = +e;
+        else if (isFL()  && !isNaN(+e)          && isNul(this._cl.beamLength)) this._cl.beamLength = +e;
+        else if (isFL()  && !isNaN(+e)          && isNul(this._cl.beamWidth))  this._cl.beamWidth  = +e;
+        else if (isFL()  && isPreNum(e, 'l', n) && isNul(this._cl.beamLength)) this._cl.beamLength = n;
+        else if (isFL()  && isPreNum(e, 'w', n) && isNul(this._cl.beamWidth))  this._cl.beamWidth  = n;
+        else if (           isEq(e, 'cycle')    && isNul(this._cl.color))      hasCycle            = true;
+        else if (           isPre(e, '#', 'a#') && hasCycle)                   cycleIndex = cycleGroups.push([e]) - 2;
+        else if (           !isNaN(+e)          && cycleGroups[cycleIndex])    cycleGroups[cycleIndex] .push('p' + e);
+        else if (           isPre(e, '#', 'a#') && isNul(this._cl.color))      this._cl.color      = new VRGBA(e);
+        else if (           isPreNum(e, 'e', n) && isNul(this._cl.enable))     this._cl.enable     = Boolean(n);
+        else if (           isOn(e)             && isNul(this._cl.enable))     this._cl.enable     = true;
+        else if (           isOff(e)            && isNul(this._cl.enable))     this._cl.enable     = false;
+        else if (           isDayNight(e)       && isNul(this._cl.switch))     this._cl.switch     = e;
+        else if (           isPreNum(e, 'b', n) && isNul(this._cl.brightness)) this._cl.brightness = (n / 100).clamp(0, 1);
+        else if (!isFL() && isPreNum(e, 'd', n) && isNul(this._cl.direction))  this._cl.direction  = n;
+        else if ( isFL() && !isNaN(+e)          && isNul(this._cl.direction))  this._cl.direction  = +e;
+        else if ( isFL() && isPreNum(e, 'd', n) && isNul(this._cl.direction))  this._cl.direction  = CLDirectionMap[n];
+        else if ( isFL() && isPreNum(e, 'a', n) && isNul(this._cl.direction))  this._cl.direction  = Math.PI / 180 * n;
+        else if (           isPreNum(e, 'x', n) && isNul(this._cl.xOffset))    this._cl.xOffset    = n;
+        else if (           isPreNum(e, 'y', n) && isNul(this._cl.yOffset))    this._cl.yOffset    = n;
+        else if (           e.length > 0        && isNul(this._cl.id))         this._cl.id         = e;
+        cycleIndex += 1; // increment index. Valid for 1 iteration after a cycle color is parsed before OOB.
+      }, this);
+
+      // normalize parameters
+      this._cl.radius        = orNaN(this._cl.radius, 0);
+      this._cl.color         = orNullish(this._cl.color, VRGBA.minRGBA());
+      this._cl.enable        = orBoolean(this._cl.enable, this._cl.id ? false : true);
+      this._cl.brightness    = orNaN(this._cl.brightness, 0);
+      this._cl.direction     = orNaN(this._cl.direction, undefined); // must be undefined for later checks
+      this._cl.id            = orNullish(this._cl.id, 0); // Alphanumeric
+      this._cl.beamLength    = orNaN(this._cl.beamLength, 0);
+      this._cl.beamWidth     = orNaN(this._cl.beamWidth, 0);
+      this._cl.xOffset       = orNaN(this._cl.xOffset, 0);
+      this._cl.yOffset       = orNaN(this._cl.yOffset, 0);
+      this._cl.cycle         = this._cl.cycle || null;
+
+      // Store initial light properties
+      let props = [this._cl.color, this._cl.enable, this._cl.direction, this._cl.brightness, this._cl.xOffset,
+                   this._cl.yOffset, this._cl.radius, this._cl.beamLength, this._cl.beamWidth];
+
+      // create initial properties
+      let startProps = new LightProperties(this._cl.type, ...props);
+
+      // Process cycle parameters - for each cycle group create currentProps and targetProps and cooresponding light
+      // delta. Then put the deltas into a list to loop/cycle through repeatedly. Note: Last cycle targets first.
+      if (cycleGroups.length) { // check if tag included color cycling
+        this._cl.cycle = [];     // only define if cycle exists
+        let currentProps = startProps, targetProps;
+        cycleGroups.forEach((e, i, a) => {                                          // ------ loop each group ------
+          let n = a[++i < a.length ? i : 0];                                        // - get next element
+          currentProps = currentProps.clone();                                      // - inherit existing props
+          currentProps.parseProps(e);                                               // - parse for new props
+          targetProps = i == a.length ? startProps : currentProps.clone();          // - create target props
+          targetProps.parseProps(n);                                                // - parse for new props
+          this._cl.cycle.push(new LightDelta(currentProps, targetProps, this._cl)); // - create light delta object
+        }, this);                                                                   // -----------------------------
+        let delta = this._cl.cycle.shift(); // pop front
+        this._cl.delta = delta.clone();     // clone front as the initial lightDelta state for this cond light
+        this._cl.cycle.push(delta);         // push original on back of list
       }
-    }
-    // Handle parsing of flashlight
-    else if (this._clType && this._clType.is(LightType.Flashlight)) {
-      this._clBeamLength = undefined;
-      this._clBeamWidth = undefined;
-      this._clOnOff = undefined;
-      this._clFlashlightDirection = undefined;
-      this._clRadius = 1;
-      for (let x of tagData) {
-        if (!isNaN(+x) && this._clBeamLength === undefined) this._clBeamLength = +x;
-        else if (!isNaN(+x) && this._clBeamWidth === undefined) this._clBeamWidth = +x;
-        else if (x[0].equalsIC("l") && this._clBeamLength === undefined) this._clBeamLength = this._clBeamLength = +(x.substr(1, x.length));
-        else if (x[0].equalsIC("w") && this._clBeamWidth === undefined) this._clBeamWidth = this._clBeamWidth = +(x.substr(1, x.length));
-        else if (x.equalsIC("cycle") && this._clColor === undefined) this._clCycle = [];
-        else if (this._clCycle && !needsCycleDuration && (x[0].equalsIC("#") || x.slice(0, 2).equalsIC("a#"))) {
-          this._clCycle.push({ "color": new VRGBA(x), "duration": 1 });
-          needsCycleDuration = true;
-        }
-        else if (this._clCycle && needsCycleDuration && !isNaN(+x)) {
-          this._clCycle[this._clCycle.length - 1].duration = +x || 1;
-          needsCycleDuration = false;
-        }
-        else if ((x[0].equalsIC("#") || x.slice(0, 2).equalsIC("a#")) &&
-                  this._clBeamColor === undefined) this._clColor = new VRGBA(x);
-        else if (!isNaN(+x) && this._clOnOff === undefined) this._clOnOff = +x;
-        else if (!isNaN(+x) && this._clFlashlightDirection === undefined) this._clFlashlightDirection = +x;
-        else if (isOn(x) && this._clOnOff === undefined) this._clOnOff = 1;
-        else if (isOff(x) && this._clOnOff === undefined) this._clOnOff = 0;
-        else if (x.equalsIC("night", "day") && this._clSwitch === undefined) this._clSwitch = x;
-        else if (x[0].equalsIC("d") && this._clFlashlightDirection === undefined) this._clFlashlightDirection = CLDirectionMap[+(x.substr(1, x.length))];
-        else if (x[0].equalsIC("a") && this._clFlashlightDirection === undefined) this._clFlashlightDirection = M_PI_180 * +(x.substr(1, x.length));
-        else if (x[0].equalsIC("x") && this._clXOffset === undefined) this._clXOffset = +(x.substr(1, x.length));
-        else if (x[0].equalsIC("y") && this._clYOffset === undefined) this._clYOffset = +(x.substr(1, x.length));
-        else if (x.length > 0 && this._clId === undefined) this._clId = x;
+      // Process conditional lighting - for a cond light, currentProps are light specific and targets are shared by ID
+      // a target can be updated on the fly using commands and all lights with matching IDs will use the properties
+      else if (this._cl.id) { // check for a conditional lighting ID
+        let lightArray = $gameVariables.GetLightArray();                            // get target light Object
+        if (lightArray[this._cl.id] == null)                                        // check if shared target exists
+          lightArray[this._cl.id] = new LightProperties();                          // - if not, create empty reference
+        let targetProps = lightArray[this._cl.id];                                  // get target prop reference
+        this._cl.delta  = new LightDelta(startProps, targetProps, this._cl, false); // create light delta object
       }
-    }
-    this._clRadius = this._clRadius || 0;
-    this._clColor = this._clColor || new VRGBA("#000000");
-    this._clBrightness = this._clBrightness || 0;
-    this._clDirection = this._clDirection || 0;
-    this._clId = this._clId || 0;
-    this._clBeamWidth = this._clBeamWidth || 0;
-    this._clBeamLength = this._clBeamLength || 0;
-    this._clOnOff = this._clOnOff || 0;
-    this._clFlashlightDirection = this._clFlashlightDirection || undefined; // Must be undefined.
-    this._clXOffset = this._clXOffset || 0;
-    this._clYOffset = this._clYOffset || 0;
-    this._clCycle = this._clCycle || null;
-    this._clCycleTimer = 0;
-    this._clCycleIndex = 0;
-  };
-  Game_Event.prototype.getLightType = function () {
-    if (this._clType === undefined) this.initLightData();
-    return this._clType;
-  };
-  Game_Event.prototype.getLightRadius = function () {
-    if (this._clType === undefined) this.initLightData();
-    return this._clRadius;
-  };
-  Game_Event.prototype.getLightColor = function () {
-    if (this._clType === undefined) this.initLightData();
-    return this._clColor;
-  };
-  Game_Event.prototype.getLightBrightness = function () {
-    if (this._clType === undefined) this.initLightData();
-    return this._clBrightness;
-  };
-  Game_Event.prototype.getLightDirection = function () {
-    if (this._clType === undefined) this.initLightData();
-    return this._clDirection;
-  };
-  Game_Event.prototype.getLightId = function () {
-    if (this._clType === undefined) this.initLightData();
-    return this._clId;
-  };
-  Game_Event.prototype.getLightFlashlightLength = function () {
-    if (this._clType === undefined) this.initLightData();
-    return this._clBeamLength;
-  };
-  Game_Event.prototype.getLightFlashlightWidth = function () {
-    if (this._clType === undefined) this.initLightData();
-    return this._clBeamWidth;
-  };
-  Game_Event.prototype.getLightFlashlightDirection = function () {
-    if (this._clType === undefined) this.initLightData();
-    return this._clFlashlightDirection;
-  };
-  Game_Event.prototype.getLightXOffset = function () {
-    if (this._clType === undefined) this.initLightData();
-    return this._clXOffset;
-  };
-  Game_Event.prototype.getLightYOffset = function () {
-    if (this._clType === undefined) this.initLightData();
-    return this._clYOffset;
-  };
-  Game_Event.prototype.getLightEnabled = function () {
-    let type = this.getLightType();
-    let result = false;
-    if (this._clSwitch === undefined) {
-      if (type.is(LightType.Flashlight) && this._clOnOff === 1) result = true;
-      else result = true;
-    } else {
-      result = (this._clSwitch.equalsIC("night") && $$.isNight()) ||
-               (this._clSwitch.equalsIC("day") && !$$.isNight());
-    }
-    return result;
-  };
-  Game_Event.prototype.getLightCycle = function () {
-    if (this._clType === undefined) this.initLightData();
-    return this._clCycle;
-  };
-  Game_Event.prototype.incrementLightCycle = function () {
-    if (this._clCycle) {
-      this._clCycleTimer--;
-      if (this._clCycleTimer < 1) {
-        let cycleList = this.getLightCycle();
-        this._clCycleIndex++;
-        if (this._clCycleIndex >= cycleList.length) this._clCycleIndex = 0;
-        if (this._clCycleIndex < cycleList.length) {
-          this._clColor = cycleList[this._clCycleIndex].color;
-          this._clCycleTimer = cycleList[this._clCycleIndex].duration;
-        }
+      // Non-conditional light
+      else {
+        this._cl.delta = { current: this._cl };// really just a self reference
       }
     }
   };
+  Game_Event.prototype.cycleLightingNext = function () {
+    let cycleList = this.getLightCycle();
+    if (cycleList && this._cl.delta.finished()) {
+      let delta = cycleList.shift();  // pop delta from front
+      this._cl.delta = delta.clone(); // duplicate delta
+      cycleList.push(delta);          // push delta on back
+    }
+  };
+  Game_Event.prototype.conditionalLightingNext = function () {
+    if (this.getLightCycle() || this.getLightId()) this._cl.delta.next();
+  };
+  Game_Event.prototype.getLightEnabled          = function () {
+    if (!this._cl.switch) return this._cl.delta.current.enable;
+    return (this._cl.switch.equalsIC("night") && $$.isNight()) ||
+           (this._cl.switch.equalsIC("day")   && !$$.isNight());
+  };
+  Game_Event.prototype.getLightType             = function () { return this._cl.type; };
+  Game_Event.prototype.getLightRadius           = function () { return this._cl.delta.current.radius; };
+  Game_Event.prototype.getLightColor            = function () { return this._cl.delta.current.color.clone(); };
+  Game_Event.prototype.getLightBrightness       = function () { return this._cl.delta.current.brightness; };
+  Game_Event.prototype.getLightDirection        = function () { return this._cl.delta.current.direction; };
+  Game_Event.prototype.getLightId               = function () { return this._cl.id; };
+  Game_Event.prototype.getLightFlashlightLength = function () { return this._cl.delta.current.beamLength; };
+  Game_Event.prototype.getLightFlashlightWidth  = function () { return this._cl.delta.current.beamWidth; };
+  Game_Event.prototype.getLightXOffset          = function () { return this._cl.delta.current.xOffset; };
+  Game_Event.prototype.getLightYOffset          = function () { return this._cl.delta.current.yOffset; };
+  Game_Event.prototype.getLightCycle            = function () { return this._cl.cycle; };
+
   let _Game_Interpreter_pluginCommand = Game_Interpreter.prototype.pluginCommand;
   /**
    *
@@ -1641,6 +2250,7 @@ class VRGBA {
       $$.defaultBrightness = 0;
       $$.mapBrightness = undefined;
       $gameVariables.SetTint(null);
+      $gameVariables.SetTintTarget(null);
     }
   };
   /**
@@ -1649,6 +2259,7 @@ class VRGBA {
    * @param {String[]} args
    */
   Game_Interpreter.prototype.communityLighting_Commands = function (command, args) {
+    $$.interpreter = this; //assign 'local' interpreter (for parallel processes)
     command = command.toLowerCase();
 
     const allCommands = {
@@ -1665,31 +2276,34 @@ class VRGBA {
     let mapOnOff = a  => a.enabled === "true" ? "on" : "off";
     let tileType = a  => (a.tileType === "terrain" ? "tile" : "region") + (a.lightType ? a.lightType : "block");
     let tintType = () => $gameParty.inBattle() ? "tintbattle" : "tint";
+    let dayMode =  a  => a.fade === "true" ? "fade" : "";
     let tintMode = a  => a.color ? "set" : "reset";
     let mathMode = a  => a.mode === "set" ? "hour" : a.mode; // set, add, or subtract.
     let showMode = a  => a.enabled.equalsIC("true") ? (a.showSeconds.equalsIC("true") ? "showseconds" : "show") : "hide";
     let radMode  = a  => +a.fadeSpeed ? "radiusgrow" : "radius";
 
     let r = PluginManager.registerCommand.bind(PluginManager, $$.name); // registar bound with first parameter.
-    let f = (c, a) => $gameMap._interpreter.communityLighting_Commands(c, a.filter(_ => _ !== "")); //command wrapper.
+    let f = (c, a) => $$.interpreter.communityLighting_Commands(c, a.filter(_ => _ !== "")); //command wrapper.
 
-    r("masterSwitch",       a  => f("script",     [mapOnOff(a)]));
-    r("tileBlock",          a  => f(tileType(a),  [a.id, mapOnOff(a), a.color, a.shape,  a.xOffset, a.yOffset, a.blockWidth, a.blockHeight]));
-    r("tileLight",          a  => f(tileType(a),  [a.id, mapOnOff(a), a.color, a.radius, a.brightness]));
-    r("setTint",            a  => f(tintType(),   [tintMode(a), a.color, a.fadeSpeed]));
-    r("daynightEnable",     a  => f("daynight",   [mapOnOff(a)]));
-    r("setTimeSpeed",       a  => f("dayNight",   ["speed", a.speed]));
-    r("setTime",            a  => f("dayNight",   [mathMode(a), a.hours, a.minutes]));
-    r("setHoursInDay",      a  => f("dayNight",   ["hoursinday", a.hours]));
-    r("showTime",           a  => f("dayNight",   [showMode(a)]));
-    r("setHourColor",       a  => f("dayNight",   ["color", a.hour, a.color]));
-    r("flashlight",         a  => f("flashLight", [mapOnOff(a), a.beamLength, a.beamWidth, a.color, a.density]));
-    r("setFire",            a  => f("setFire",    [a.radiusShift, a.redYellowShift]));
-    r("playerLightRadius",  a  => f("light",      [radMode(a), a.radius, a.color, "B"+a.brightness, a.fadeSpeed]));
-    r("activateById",       a  => f("light",      [mapOnOff(a), a.id]));
-    r("lightColor",         a  => f("light",      ["color", a.id, a.color]));
-    r("resetLightSwitches", () => f("light",      ["switch", "reset"]));
-    r("resetBattleTint",    (a)  => f("tintbattle", ["reset",         a.fadeSpeed]));
+    r("masterSwitch",       function (a) { $$.interpreter = this; f("script",     [mapOnOff(a)]); });
+    r("tileBlock",          function (a) { $$.interpreter = this; f(tileType(a),  [a.id, mapOnOff(a), a.color, a.shape, a.xOffset, a.yOffset, a.blockWidth, a.blockHeight]); });
+    r("tileLight",          function (a) { $$.interpreter = this; f(tileType(a),  [a.id, mapOnOff(a), a.color, a.radius, a.brightness]); });
+    r("setTint",            function (a) { $$.interpreter = this; f(tintType(),   [tintMode(a), a.color, a.fadeSpeed]); });
+    r("daynightEnable",     function (a) { $$.interpreter = this; f("daynight",   [mapOnOff(a), dayMode(a)]); });
+    r("setTimeSpeed",       function (a) { $$.interpreter = this; f("dayNight",   ["speed", a.speed]); });
+    r("setTime",            function (a) { $$.interpreter = this; f("dayNight",   [mathMode(a), a.hours, a.minutes, dayMode(a)]); });
+    r("setHoursInDay",      function (a) { $$.interpreter = this; f("dayNight",   ["hoursinday", a.hours, dayMode(a)]); });
+    r("showTime",           function (a) { $$.interpreter = this; f("dayNight",   [showMode(a)]); });
+    r("setHourColor",       function (a) { $$.interpreter = this; f("dayNight",   ["color", a.hour, a.color, dayMode(a)]); });
+    r("flashlight",         function (a) { $$.interpreter = this; f("flashLight", [mapOnOff(a), a.beamLength, a.beamWidth, a.color, a.density]); });
+    r("setFire",            function (a) { $$.interpreter = this; f("setFire",    [a.radiusShift, a.redYellowShift]); });
+    r("playerLightRadius",  function (a) { $$.interpreter = this; f("light",      [radMode(a), a.radius, a.color, "B" + a.brightness, a.fadeSpeed]); });
+    r("activateById",       function (a) { $$.interpreter = this; f("light",      [mapOnOff(a), a.id]); });
+    r("lightColor",         function (a) { $$.interpreter = this; f("light",      ["color", a.id, a.color]); });
+    r("resetLightSwitches", function ()  { $$.interpreter = this; f("light",      ["switch", "reset"]); });
+    r("resetTint",          function (a) { $$.interpreter = this; f(tintType(),   ["reset", a.fadeSpeed]); });
+    r("condLight",          function (a) { $$.interpreter = this; f("light",      ["cond", a.id].concat(a.properties.split(/\s+/))); });
+    r("condLightWait",      function (a) { $$.interpreter = this; f("light",      ["wait", a.id]); });
   }
 
   /**
@@ -1863,19 +2477,15 @@ class VRGBA {
       $$.ReloadMapEvents();  // reload map events on map change
     }
 
-    // reload mapevents if event_data has changed (deleted or spawned events/saves)
-    if (event_eventcount != $gameMap.events().length) $$.ReloadMapEvents();
-
     // remove all old sprites
     for (let i = 0, len = this._sprites.length; i < len; i++) this._removeSprite();
 
     // No lighting on maps less than 1 || Plugin deactivated in options || Plugin deactivated by plugin command
     if (map_id <= 0 || !options_lighting_on || !$gameVariables.GetScriptActive()) return;
 
-    // reload map events every 200 cycles just in case or when a refresh is requested
-    event_reload_counter++;
-    if (event_reload_counter > 200) {
-      event_reload_counter = 0;
+    // reload map when a refresh is requested (event erase, page change, or _events object change)
+    if (ReloadMapEventsRequired) {
+      ReloadMapEventsRequired = false;
       $$.ReloadMapEvents();
     }
 
@@ -1968,6 +2578,12 @@ class VRGBA {
           if (seconds >= secondsinDay) seconds = 0;                            // clamp
           $gameVariables.SetDaynightSeconds(seconds);                          // set
           $$.saveTime();                                                       // save
+          // Set target to the next hour tint if enabled and the tint matches the current target
+          if (daynightTintEnabled && $gameVariables.GetTintTarget().finished()) {
+            let delta = ColorDelta.createTimeTint(true, 60 * speed);
+            $gameVariables.SetTint(delta.get());
+            $gameVariables.SetTintTarget(delta);
+          }
         }
       }
     }
@@ -1975,8 +2591,8 @@ class VRGBA {
     // ********** OTHER LIGHTSOURCES **************
     for (let i = 0, len = eventObjId.length; i < len; i++) {
       let evid = event_id[i];
-      let cur = $gameMap.events()[eventObjId[i]];
-      if (cur._lastLightPage !== cur._pageIndex) cur.resetLightData();
+      let cur  = events[eventObjId[i]];
+      if (cur._cl == null) cur.initLightData();
 
       let lightsOnRadius = $gameVariables.GetActiveRadius();
       if (lightsOnRadius > 0) {
@@ -1988,72 +2604,50 @@ class VRGBA {
 
       let lightType = cur.getLightType();
       if (lightType) {
-        let objectflicker = lightType.is(LightType.Fire);
-        let light_radius = cur.getLightRadius();
-        let xOffset = cur.getLightXOffset() * $gameMap.tileWidth();
-        let yOffset = cur.getLightYOffset() * $gameMap.tileHeight();
-        if (light_radius >= 0) {
+        cur.cycleLightingNext();       // Cycle colors
+        cur.conditionalLightingNext(); // conditional lighting
+        let objectflicker  = lightType.is(LightType.Fire);
+        let lightId        = cur.getLightId();
+        let light_radius   = cur.getLightRadius();
+        let color          = cur.getLightColor();      // light color
+        let direction      = cur.getLightDirection();  // direction
+        let brightness     = cur.getLightBrightness(); // brightness
+        let xOffset        = cur.getLightXOffset() * $gameMap.tileWidth();
+        let yOffset        = cur.getLightYOffset() * $gameMap.tileHeight();
+        let state          = cur.getLightEnabled();    // checks for on, off, day, and night
 
-          // light color
-          let color = cur.getLightColor();
-
-          // Cycle colors
-          cur.incrementLightCycle();
-
-          // brightness and direction
-
-          let brightness = cur.getLightBrightness();
-          let direction = cur.getLightDirection();
-          // conditional lighting
-          let lightid = cur.getLightId();
-          let state = cur.getLightEnabled();
-          if (lightid) {
-            state = false;
-
-            let lightarray = $gameVariables.GetLightArray();
-            if (lightarray[lightid]) {
-              let tcolorvalue;
-              [state, tcolorvalue] = lightarray[lightid];
-              if (tcolorvalue != 'defaultcolor') color = new VRGBA(tcolorvalue);
-            }
-
-            // Set kill switch to ON if the conditional light is deactivated,
-            // or to OFF if it is active.
-            if (killSwitchAuto && killswitch !== 'None') {
-              let key = [map_id, evid, killswitch];
-              if ($gameSelfSwitches.value(key) === state) $gameSelfSwitches.setValue(key, !state);
-            }
+        // Set kill switch to ON if the conditional light is deactivated,
+        // or to OFF if it is active.
+        if (lightId && killSwitchAuto && killswitch !== 'None') {
+          let key = [map_id, evid, killswitch];
+          if ($gameSelfSwitches.value(key) === state) $gameSelfSwitches.setValue(key, !state);
+        }
+        // kill switch
+        if (killswitch !== 'None' && state) {
+          let key = [map_id, evid, killswitch];
+          if ($gameSelfSwitches.value(key) === true) state = false;
+        }
+        // show light
+        if (state === true) {
+          let lx1 = events[event_stacknumber[i]].screenX();
+          let ly1 = events[event_stacknumber[i]].screenY() - 24;
+          if (!shift_lights_with_events) {
+            ly1 += events[event_stacknumber[i]].shiftY();
           }
-
-          // kill switch
-          if (killswitch !== 'None' && state) {
-            let key = [map_id, evid, killswitch];
-            if ($gameSelfSwitches.value(key) === true) state = false;
-          }
-
-          // show light
-          if (state === true) {
-            let lx1 = $gameMap.events()[event_stacknumber[i]].screenX();
-            let ly1 = $gameMap.events()[event_stacknumber[i]].screenY() - 24;
-            if (!shift_lights_with_events) {
-              ly1 += $gameMap.events()[event_stacknumber[i]].shiftY();
-            }
 
           // apply offsets
           lx1 += +xOffset;
           ly1 += +yOffset;
 
-            if (lightType.is(LightType.Flashlight)) {
-              let ldir = RMDirectionMap[$gameMap.events()[event_stacknumber[i]]._direction] || 0;
-              let flashlength = cur.getLightFlashlightLength();
-              let flashwidth  = cur.getLightFlashlightWidth();
-              let direction   = cur.getLightFlashlightDirection();
-              if (!isNaN(direction)) ldir = direction;
-              this._maskBitmaps.radialgradientFlashlight(lx1, ly1, color, VRGBA.empty(), ldir, flashlength, flashwidth);
-            } else if (lightType.is(LightType.Light, LightType.Fire)) {
-              this._maskBitmaps.radialgradientFillRect(lx1, ly1, 0, light_radius, color, VRGBA.empty(), objectflicker,
-                                                       brightness, direction);
-            }
+          if (lightType.is(LightType.Flashlight)) {
+            let ldir = RMDirectionMap[events[event_stacknumber[i]]._direction] || 0;
+            let flashlength = cur.getLightFlashlightLength();
+            let flashwidth  = cur.getLightFlashlightWidth();
+            if (!isNaN(direction)) ldir = direction;
+            this._maskBitmaps.radialgradientFlashlight(lx1, ly1, color, VRGBA.minRGBA(), ldir, flashlength, flashwidth);
+          } else if (lightType.is(LightType.Light, LightType.Fire)) {
+            this._maskBitmaps.radialgradientFillRect(lx1, ly1, 0, light_radius, color, VRGBA.minRGBA(), objectflicker,
+                                                     brightness, direction);
           }
         }
       }
@@ -2084,7 +2678,7 @@ class VRGBA {
         tile_color.b = Math.floor(tile_color.b + (60 - $gameTemp._glowAmount)).clamp(0, 255);
         tile_color.a = Math.floor(tile_color.a + (60 - $gameTemp._glowAmount)).clamp(0, 255);
       }
-      this._maskBitmaps.radialgradientFillRect(x1, y1, 0, tile.radius, tile_color, VRGBA.empty(), objectflicker,
+      this._maskBitmaps.radialgradientFillRect(x1, y1, 0, tile.radius, tile_color, VRGBA.minRGBA(), objectflicker,
                                                tile.brightness);
     });
 
@@ -2123,82 +2717,10 @@ class VRGBA {
     }, this);
     ctxMul.globalCompositeOperation = 'lighter';
 
-
-    // *********************************** DAY NIGHT CYCLE FILTER **************************
-    if (daynightTintEnabled) {
-
-      let daynightspeed = $gameVariables.GetDaynightSpeed();
-      let daynighttimer = $$.seconds() + $$.minutes() * 60;
-      let daynightcycle = $$.hours();
-      let daynighthoursinday = $gameVariables.GetDaynightHoursinDay();   // 24
-      let daynightcolors = $gameVariables.GetDaynightColorArray();
-      let c1 = daynightcolors[daynightcycle].color.clone();
-      if (daynightspeed > 0) {
-        let nextcolor = daynightcycle + 1;
-        if (nextcolor >= daynighthoursinday) {
-          nextcolor = 0;
-        }
-        let c2 = daynightcolors[nextcolor].color;
-
-        let stepR = (c2.r - c1.r) / (60 * 60);
-        let stepG = (c2.g - c1.g) / (60 * 60);
-        let stepB = (c2.b - c1.b) / (60 * 60);
-        let stepA = (c2.a - c1.a) / (60 * 60);
-
-        c1.r = Math.floor(c1.r + (stepR * daynighttimer));
-        c1.g = Math.floor(c1.g + (stepG * daynighttimer));
-        c1.b = Math.floor(c1.b + (stepB * daynighttimer));
-        c1.a = Math.floor(c1.a + (stepA * daynighttimer));
-      }
-      this._maskBitmaps.FillRect(-lightMaskPadding, 0, maxX, maxY, c1);
-    }
-    // *********************************** TINT **************************
-    else {
-      let c1 = $gameVariables.GetTint();
-      let c2 = $gameVariables.GetTintTarget();
-      let tint_speed = $gameVariables.GetTintSpeed();
-      if (c1.v != c2.v || c1.r != c2.r || c1.g != c2.g || c1.b != c2.b || c1.a != c2.a) {
-        let tintdatenow = new Date();
-        let tintseconds = Math.floor(tintdatenow.getTime() / 10);
-        if (tintseconds > tint_oldseconds) {
-          tint_oldseconds = tintseconds;
-          tint_timer++;
-        }
-        let stepR = (c2.r - c1.r) / (60 * tint_speed);
-        let stepG = (c2.g - c1.g) / (60 * tint_speed);
-        let stepB = (c2.b - c1.b) / (60 * tint_speed);
-        let stepA = (c2.a - c1.a) / (60 * tint_speed);
-
-        let c3 = new VRGBA(c2.v,
-                           Math.floor(c1.r + (stepR * tint_timer)).clamp(0, 255),
-                           Math.floor(c1.g + (stepG * tint_timer)).clamp(0, 255),
-                           Math.floor(c1.b + (stepB * tint_timer)).clamp(0, 255),
-                           Math.floor(c1.a + (stepA * tint_timer)).clamp(0, 255));
-
-        let reddone = false, greendone = false, bluedone = false, alphadone = false;
-
-        //Greater than
-        if (stepR >= 0 && c3.r >= c2.r) reddone   = true;
-        if (stepG >= 0 && c3.g >= c2.g) greendone = true;
-        if (stepB >= 0 && c3.b >= c2.b) bluedone  = true;
-        if (stepA >= 0 && c3.a >= c2.a) alphadone = true;
-
-        // Less than
-        if (stepR <= 0 && c3.r <= c2.r) reddone   = true;
-        if (stepG <= 0 && c3.g <= c2.g) greendone = true;
-        if (stepB <= 0 && c3.b <= c2.b) bluedone  = true;
-        if (stepA <= 0 && c3.a <= c2.a) alphadone = true;
-
-        if (reddone == true && bluedone == true && greendone == true && alphadone == true) {
-          $gameVariables.SetTint(c3);
-        }
-
-        c1 = c3;
-      } else {
-        tint_timer = 0;
-      }
-      this._maskBitmaps.FillRect(-lightMaskPadding, 0, maxX, maxY, c1);
-    }
+    // Compute tint for next frame
+    let tintValue = $gameVariables.GetTintTarget().next().get();
+    $gameVariables.SetTint(tintValue);
+    this._maskBitmaps.FillRect(-lightMaskPadding, 0, maxX, maxY, tintValue); // offset to fill entire mask
 
     // reset drawmode to normal
     ctxMul.globalCompositeOperation = 'source-over';
@@ -2664,7 +3186,7 @@ class VRGBA {
     // then use the tint of the map, otherwise use full brightness
     let c = (!DataManager.isBattleTest() && !DataManager.isEventTest() && $gameMap.mapId() >= 0 &&
              $gameVariables.GetScriptActive() && options_lighting_on && lightInBattle) ?
-            $gameVariables.GetTint() : new VRGBA("#ffffff");
+            $gameVariables.GetTint() : VRGBA.maxRGBA();
 
     let note = $$.getCLTag($$.getFirstComment($dataTroops[$gameTroop._troopId].pages[0]));
     if ((/^tintbattle\b/i).test(note)) {
@@ -2678,11 +3200,11 @@ class VRGBA {
     if (c.magnitude() < 0x66 * 3 && c.r < 0x66 && c.g < 0x66 && c.b < 0x66)
       c.set({ v: false, r: 0x66, g: 0x66, b: 0x66, a: 0xff });
 
-    $gameTemp._BattleTint = c;
+    $gameTemp._BattleTintInitial = c;
+    $gameTemp._BattleTintTarget = ColorDelta.createTint(c);
     this._maskBitmaps.FillRect(-lightMaskPadding, 0, maxX, maxY, c); // offset to fill entire mask
     this._maskBitmaps.multiply._baseTexture.update(); // Required to update battle texture in RMMZ optional for RMMV
     this._maskBitmaps.additive._baseTexture.update(); // Required to update battle texture in RMMZ optional for RMMV
-    $gameTemp._BattleTintSpeed = 0;
   };
 
   //@method _createBitmaps
@@ -2695,48 +3217,14 @@ class VRGBA {
     this._maskBitmaps.additive.clearRect(0, 0, maxX, maxY);
 
     // Prevent the battle scene from being too dark
-    let c = $gameTemp._BattleTint; // get next color
+    let c = $gameTemp._BattleTintTarget.next().get(); // get next color
     if (c.magnitude() < 0x66 * 3 && c.r < 0x66 && c.g < 0x66 && c.b < 0x66) {
       c.set({ v: false, r: 0x66, g: 0x66, b: 0x66, a: 0xff });
-      $gameTemp._BattleTint = c; // reassign if out of bounds. Shouldn't be possible.
+      $gameTemp._BattleTintTarget.current = c; // reassign if out of bounds. Shouldn't be possible.
     }
 
-    let c1 = $gameTemp._BattleTint;
-    if ($gameTemp._BattleTintSpeed > 0) {
-
-      $gameTemp._BattleTintTimer += 1;
-
-      c1 = $gameTemp._BattleTintFade;
-      let c2 = $gameTemp._BattleTint;
-
-      let stepR = (c2.r - c1.r) / (60 * $gameTemp._BattleTintSpeed);
-      let stepG = (c2.g - c1.g) / (60 * $gameTemp._BattleTintSpeed);
-      let stepB = (c2.b - c1.b) / (60 * $gameTemp._BattleTintSpeed);
-      let stepA = (c2.a - c1.a) / (60 * $gameTemp._BattleTintSpeed);
-
-      let c3 = new VRGBA(c2.v,
-                         Math.floor(c1.r + (stepR * $gameTemp._BattleTintTimer)).clamp(0, 255),
-                         Math.floor(c1.g + (stepG * $gameTemp._BattleTintTimer)).clamp(0, 255),
-                         Math.floor(c1.b + (stepB * $gameTemp._BattleTintTimer)).clamp(0, 255),
-                         Math.floor(c1.a + (stepA * $gameTemp._BattleTintTimer)).clamp(0, 255));
-      let reddone = false, greendone = false, bluedone = false, alphadone = false;
-      if (stepR >= 0 && c3.r >= c2.r) reddone   = true;
-      if (stepR <= 0 && c3.r <= c2.r) reddone   = true;
-      if (stepG >= 0 && c3.g >= c2.g) greendone = true;
-      if (stepG <= 0 && c3.g <= c2.g) greendone = true;
-      if (stepB >= 0 && c3.b >= c2.b) bluedone  = true;
-      if (stepB <= 0 && c3.b <= c2.b) bluedone  = true;
-      if (stepA >= 0 && c3.a >= c2.a) alphadone = true;
-      if (stepA <= 0 && c3.a <= c2.a) alphadone = true;
-      if (reddone == true && bluedone == true && greendone == true && alphadone) {
-        $gameTemp._BattleTintFade = $gameTemp._BattleTint;
-        $gameTemp._BattleTintSpeed = 0;
-        $gameTemp._BattleTintTimer = 0;
-      }
-      c1 = c3;
-      $gameTemp._BattleTintFade = c3;
-    }
-    this._maskBitmaps.FillRect(-lightMaskPadding, 0, maxX, maxY, c1);
+    // Compute tint for next frame
+    this._maskBitmaps.FillRect(-lightMaskPadding, 0, maxX, maxY, c);
     this._maskBitmaps.multiply._baseTexture.update(); // Required to update battle texture in RMMZ optional for RMMV
     this._maskBitmaps.additive._baseTexture.update(); // Required to update battle texture in RMMZ optional for RMMV
   };
@@ -2821,19 +3309,20 @@ class VRGBA {
     //**********************fill up new map-array *************************
     eventObjId = [];
     event_id = [];
+    events = $gameMap.events(); // cache because events() API calls filter for each call
     event_stacknumber = [];
-    event_eventcount = $gameMap.events().length;
+    event_eventcount = events.length;
 
     for (let i = 0; i < event_eventcount; i++) {
-      if ($gameMap.events()[i]) {
-        if ($gameMap.events()[i].event() && !$gameMap.events()[i]._erased) {
-          let note = $gameMap.events()[i].getCLTag();
+      if (events[i]) {
+        if (events[i].event() && !events[i]._erased) {
+          let note = events[i].getCLTag();
 
           let note_args = note.split(" ");
           let note_command = LightType[note_args.shift().toLowerCase()];
           if (note_command) {
             eventObjId.push(i);
-            event_id.push($gameMap.events()[i]._eventId);
+            event_id.push(events[i]._eventId);
             event_stacknumber.push(i);
 
           }
@@ -2858,6 +3347,9 @@ class VRGBA {
               if (daynightspeed < 1) daynightspeed = 5000;
               $gameVariables.SetDaynightSpeed(daynightspeed);
             }
+            let delta = ColorDelta.createTimeTint(false, 60 * $gameVariables.GetDaynightSpeed());
+            $gameVariables.SetTint(delta.get());
+            $gameVariables.SetTintTarget(delta);
           }
         }
         else if ((/^RegionFire\b/i).test(mapnote)) {
@@ -2985,30 +3477,51 @@ class VRGBA {
 
     // *********************** TURN SPECIFIC LIGHT ON *********************
     else if (isOn(args[0])) {
-      let lightid = +args[1];
-      let lightarray = $gameVariables.GetLightArray();
-      void (lightarray[lightid] ? lightarray[lightid][0] = true : lightarray[lightid] = [true, 'defaultcolor']);
+      let targetProps = $gameVariables.GetLightArray()[args[1].toLowerCase()];
+      if (targetProps) { targetProps.parseProps(["e1"]); }
     }
 
     // *********************** TURN SPECIFIC LIGHT OFF *********************
     else if (isOff(args[0])) {
-      let lightid = +args[1];
-      let lightarray = $gameVariables.GetLightArray();
-      void (lightarray[lightid] ? lightarray[lightid][0] = false : lightarray[lightid] = [false, 'defaultcolor']);
+      let targetProps = $gameVariables.GetLightArray()[args[1].toLowerCase()];
+      if (targetProps) { targetProps.parseProps(["e0"]); }
     }
 
     // *********************** SET COLOR *********************
     else if (args[0].equalsIC('color')) {
-      let newcolor = args[2];
-      if (!newcolor || newcolor.equalsIC('defaultcolor')) newcolor = 'defaultcolor';
-      let lightid = +args[1];
-      let lightarray = $gameVariables.GetLightArray();
-      void (lightarray[lightid] ? lightarray[lightid][1] = newcolor : lightarray[lightid] = [false, newcolor]);
+      let targetProps = $gameVariables.GetLightArray()[args[1].toLowerCase()];
+      if (targetProps) targetProps.parseProps([(args[2] != null && !args[2].equalsIC("defaultcolor")) ? args[2] : "#"]);
+    }
+
+    // *********************** SET CONDITIONAL LIGHT *********************
+    else if (args[0].equalsIC('cond')) {
+      let targetProps = $gameVariables.GetLightArray()[args[1].toLowerCase()];
+      if (targetProps) targetProps.parseProps(args[2] != null ? args.slice(2) : ['']);
+    }
+
+    // *********************** WAIT on CONDITIONAL LIGHT *********************
+    else if (args[0].equalsIC('wait')) { // wait for conditional light to finish processing
+      let targetProps = $gameVariables.GetLightArray()[args[1].toLowerCase()];
+      if (targetProps) {
+        if (targetProps.updateFrame == Graphics.frameCount) {
+          // light was scheduled to transition this frame and the deltas haven't been updated to use targets duration
+          $$.interpreter.wait(targetProps.transitionDuration + targetProps.pauseDuration);
+        } else { // light was scheduled to transition in a prior frame so lookup how much time is left
+          for (let i = 0, len = eventObjId.length; i < len; i++) {
+            let cur = events[eventObjId[i]];
+            if (cur._cl.delta.target == targetProps) {
+              $$.interpreter.wait(cur._cl.delta.current.transitionDuration + cur._cl.delta.current.pauseDuration);
+              break;
+            }
+          }
+        }
+      }
     }
 
     // **************************** RESET ALL SWITCHES ***********************
     else if (args[0].equalsIC('switch') && args[1].equalsIC('reset')) {
-      $gameVariables.SetLightArray({});
+      let lightArray = $gameVariables.GetLightArray();
+      for (let i in lightArray) lightArray[i].parseProps(['t', 'p', '#', 'e', 'b', 'x', 'y', 'r', 'l', 'w', 'a']); // clear
     }
   };
 
@@ -3018,18 +3531,13 @@ class VRGBA {
    */
   $$.tint = function (args) {
     let cmd = args[0].trim();
-    if (cmd.equalsIC('set', 'fade')) {
-      let speed = +args[2] || 0;
-      if (speed == 0) $gameVariables.SetTint(new VRGBA(args[1]));
-      $gameVariables.SetTintTarget(new VRGBA(args[1]));
-      $gameVariables.SetTintSpeed(speed);
-    }
+    if (cmd.equalsIC('set', 'fade'))
+      $gameVariables.SetTintTarget(ColorDelta.createTint(new VRGBA(args[1]), 60 * (+args[2] || 0)));
     else if (cmd.equalsIC("reset", "daylight")) {
-      let currentColor = $gameVariables.GetTintByTime();
-      let speed = +args[1] || 0;
-      if (speed == 0) $gameVariables.SetTint(currentColor);
-      $gameVariables.SetTintTarget(currentColor);
-      $gameVariables.SetTintSpeed(speed);
+      let fadeDuration = 60 * (+args[1] || 0);
+      let delta = ColorDelta.createTimeTint(false, 0); // get the daynight tint for the current time
+      delta = ColorDelta.createTint(delta.get(), fadeDuration); // use tint for current time as target
+      $gameVariables.SetTintTarget(delta);
     }
   };
 
@@ -3040,16 +3548,10 @@ class VRGBA {
   $$.tintbattle = function (args, overrideInBattleCheck = false) {
     if ($gameVariables.GetScriptActive() && lightInBattle && ($gameParty.inBattle() || overrideInBattleCheck)) {
       let cmd = args[0].trim();
-      if (cmd.equalsIC("set", 'fade')) {
-        $gameTemp._BattleTintFade = $gameTemp._BattleTint;
-        $gameTemp._BattleTintTimer = 0;
-        $gameTemp._BattleTint = new VRGBA(args[1]);
-        $gameTemp._BattleTintSpeed = +args[2] || 0;
-      }
+      if (cmd.equalsIC("set", 'fade'))
+        $gameTemp._BattleTintTarget = ColorDelta.createBattleTint(new VRGBA(args[1], "#666666"), 60 * (+args[2] || 0));
       else if (cmd.equalsIC('reset', 'daylight')) {
-        $gameTemp._BattleTintTimer = 0;
-        $gameTemp._BattleTint = $gameTemp._MapTint;
-        $gameTemp._BattleTintSpeed = +args[1] || 0;
+        $gameTemp._BattleTintTarget = ColorDelta.createBattleTint($gameTemp._BattleTintInitial, 60 * (+args[1] || 0));
       }
     }
   };
@@ -3070,16 +3572,30 @@ class VRGBA {
       if (seconds < 0) seconds += totalSeconds;
       gV.SetDaynightSeconds(seconds);
       gV.SetDaynightHoursinDay(hoursInDay);
+      setTimeColorDelta();
       $$.saveTime();
+    };
+    let setColorDelta = () => {
+      let delta = ColorDelta.createTint(gV.GetTint());
+      $gameVariables.SetTint(delta.get());
+      $gameVariables.SetTintTarget(delta);
+    };
+    let setTimeColorDelta = () => {
+      if (daynightCycleEnabled && daynightTintEnabled) {
+        let hasFade = 'fade'.equalsIC(...a) || gV.GetDaynightSpeed() == 0;
+        let delta = ColorDelta.createTimeTint(hasFade, 60 * $gameVariables.GetDaynightSpeed());
+        $gameVariables.SetTint(delta.get());
+        $gameVariables.SetTintTarget(delta);
+      }
     };
     let isCmd                      = (s)    => a[0].equalsIC(s);
     let showTime                   = (w, s) => [gV._clShowTimeWindow, gV._clShowTimeWindowSeconds] = [w, s];
     let [gV, a]                    = [$gameVariables, args];
     let [secondsTotal, hoursInDay] = [gV.GetDaynightSeconds(), gV.GetDaynightHoursinDay()];
     let [hours, minutes, seconds]  = [$$.hours(), $$.minutes(), $$.seconds()];
-    if      (isCmd('on'))          void (daynightTintEnabled = true);                                   // enable daynight tint
-    else if (isCmd('off'))         void (daynightTintEnabled = false);                                  // disable daynight tint
-    else if (isCmd('speed'))       void (gV.SetDaynightSpeed(a[1]));                                    // set daynight speed
+    if      (isCmd('on'))          void (daynightTintEnabled = true, setTimeColorDelta());              // enable daynight tint
+    else if (isCmd('off'))         void (daynightTintEnabled = false, setColorDelta());                 // disable daynight tint
+    else if (isCmd('speed'))       void (gV.SetDaynightSpeed(a[1]), setTimeColorDelta());               // set daynight speed
     else if (isCmd('add'))         void modTime(hoursInDay, +a[1],   +a[2],   secondsTotal, 0);         // add to cur time
     else if (isCmd('subtract'))    void modTime(hoursInDay, -+a[1], -+a[2],   secondsTotal, 0);         // sub from cur time
     else if (isCmd('hour'))        void modTime(hoursInDay, +a[1],   +a[2],   0);                       // set the cur time
@@ -3087,8 +3603,8 @@ class VRGBA {
     else if (isCmd('show'))        void showTime(true, false);                                          // show clock
     else if (isCmd('showseconds')) void showTime(true, true);                                           // show clock seconds
     else if (isCmd('hide'))        void showTime(false, false);                                         // hide clock
-    else if (isCmd('color'))       void (gV.SetTintAtHour(a[1], new VRGBA(a[2])));                      // change hour color
-  };
+    else if (isCmd('color'))       void (gV.SetTintAtHour(a[1], new VRGBA(a[2])), setTimeColorDelta()); // change hour color
+};
 
   let _Tilemap_drawShadow = Tilemap.prototype._drawShadow;
   Tilemap.prototype._drawShadow = function (bitmap, shadowBits, dx, dy) {
@@ -3151,7 +3667,7 @@ Game_Variables.prototype.SetTint = function (value) {
   this._Community_Tint_Value = value.clone();
 };
 Game_Variables.prototype.GetTint = function () {
-  if (!this._Community_Tint_Value) this._Community_Tint_Value = VRGBA.empty();
+  if (!this._Community_Tint_Value) this._Community_Tint_Value = VRGBA.minRGBA();
   return this._Community_Tint_Value.clone();
 };
 Game_Variables.prototype.SetTintAtHour = function (hour, color) {
@@ -3161,22 +3677,17 @@ Game_Variables.prototype.SetTintAtHour = function (hour, color) {
 Game_Variables.prototype.GetTintByTime = function (inc = 0) {
   let hours = Community.Lighting.hours() + inc; // increment from current hour
   let hoursinDay = this.GetDaynightHoursinDay();
-  while (hours >= hoursinDay) hours -= hoursinDay;
-  while (hours < 0) hours += hoursinDay;
+  hours %= hoursinDay; // clamp to within total hours in day
+  if (hours < 0) hours += hoursinDay;
   let result = this.GetDaynightColorArray()[hours];
-  return result ? result.color.clone() : VRGBA.empty();
+  return result ? result.color.clone() : VRGBA.minRGBA();
 };
-Game_Variables.prototype.SetTintTarget = function (value) {
-  this._Community_TintTarget_Value = value.clone();
+Game_Variables.prototype.SetTintTarget = function (delta) {
+  this._Community_TintTarget = delta;
 };
 Game_Variables.prototype.GetTintTarget = function () {
-  return orNullish(this._Community_TintTarget_Value, VRGBA.empty());
-};
-Game_Variables.prototype.SetTintSpeed = function (value) {
-  this._Community_TintSpeed_Value = orNaN(+value);
-};
-Game_Variables.prototype.GetTintSpeed = function () {
-  return orNullish(this._Community_TintSpeed_Value, 60);
+  if (!this._Community_TintTarget) this._Community_TintTarget = new ColorDelta(this.GetTint());
+  return this._Community_TintTarget;
 };
 Game_Variables.prototype.SetFlashlight = function (value) {
   this._Community_Lighting_Flashlight = value;
@@ -3209,7 +3720,7 @@ Game_Variables.prototype.SetPlayerColor = function (value) { // don't set if emp
   if (value) this._Community_Lighting_PlayerColor = new VRGBA(value);
 };
 Game_Variables.prototype.GetPlayerColor = function () {
-  if (!this._Community_Lighting_PlayerColor) this._Community_Lighting_PlayerColor = new VRGBA("#ffffff");
+  if (!this._Community_Lighting_PlayerColor) this._Community_Lighting_PlayerColor = VRGBA.maxRGBA();
   return this._Community_Lighting_PlayerColor.clone();
 };
 Game_Variables.prototype.SetPlayerBrightness = function (value) { // don't set if invalid.
@@ -3264,7 +3775,7 @@ Game_Variables.prototype.GetDaynightColorArray = function () {
   if (hoursInDay > result.length) { // lazy check bounds before returning and add colors if too small
     let origLength = result.length;
     result.length = hoursInDay;     // more efficient than a for loop
-    result.fill({ "color": new VRGBA("#ffffff"), "isNight": false }, origLength);
+    result.fill({ "color": VRGBA.maxRGBA(), "isNight": false }, origLength);
   }
   this._Community_Lighting_DayNightColorArray = result; // assign reference
   return result;
