@@ -318,6 +318,17 @@ Imported[Community.Lighting.name] = true;
 *
 * @----------------------------
 *
+* @command condLightWait
+* @text Wait on Conditional Lighting
+* @desc Wait for the conditional light to finish both transitioning and pausing before continuing the event script.
+*
+* @arg id
+* @text Event ID
+* @desc This is an ID you assigned via note tag, as in <cl: light 150 #fff myIdHere> not an event's id number
+* @type text
+*
+* @----------------------------
+*
 * @command lightColor
 * @text Light Color By ID
 * @desc Change an event's light color on the current map.
@@ -1038,6 +1049,10 @@ Imported[Community.Lighting.name] = true;
 * - flashlight beam width (w). Must use the specified prefixes. Unsupported prefixes are
 * - ignored. See the Conditional Light section for more detail on each property.
 *
+* Light wait id
+* - wait for the conditional light to finish both transitioning and pausing before continuing
+* - the event script.
+*
 * Light color id c
 * - Change the color (c) of lightsource with id (id)
 * - Work even if the associated light is currently off.
@@ -1723,7 +1738,7 @@ class LightDelta {
   }
 
   /**
-   * Returns whether all deltas are finished or not.
+   * Returns whether the light has finished transitioning and pausing.
    * @returns {Boolean}
    */
   finished() { return this.current.transitionDuration <= 0 && this.current.pauseDuration <= 0; }
@@ -2243,6 +2258,7 @@ class ColorDelta {
    * @param {String[]} args
    */
   Game_Interpreter.prototype.communityLighting_Commands = function (command, args) {
+    $$.interpreter = this; //assign 'local' interpreter (for parallel processes)
     command = command.toLowerCase();
 
     const allCommands = {
@@ -2266,26 +2282,27 @@ class ColorDelta {
     let radMode  = a  => +a.fadeSpeed ? "radiusgrow" : "radius";
 
     let r = PluginManager.registerCommand.bind(PluginManager, $$.name); // registar bound with first parameter.
-    let f = (c, a) => $gameMap._interpreter.communityLighting_Commands(c, a.filter(_ => _ !== "")); //command wrapper.
+    let f = (c, a) => $$.interpreter.communityLighting_Commands(c, a.filter(_ => _ !== "")); //command wrapper.
 
-    r("masterSwitch",       a  => f("script",     [mapOnOff(a)]));
-    r("tileBlock",          a  => f(tileType(a),  [a.id, mapOnOff(a), a.color, a.shape,  a.xOffset, a.yOffset, a.blockWidth, a.blockHeight]));
-    r("tileLight",          a  => f(tileType(a),  [a.id, mapOnOff(a), a.color, a.radius, a.brightness]));
-    r("setTint",            a  => f(tintType(),   [tintMode(a), a.color, a.fadeSpeed]));
-    r("daynightEnable",     a  => f("daynight",   [mapOnOff(a), dayMode(a)]));
-    r("setTimeSpeed",       a  => f("dayNight",   ["speed", a.speed]));
-    r("setTime",            a  => f("dayNight",   [mathMode(a), a.hours, a.minutes, dayMode(a)]));
-    r("setHoursInDay",      a  => f("dayNight",   ["hoursinday", a.hours, dayMode(a)]));
-    r("showTime",           a  => f("dayNight",   [showMode(a)]));
-    r("setHourColor",       a  => f("dayNight",   ["color", a.hour, a.color, dayMode(a)]));
-    r("flashlight",         a  => f("flashLight", [mapOnOff(a), a.beamLength, a.beamWidth, a.color, a.density]));
-    r("setFire",            a  => f("setFire",    [a.radiusShift, a.redYellowShift]));
-    r("playerLightRadius",  a  => f("light",      [radMode(a), a.radius, a.color, "B"+a.brightness, a.fadeSpeed]));
-    r("activateById",       a  => f("light",      [mapOnOff(a), a.id]));
-    r("lightColor",         a  => f("light",      ["color", a.id, a.color]));
-    r("resetLightSwitches", () => f("light",      ["switch", "reset"]));
-    r("resetTint",          a  => f(tintType(),   ["reset", a.fadeSpeed]));
-    r("condLight",          a  => f("light",      ["cond", a.id, a.properties]));
+    r("masterSwitch",       function (a) { $$.interpreter = this; f("script",     [mapOnOff(a)]); });
+    r("tileBlock",          function (a) { $$.interpreter = this; f(tileType(a),  [a.id, mapOnOff(a), a.color, a.shape, a.xOffset, a.yOffset, a.blockWidth, a.blockHeight]); });
+    r("tileLight",          function (a) { $$.interpreter = this; f(tileType(a),  [a.id, mapOnOff(a), a.color, a.radius, a.brightness]); });
+    r("setTint",            function (a) { $$.interpreter = this; f(tintType(),   [tintMode(a), a.color, a.fadeSpeed]); });
+    r("daynightEnable",     function (a) { $$.interpreter = this; f("daynight",   [mapOnOff(a), dayMode(a)]); });
+    r("setTimeSpeed",       function (a) { $$.interpreter = this; f("dayNight",   ["speed", a.speed]); });
+    r("setTime",            function (a) { $$.interpreter = this; f("dayNight",   [mathMode(a), a.hours, a.minutes, dayMode(a)]); });
+    r("setHoursInDay",      function (a) { $$.interpreter = this; f("dayNight",   ["hoursinday", a.hours, dayMode(a)]); });
+    r("showTime",           function (a) { $$.interpreter = this; f("dayNight",   [showMode(a)]); });
+    r("setHourColor",       function (a) { $$.interpreter = this; f("dayNight",   ["color", a.hour, a.color, dayMode(a)]); });
+    r("flashlight",         function (a) { $$.interpreter = this; f("flashLight", [mapOnOff(a), a.beamLength, a.beamWidth, a.color, a.density]); });
+    r("setFire",            function (a) { $$.interpreter = this; f("setFire",    [a.radiusShift, a.redYellowShift]); });
+    r("playerLightRadius",  function (a) { $$.interpreter = this; f("light",      [radMode(a), a.radius, a.color, "B" + a.brightness, a.fadeSpeed]); });
+    r("activateById",       function (a) { $$.interpreter = this; f("light",      [mapOnOff(a), a.id]); });
+    r("lightColor",         function (a) { $$.interpreter = this; f("light",      ["color", a.id, a.color]); });
+    r("resetLightSwitches", function ()  { $$.interpreter = this; f("light",      ["switch", "reset"]); });
+    r("resetTint",          function (a) { $$.interpreter = this; f(tintType(),   ["reset", a.fadeSpeed]); });
+    r("condLight",          function (a) { $$.interpreter = this; f("light",      ["cond", a.id].concat(a.properties.split(/\s+/))); });
+    r("condLightWait",      function (a) { $$.interpreter = this; f("light",      ["wait", a.id]); });
   }
 
   /**
@@ -3478,7 +3495,26 @@ class ColorDelta {
     // *********************** SET CONDITIONAL LIGHT *********************
     else if (args[0].equalsIC('cond')) {
       let targetProps = $gameVariables.GetLightArray()[args[1].toLowerCase()];
-      if (targetProps) targetProps.parseProps(args[2] != null ? args[2].split(/\s+/) : ['']);
+      if (targetProps) targetProps.parseProps(args[2] != null ? args.slice(2) : ['']);
+    }
+
+    // *********************** WAIT on CONDITIONAL LIGHT *********************
+    else if (args[0].equalsIC('wait')) { // wait for conditional light to finish processing
+      let targetProps = $gameVariables.GetLightArray()[args[1].toLowerCase()];
+      if (targetProps) {
+        if (targetProps.updateFrame == Graphics.frameCount) {
+          // light was scheduled to transition this frame and the deltas haven't been updated to use targets duration
+          $$.interpreter.wait(targetProps.transitionDuration + targetProps.pauseDuration);
+        } else { // light was scheduled to transition in a prior frame so lookup how much time is left
+          for (let i = 0, len = eventObjId.length; i < len; i++) {
+            let cur = events[eventObjId[i]];
+            if (cur._cl.delta.target == targetProps) {
+              $$.interpreter.wait(cur._cl.delta.current.transitionDuration + cur._cl.delta.current.pauseDuration);
+              break;
+            }
+          }
+        }
+      }
     }
 
     // **************************** RESET ALL SWITCHES ***********************
