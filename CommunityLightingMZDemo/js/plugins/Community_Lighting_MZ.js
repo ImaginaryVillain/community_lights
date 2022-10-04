@@ -1533,20 +1533,20 @@ class LightProperties {
     // properties with no suffix 'clear' the target
     properties.forEach((e) => {
       // clear checks (back to initial value for the given property)
-      if      (        e.equalsIC('t'))        this.transitionDuration = 0;
-      else if (        e.equalsIC('p'))        this.pauseDuration      = 0;
-      else if (        e.equalsIC('#'))        this.color      = void (0);
-      else if (        e.equalsIC('a#'))       this.color      = void (0);
-      else if (        e.equalsIC('e'))        this.enable     = void (0);
-      else if (        e.equalsIC('b'))        this.brightness = void (0);
-      else if (        e.equalsIC('x'))        this.xOffset    = void (0);
-      else if (        e.equalsIC('y'))        this.yOffset    = void (0);
-      else if (isOL && e.equalsIC('r'))        this.radius     = void (0);
-      else if (isFL && e.equalsIC('l'))        this.beamLength = void (0);
-      else if (isFL && e.equalsIC('w'))        this.beamWidth  = void (0);
-      else if (isFL && e.equalsIC('a'))        this.clockwise  = this.direction = void (0);
-      else if (isFL && e.equalsIC('+a'))       this.clockwise  = this.direction = void (0);
-      else if (isFL && e.equalsIC('-a'))       this.clockwise  = this.direction = void (0);
+      if      (        e.equalsIC('t'))  { this.transitionDuration = 0; return; }
+      else if (        e.equalsIC('p'))  { this.pauseDuration      = 0; return; }
+      else if (        e.equalsIC('#'))  { this.color      = void (0); return; }
+      else if (        e.equalsIC('a#')) { this.color      = void (0); return; }
+      else if (        e.equalsIC('e'))  { this.enable     = void (0); return; }
+      else if (        e.equalsIC('b'))  { this.brightness = void (0); return; }
+      else if (        e.equalsIC('x'))  { this.xOffset    = void (0); return; }
+      else if (        e.equalsIC('y'))  { this.yOffset    = void (0); return; }
+      else if (isOL && e.equalsIC('r'))  { this.radius     = void (0); return; }
+      else if (isFL && e.equalsIC('l'))  { this.beamLength = void (0); return; }
+      else if (isFL && e.equalsIC('w'))  { this.beamWidth  = void (0); return; }
+      else if (isFL && e.equalsIC('a'))  { this.clockwise  = this.direction = void (0); return; }
+      else if (isFL && e.equalsIC('+a')) { this.clockwise  = this.direction = void (0); return; }
+      else if (isFL && e.equalsIC('-a')) { this.clockwise  = this.direction = void (0); return; }
 
       // parse suffix (individual & random ranges)
       let suffix, rand = (min, max) => Math.random() * (max - min) + min;
@@ -2154,7 +2154,7 @@ class ColorDelta {
       // normalize parameters
       this._cl.radius        = orNaN(this._cl.radius, 0);
       this._cl.color         = orNullish(this._cl.color, VRGBA.minRGBA());
-      this._cl.enable        = orBoolean(this._cl.enable, true);
+      this._cl.enable        = orBoolean(this._cl.enable, this._cl.id ? false : true);
       this._cl.brightness    = orNaN(this._cl.brightness, 0);
       this._cl.direction     = orNaN(this._cl.direction, undefined); // must be undefined for later checks
       this._cl.id            = orNullish(this._cl.id, 0); // Alphanumeric
