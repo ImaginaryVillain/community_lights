@@ -629,17 +629,20 @@ Imported[Community.Lighting.name] = true;
 * - Sets the number of hours in a day to [h] (set hour colors if doing this).
 *   Specifying 'fade' will gradually transition the tint to that of the next hour.
 *
-* Tint set c [s]
-* Tint fade c [s]
+* Tint set c [s] [cycles]
+* Tint fade c [s] [cycles]
 * - Sets or fades the current screen tint to the color (c)
 * - The optional argument speed (s) sets the fade speed (1 = fast, 20 = very slow)
 * - Both commands operate identically.
 *
-* Tint reset [s]
-* Tint daylight [s]
+* Tint reset [s] [cycles]
+* Tint daylight [s] [cycles]
 * - Resets or fades the tint based on the current hour.
 * - The optional argument speed (s) sets the fade speed (1 = fast, 20 = very slow)
 * - Both commands operate identically.
+*
+* Tint wait
+* - wait for the tint to finish transitioning before continuing the event script.
 *
 * TileLight   id ON c r
 * RegionLight id ON c r
@@ -1790,6 +1793,7 @@ class ColorDelta {
     let mapOnOff = a  => a.enabled === "true" ? "on" : "off";
     let tileType = a  => (a.tileType === "terrain" ? "tile" : "region") + (a.lightType ? a.lightType : "block");
     let tintType = () => $gameParty.inBattle() ? "tintbattle" : "tint";
+    let timeMode = a  => a.cycles ? 'cycles' : '';
     let dayMode =  a  => a.fade === "true" ? "fade" : "";
     let tintMode = a  => a.color ? "set" : "reset";
     let mathMode = a  => a.mode === "set" ? "hour" : a.mode; // set, add, or subtract.
@@ -1802,7 +1806,6 @@ class ColorDelta {
     r("masterSwitch",       function (a) { $$.interpreter = this; f("script",     [mapOnOff(a)]); });
     r("tileBlock",          function (a) { $$.interpreter = this; f(tileType(a),  [a.id, mapOnOff(a), a.color, a.shape, a.xOffset, a.yOffset, a.blockWidth, a.blockHeight]); });
     r("tileLight",          function (a) { $$.interpreter = this; f(tileType(a),  [a.id, mapOnOff(a), a.color, a.radius, a.brightness]); });
-    r("setTint",            function (a) { $$.interpreter = this; f(tintType(),   [tintMode(a), a.color, a.fadeSpeed]); });
     r("daynightEnable",     function (a) { $$.interpreter = this; f("daynight",   [mapOnOff(a), dayMode(a)]); });
     r("setTimeSpeed",       function (a) { $$.interpreter = this; f("dayNight",   ["speed", a.speed]); });
     r("setTime",            function (a) { $$.interpreter = this; f("dayNight",   [mathMode(a), a.hours, a.minutes, dayMode(a)]); });
@@ -1815,7 +1818,9 @@ class ColorDelta {
     r("activateById",       function (a) { $$.interpreter = this; f("light",      [mapOnOff(a), a.id]); });
     r("lightColor",         function (a) { $$.interpreter = this; f("light",      ["color", a.id, a.color]); });
     r("resetLightSwitches", function ()  { $$.interpreter = this; f("light",      ["switch", "reset"]); });
-    r("resetTint",          function (a) { $$.interpreter = this; f(tintType(),   ["reset", a.fadeSpeed]); });
+    r("setTint",            function (a) { $$.interpreter = this; f(tintType(), [tintMode(a), a.color, a.fadeSpeed, timeMode(a)]); });
+    r("resetTint",          function (a) { $$.interpreter = this; f(tintType(),   ["reset", a.fadeSpeed, timeMode(a)]); });
+    r("waitTint",           function (a) { $$.interpreter = this; f(tintType(),   ["wait"]); });
     r("condLight",          function (a) { $$.interpreter = this; f("light",      ["cond", a.id].concat(a.properties.split(/\s+/))); });
     r("condLightWait",      function (a) { $$.interpreter = this; f("light",      ["wait", a.id]); });
   }
@@ -3045,13 +3050,17 @@ class ColorDelta {
    */
   $$.tint = function (args) {
     let cmd = args[0].trim();
-    if (cmd.equalsIC('set', 'fade'))
-      $gameVariables.SetTintTarget(ColorDelta.createTint(new VRGBA(args[1]), 60 * (+args[2] || 0)));
-    else if (cmd.equalsIC("reset", "daylight")) {
-      let fadeDuration = 60 * (+args[1] || 0);
+    console.log(cmd);
+    if (cmd.equalsIC('set', 'fade')) {
+      let fadeDuration = (args[3] && args[3].equalsIC('cycles') ? 1 : 60) * (+args[2] || 0); // arg is speed or cycles
+      $gameVariables.SetTintTarget(ColorDelta.createTint(new VRGBA(args[1]), fadeDuration));
+    } else if (cmd.equalsIC('reset', 'daylight')) {
+      let fadeDuration = (args[2] && args[2].equalsIC('cycles') ? 1 : 60) * (+args[1] || 0); // arg is speed or cycles
       let delta = ColorDelta.createTimeTint(false, 0); // get the daynight tint for the current time
       delta = ColorDelta.createTint(delta.get(), fadeDuration); // use tint for current time as target
       $gameVariables.SetTintTarget(delta);
+    } else if (cmd.equalsIC('wait')) {
+      $$.interpreter.wait($gameVariables.GetTintTarget().fadeDuration);
     }
   };
 
@@ -3062,10 +3071,15 @@ class ColorDelta {
   $$.tintbattle = function (args, overrideInBattleCheck = false) {
     if ($gameVariables.GetScriptActive() && lightInBattle && ($gameParty.inBattle() || overrideInBattleCheck)) {
       let cmd = args[0].trim();
-      if (cmd.equalsIC("set", 'fade'))
-        $gameTemp._BattleTintTarget = ColorDelta.createBattleTint(new VRGBA(args[1], "#666666"), 60 * (+args[2] || 0));
+      if (cmd.equalsIC('set', 'fade')) {
+        let fadeDuration = (args[3] && args[3].equalsIC('cycles') ? 1 : 60) * (+args[2] || 0); // arg is speed or cycles
+        $gameTemp._BattleTintTarget = ColorDelta.createBattleTint(new VRGBA(args[1], '#666666'), fadeDuration);
+      }
       else if (cmd.equalsIC('reset', 'daylight')) {
-        $gameTemp._BattleTintTarget = ColorDelta.createBattleTint($gameTemp._BattleTintInitial, 60 * (+args[1] || 0));
+        let fadeDuration = (args[2] && args[2].equalsIC('cycles') ? 1 : 60) * (+args[1] || 0); // arg is speed or cycles
+        $gameTemp._BattleTintTarget = ColorDelta.createBattleTint($gameTemp._BattleTintInitial, fadeDuration);
+      } else if (cmd.equalsIC('wait')) {
+        $$.interpreter.wait($gameVariables.GetTintTarget().fadeDuration);
       }
     }
   };
