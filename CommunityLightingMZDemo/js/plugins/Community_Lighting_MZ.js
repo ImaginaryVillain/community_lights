@@ -1387,12 +1387,12 @@ class VRGBA {
   }
 
   /**
-   * Creates an VRGBA object will r,g,b,a = 0 and v = false.
+   * Creates an VRGBA object will r,g,b = 0, a = 255, and v = false.
    * @returns {VRGBA}
    */
   static minRGBA() {
     let that = new VRGBA();
-    [that.v, that.r, that.g, that.b, that.a] = [false, 0, 0, 0, 0];
+    [that.v, that.r, that.g, that.b, that.a] = [false, 0, 0, 0, 255];
     return that;
   }
 
