@@ -923,7 +923,8 @@ Imported[Community.Lighting.name] = true;
 * See the Plugin Commands section for more details.
 *
 * Ranges can be used if random values are desired. Cycle tags are statically generated at map
-* load. If dynamically random property values are desired, use the 'light cond' command instead.
+* load. If dynamic random property values are desired, use the 'light cond' command instead in
+* combination with the 'light wait' command.
 * See the table below for property specific formatting.
 *
 * The following table shows supported properties:
