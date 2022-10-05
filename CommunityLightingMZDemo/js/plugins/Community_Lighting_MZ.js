@@ -311,10 +311,18 @@ Imported[Community.Lighting.name] = true;
 * @type text
 *
 * @arg properties
-* @text properties
+* @text Properties
 * @desc fmt: [tN] [pN] [<#|#a>hex] [eN] [<a|+a|-a>N] [bN] [xN] [yN] [rN] [lN] [wN] where N is a number or range (N:N).
 * @type text
 * @default t5 #ffffff e1 -a90 b0 x0 y0 r150 l12 w12
+*
+* @arg wait
+* @text Wait
+* @desc Wait for the light to finish both transitioning and pausing before continuing the event script.
+* @type boolean
+* @on On
+* @off Off
+* @default false
 *
 * @----------------------------
 *
@@ -575,6 +583,14 @@ Imported[Community.Lighting.name] = true;
 * @off Off
 * @default false
 *
+* @arg wait
+* @text Wait
+* @desc Wait for the tint to finish transitioning before continuing the event script.
+* @type boolean
+* @on On
+* @off Off
+* @default false
+*
 * @----------------------------
 *
 * @command resetTint
@@ -592,6 +608,14 @@ Imported[Community.Lighting.name] = true;
 * @arg cycles
 * @text uses cycles
 * @desc If set to "on" the tint will gradually transition over the specified cycle count
+* @type boolean
+* @on On
+* @off Off
+* @default false
+*
+* @arg wait
+* @text Wait
+* @desc Wait for the tint to finish transitioning before continuing the event script.
 * @type boolean
 * @on On
 * @off Off
@@ -2307,6 +2331,7 @@ class ColorDelta {
 
   if (isRMMZ()) { // RMMZ only command interface
     let mapOnOff = a  => a.enabled === "true" ? "on" : "off";
+    let hasWait  = a  => a.wait === "true";
     let tileType = a  => (a.tileType === "terrain" ? "tile" : "region") + (a.lightType ? a.lightType : "block");
     let tintType = () => $gameParty.inBattle() ? "tintbattle" : "tint";
     let timeMode = a  => a.cycles ? 'cycles' : '';
@@ -2334,10 +2359,10 @@ class ColorDelta {
     r("activateById",       function (a) { $$.interpreter = this; f("light",      [mapOnOff(a), a.id]); });
     r("lightColor",         function (a) { $$.interpreter = this; f("light",      ["color", a.id, a.color]); });
     r("resetLightSwitches", function ()  { $$.interpreter = this; f("light",      ["switch", "reset"]); });
-    r("setTint",            function (a) { $$.interpreter = this; f(tintType(), [tintMode(a), a.color, a.fadeSpeed, timeMode(a)]); });
-    r("resetTint",          function (a) { $$.interpreter = this; f(tintType(),   ["reset", a.fadeSpeed, timeMode(a)]); });
+    r("setTint",            function (a) { $$.interpreter = this; f(tintType(),   [tintMode(a), a.color, a.fadeSpeed, timeMode(a)]); if (hasWait(a)) f(tintType(), ["wait"]); });
+    r("resetTint",          function (a) { $$.interpreter = this; f(tintType(),   ["reset", a.fadeSpeed, timeMode(a)]); if (hasWait(a)) f(tintType(), ["wait"]); });
     r("waitTint",           function ()  { $$.interpreter = this; f(tintType(),   ["wait"]); });
-    r("condLight",          function (a) { $$.interpreter = this; f("light",      ["cond", a.id].concat(a.properties.split(/\s+/))); });
+    r("condLight",          function (a) { $$.interpreter = this; f("light",      ["cond", a.id].concat(a.properties.split(/\s+/))); if (hasWait(a)) f("light", ["wait", a.id]); });
     r("condLightWait",      function (a) { $$.interpreter = this; f("light",      ["wait", a.id]); });
   }
 
