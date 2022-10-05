@@ -747,8 +747,8 @@ const M_PI_180 = Math.PI / 180; // cache PI/180 - this is faster
 
 Number.prototype.is           = function(...a)     { return a.includes(Number(this)); };
 Number.prototype.inRange      = function(min, max) { return this >= min && this <= max; };
-Number.prototype.clone        = function()         { return this; };
-Boolean.prototype.clone       = function()         { return this; };
+Number.prototype.clone        = function()         { return Number(this); };
+Boolean.prototype.clone       = function()         { return this == true; };
 String.prototype.equalsIC     = function(...a)     { return a.map(s => s.toLowerCase()).includes(this.toLowerCase()); };
 String.prototype.startsWithIC = function(s)        { return this.toLowerCase().startsWith(s.toLowerCase()); };
 Math.minmax                   = (minOrMax, ...a) =>  minOrMax ? Math.min(...a) : Math.max(...a); // min if positive
