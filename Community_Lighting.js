@@ -1467,6 +1467,7 @@ class ColorDelta {
     }
   }
 
+  let cachedFunctions = false; // used pre-call some functions to force js engine to cache them early
   let ReloadMapEventsRequired = false;
   let colorcycle_count = [1000];
   let colorcycle_timer = [1000];
@@ -1820,7 +1821,7 @@ class ColorDelta {
     r("resetLightSwitches", function ()  { $$.interpreter = this; f("light",      ["switch", "reset"]); });
     r("setTint",            function (a) { $$.interpreter = this; f(tintType(), [tintMode(a), a.color, a.fadeSpeed, timeMode(a)]); });
     r("resetTint",          function (a) { $$.interpreter = this; f(tintType(),   ["reset", a.fadeSpeed, timeMode(a)]); });
-    r("waitTint",           function (a) { $$.interpreter = this; f(tintType(),   ["wait"]); });
+    r("waitTint",           function ()  { $$.interpreter = this; f(tintType(),   ["wait"]); });
     r("condLight",          function (a) { $$.interpreter = this; f("light",      ["cond", a.id].concat(a.properties.split(/\s+/))); });
     r("condLightWait",      function (a) { $$.interpreter = this; f("light",      ["wait", a.id]); });
   }
@@ -2108,9 +2109,30 @@ class ColorDelta {
     }
 
     // ********** OTHER LIGHTSOURCES **************
-    for (let i = 0, len = eventObjId.length; i < len; i++) {
-      let evid = event_id[i];
-      let cur  = events[eventObjId[i]];
+    for (let i = -1, len = eventObjId.length; i < len; i++) {
+      let evid, cur;
+      if (i != -1) {
+        evid = event_id[i];
+        cur  = events[eventObjId[i]];
+      } else { // call the functions early to cache them. Avoids some stuttering on first calls.
+        if (!cachedFunctions) {
+          cachedFunctions = true;
+          let props = [VRGBA.minRGBA(), true, 0, 0, 0, 0, 20, 20, 20];
+          let s0 = new LightProperties(LightType.Light, ...props);
+          let s1 = new LightProperties(LightType.Flashlight, ...props);
+          let t0 = s0.clone(), t1 = s1.clone();
+          t0.parseProps(['t1', 'p1', 'a#FFFFFF', 'e1', 'b1', 'x1', 'y1', 'r20', 'l20', 'w20', 'a20', '+a20', '-a20']);
+          t1.parseProps(['t1', 'p1', 'a#FFFFFF', 'e1', 'b1', 'x1', 'y1', 'r20', 'l20', 'w20', 'a20', '+a20', '-a20']);
+          let d0 = new LightDelta(s0, t0, s0).clone(), d1 = new LightDelta(s1, t1, s0).clone();
+          d0.next(); d1.next();
+          this._maskBitmaps.radialgradientFillRect(0, 0, 0, 10, VRGBA.minRGBA(), VRGBA.minRGBA(), true, 0, 0);
+          this._maskBitmaps.radialgradientFlashlight(0, 0, VRGBA.minRGBA(), VRGBA.minRGBA(), 0, 20, 20, LightType.Flashlight);
+          this._maskBitmaps.radialgradientFlashlight(0, 0, VRGBA.minRGBA(), VRGBA.minRGBA(), 0, 20, 20, LightType.Conelight);
+          this._maskBitmaps.radialgradientFlashlight(0, 0, VRGBA.minRGBA(), VRGBA.minRGBA(), 0, 20, 20, LightType.Spotlight);
+        }
+        continue;
+      }
+
       if (cur._cl == null) cur.initLightData();
 
       let lightsOnRadius = $gameVariables.GetActiveRadius();
