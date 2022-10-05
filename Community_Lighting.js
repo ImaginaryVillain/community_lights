@@ -412,6 +412,7 @@ Imported[Community.Lighting.name] = true;
 * in front of any color light color.
 *
 * Example note tags:
+*
 * <cl: light r300 {a#990000 t15} {a#999900} {a#009900} {a#009999} {a#000099}>
 * Creates a cycling volumetric light that rotates every 15 frames.
 *
@@ -632,13 +633,15 @@ Imported[Community.Lighting.name] = true;
 * Tint set c [s] [cycles]
 * Tint fade c [s] [cycles]
 * - Sets or fades the current screen tint to the color (c)
-* - The optional argument speed (s) sets the fade speed (1 = fast, 20 = very slow)
+* - The optional argument speed (s) sets the fade speed (1 = fast, 20 = very slow).
+* - If the optional argument 'cycles' is provided, then speed is treated as a cycle count.
 * - Both commands operate identically.
 *
 * Tint reset [s] [cycles]
 * Tint daylight [s] [cycles]
 * - Resets or fades the tint based on the current hour.
 * - The optional argument speed (s) sets the fade speed (1 = fast, 20 = very slow)
+* - If the optional argument 'cycles' is provided, then speed is treated as a cycle count.
 * - Both commands operate identically.
 *
 * Tint wait
@@ -3072,7 +3075,6 @@ class ColorDelta {
    */
   $$.tint = function (args) {
     let cmd = args[0].trim();
-    console.log(cmd);
     if (cmd.equalsIC('set', 'fade')) {
       let fadeDuration = (args[3] && args[3].equalsIC('cycles') ? 1 : 60) * (+args[2] || 0); // arg is speed or cycles
       $gameVariables.SetTintTarget(ColorDelta.createTint(new VRGBA(args[1]), fadeDuration));

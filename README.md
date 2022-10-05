@@ -444,17 +444,22 @@ You can post your questions on the related thread on rpgmakerweb: https://forums
 	* - Sets the number of hours in a day to [h] (set hour colors if doing this).
 	*   Specifying 'fade' will gradually transition the tint to that of the next hour.
 	*
-	* Tint set c [s]
-	* Tint fade c [s]
+	* Tint set c [s] [cycles]
+	* Tint fade c [s] [cycles]
 	* - Sets or fades the current screen tint to the color (c)
-	* - The optional argument speed (s) sets the fade speed (1 = fast, 20 = very slow)
+	* - The optional argument speed (s) sets the fade speed (1 = fast, 20 = very slow).
+	* - If the optional argument 'cycles' is provided, then speed is treated as a cycle count.
 	* - Both commands operate identically.
 	*
-	* Tint reset [s]
-	* Tint daylight [s]
+	* Tint reset [s] [cycles]
+	* Tint daylight [s] [cycles]
 	* - Resets or fades the tint based on the current hour.
 	* - The optional argument speed (s) sets the fade speed (1 = fast, 20 = very slow)
+	* - If the optional argument 'cycles' is provided, then speed is treated as a cycle count.
 	* - Both commands operate identically.
+	*
+	* Tint wait
+	* - wait for the tint to finish transitioning before continuing the event script.
 	*
 	* TileLight   id ON c r
 	* RegionLight id ON c r
