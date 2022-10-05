@@ -412,6 +412,7 @@ Imported[Community.Lighting.name] = true;
 * in front of any color light color.
 *
 * Example note tags:
+*
 * <cl: light r300 {a#990000 t15} {a#999900} {a#009900} {a#009999} {a#000099}>
 * Creates a cycling volumetric light that rotates every 15 frames.
 *
@@ -632,13 +633,15 @@ Imported[Community.Lighting.name] = true;
 * Tint set c [s] [cycles]
 * Tint fade c [s] [cycles]
 * - Sets or fades the current screen tint to the color (c)
-* - The optional argument speed (s) sets the fade speed (1 = fast, 20 = very slow)
+* - The optional argument speed (s) sets the fade speed (1 = fast, 20 = very slow).
+* - If the optional argument 'cycles' is provided, then speed is treated as a cycle count.
 * - Both commands operate identically.
 *
 * Tint reset [s] [cycles]
 * Tint daylight [s] [cycles]
 * - Resets or fades the tint based on the current hour.
 * - The optional argument speed (s) sets the fade speed (1 = fast, 20 = very slow)
+* - If the optional argument 'cycles' is provided, then speed is treated as a cycle count.
 * - Both commands operate identically.
 *
 * Tint wait
@@ -1467,6 +1470,7 @@ class ColorDelta {
     }
   }
 
+  let cachedFunctions = false; // used pre-call some functions to force js engine to cache them early
   let ReloadMapEventsRequired = false;
   let colorcycle_count = [1000];
   let colorcycle_timer = [1000];
@@ -1820,7 +1824,7 @@ class ColorDelta {
     r("resetLightSwitches", function ()  { $$.interpreter = this; f("light",      ["switch", "reset"]); });
     r("setTint",            function (a) { $$.interpreter = this; f(tintType(), [tintMode(a), a.color, a.fadeSpeed, timeMode(a)]); });
     r("resetTint",          function (a) { $$.interpreter = this; f(tintType(),   ["reset", a.fadeSpeed, timeMode(a)]); });
-    r("waitTint",           function (a) { $$.interpreter = this; f(tintType(),   ["wait"]); });
+    r("waitTint",           function ()  { $$.interpreter = this; f(tintType(),   ["wait"]); });
     r("condLight",          function (a) { $$.interpreter = this; f("light",      ["cond", a.id].concat(a.properties.split(/\s+/))); });
     r("condLightWait",      function (a) { $$.interpreter = this; f("light",      ["wait", a.id]); });
   }
@@ -2108,9 +2112,30 @@ class ColorDelta {
     }
 
     // ********** OTHER LIGHTSOURCES **************
-    for (let i = 0, len = eventObjId.length; i < len; i++) {
-      let evid = event_id[i];
-      let cur  = events[eventObjId[i]];
+    for (let i = -1, len = eventObjId.length; i < len; i++) {
+      let evid, cur;
+      if (i != -1) {
+        evid = event_id[i];
+        cur  = events[eventObjId[i]];
+      } else { // call the functions early to cache them. Avoids some stuttering on first calls.
+        if (!cachedFunctions) {
+          cachedFunctions = true;
+          let props = [VRGBA.minRGBA(), true, 0, 0, 0, 0, 20, 20, 20];
+          let s0 = new LightProperties(LightType.Light, ...props);
+          let s1 = new LightProperties(LightType.Flashlight, ...props);
+          let t0 = s0.clone(), t1 = s1.clone();
+          t0.parseProps(['t1', 'p1', 'a#FFFFFF', 'e1', 'b1', 'x1', 'y1', 'r20', 'l20', 'w20', 'a20', '+a20', '-a20']);
+          t1.parseProps(['t1', 'p1', 'a#FFFFFF', 'e1', 'b1', 'x1', 'y1', 'r20', 'l20', 'w20', 'a20', '+a20', '-a20']);
+          let d0 = new LightDelta(s0, t0, s0).clone(), d1 = new LightDelta(s1, t1, s0).clone();
+          d0.next(); d1.next();
+          this._maskBitmaps.radialgradientFillRect(0, 0, 0, 10, VRGBA.minRGBA(), VRGBA.minRGBA(), true, 0, 0);
+          this._maskBitmaps.radialgradientFlashlight(0, 0, VRGBA.minRGBA(), VRGBA.minRGBA(), 0, 20, 20, LightType.Flashlight);
+          this._maskBitmaps.radialgradientFlashlight(0, 0, VRGBA.minRGBA(), VRGBA.minRGBA(), 0, 20, 20, LightType.Conelight);
+          this._maskBitmaps.radialgradientFlashlight(0, 0, VRGBA.minRGBA(), VRGBA.minRGBA(), 0, 20, 20, LightType.Spotlight);
+        }
+        continue;
+      }
+
       if (cur._cl == null) cur.initLightData();
 
       let lightsOnRadius = $gameVariables.GetActiveRadius();
@@ -3050,7 +3075,6 @@ class ColorDelta {
    */
   $$.tint = function (args) {
     let cmd = args[0].trim();
-    console.log(cmd);
     if (cmd.equalsIC('set', 'fade')) {
       let fadeDuration = (args[3] && args[3].equalsIC('cycles') ? 1 : 60) * (+args[2] || 0); // arg is speed or cycles
       $gameVariables.SetTintTarget(ColorDelta.createTint(new VRGBA(args[1]), fadeDuration));
