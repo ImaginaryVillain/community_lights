@@ -312,9 +312,9 @@ Imported[Community.Lighting.name] = true;
 *
 * @arg properties
 * @text properties
-* @desc Format: [tN] [pN] [<#|#a><RRGGBBAA|RRGGBB>] [on|off] [<a|+a|-a>N] [bN] [xN] [yN] [rN] [lN] [wN]
+* @desc fmt: [tN] [pN] [<#|#a>hex] [eN] [<a|+a|-a>N] [bN] [xN] [yN] [rN] [lN] [wN] where N is a number or range (N:N).
 * @type text
-* @default t5 #ffffff on -a90 b0 x0 y0 r150 l12 w12
+* @default t5 #ffffff e1 -a90 b0 x0 y0 r150 l12 w12
 *
 * @----------------------------
 *
@@ -962,7 +962,7 @@ Imported[Community.Lighting.name] = true;
 * |   color     |   #, #a   |   <#|#a><hex|hex:hex>   | #, #FFEEDD, #ffeedd, | color or additive color                |
 * |             |           |                         |  a#000000:a#ffffff   |                                        |
 * |-------------|-----------|-------------------------|----------------------|----------------------------------------|
-* |  enable     |     e     |        e<1|0|0:1>       |     e1, e0, e0:1     | turns light on or off instantly        |
+* |  enable     |     e     |        e<0|1|0:1>       |     e0, e1, e0:1     | turns light on or off instantly        |
 * |-------------|-----------|-------------------------|----------------------|----------------------------------------|
 * |   angle     | a, +a, -a |     <a|+a|-a><N|N:N>    |  a, a30, +a30, -a30  | flashlight angle in degrees. '+' moves |
 * |             |           |                         |    +a0:30, -a0:30    | clockwise, '-' moves counterclockwise  |
@@ -1065,9 +1065,13 @@ Imported[Community.Lighting.name] = true;
 * Light off id
 * - Turn off light with matching id number
 *
-* Light cond id [tN] [pN] [<#|#a><RRGGBBAA|RRGGBB>] [<a|+a|-a>N] [bN] [xN] [yN] [rN] [lN] [wN]
-* - transitions a conditional light to the specified properties over the the given
-* - time period in cycles. Supported propreties are color, flashlight angle (a),
+* Light cond id [tN] [pN] [<#|#a>hex] [eN] [<a|+a|-a>N] [bN] [xN] [yN] [rN] [lN] [wN]
+* - where N can either be a single number such as 0, 2, 3, etc., or a range of numbers,
+* - such as 0:1, 1:9, 2:10, etc. And hex can either be a single hex color such as #000000,
+* - #ffffff, a#ffffff, etc. or a range such as #000000:#ffffff, a#333333bb:a#999999bb.
+* - The command transitions a conditional light to the specified properties over the given
+* - time period in cycles. Supported propreties are transition duration (t),
+* - pause duration (p), color (#, a#), enable (e), flashlight angle (a, +a, -a),
 * - brightness (b), x offset (x), y offset (y), radius (r), flashlight beam length (l),
 * - flashlight beam width (w). Must use the specified prefixes. Unsupported prefixes are
 * - ignored. See the Conditional Light section for more detail on each property.

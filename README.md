@@ -227,7 +227,7 @@ You can post your questions on the related thread on rpgmakerweb: https://forums
 	*
 	* Example note tags:
 	*
-	* <cl: light 300 cycle a#990000 15 a#999900 15 a#009900 15 a#009999 15 a#000099 15>
+	* <cl: light r300 {a#990000 t15} {a#999900} {a#009900} {a#009999} {a#000099}>
 	* Creates a cycling volumetric light that rotates every 15 frames.
 	*
 	* <cl: Flashlight l8 w12 a#660000 on asdf>
@@ -268,7 +268,7 @@ You can post your questions on the related thread on rpgmakerweb: https://forums
 	* |   color     |   #, #a   |   <#|#a><hex|hex:hex>   | #, #FFEEDD, #ffeedd, | color or additive color                |
 	* |             |           |                         |  a#000000:a#ffffff   |                                        |
 	* |-------------|-----------|-------------------------|----------------------|----------------------------------------|
-	* |  enable     |     e     |        e<1|0|0:1>       |     e1, e0, e0:1     | turns light on or off instantly        |
+	* |  enable     |     e     |        e<0|1|0:1>       |     e0, e1, e0:1     | turns light on or off instantly        |
 	* |-------------|-----------|-------------------------|----------------------|----------------------------------------|
 	* |   angle     | a, +a, -a |     <a|+a|-a><N|N:N>    |  a, a30, +a30, -a30  | flashlight angle in degrees. '+' moves |
 	* |             |           |                         |    +a0:30, -a0:30    | clockwise, '-' moves counterclockwise  |
@@ -371,9 +371,13 @@ You can post your questions on the related thread on rpgmakerweb: https://forums
 	* Light off id
 	* - Turn off light with matching id number
 	*
-	* Light cond id [tN] [pN] [<#|#a><RRGGBBAA|RRGGBB>] [<a|+a|-a>N] [bN] [xN] [yN] [rN] [lN] [wN]
-	* - transitions a conditional light to the specified properties over the the given
-	* - time period in cycles. Supported propreties are color, flashlight angle (a),
+	* Light cond id [tN] [pN] [<#|#a>hex] [eN] [<a|+a|-a>N] [bN] [xN] [yN] [rN] [lN] [wN]
+	* - where N can either be a single number such as 0, 2, 3, etc., or a range of numbers,
+	* - such as 0:1, 1:9, 2:10, etc. And hex can either be a single hex color such as #000000,
+	* - #ffffff, a#ffffff, etc. or a range such as #000000:#ffffff, a#333333bb:a#999999bb.
+	* - The command transitions a conditional light to the specified properties over the given
+	* - time period in cycles. Supported propreties are transition duration (t),
+	* - pause duration (p), color (#, a#), enable (e), flashlight angle (a, +a, -a),
 	* - brightness (b), x offset (x), y offset (y), radius (r), flashlight beam length (l),
 	* - flashlight beam width (w). Must use the specified prefixes. Unsupported prefixes are
 	* - ignored. See the Conditional Light section for more detail on each property.
