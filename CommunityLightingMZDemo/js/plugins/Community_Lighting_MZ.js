@@ -3586,12 +3586,12 @@ class ColorDelta {
       if (targetProps) {
         if (targetProps.updateFrame == Graphics.frameCount) {
           // light was scheduled to transition this frame and the deltas haven't been updated to use targets duration
-          $$.interpreter.wait(targetProps.transitionDuration + targetProps.pauseDuration);
+          $$.interpreter.wait(targetProps.transitionDuration + targetProps.pauseDuration + 1); // +1 needed for off by one
         } else { // light was scheduled to transition in a prior frame so lookup how much time is left
           for (let i = 0, len = eventObjId.length; i < len; i++) {
             let cur = events[eventObjId[i]];
             if (cur._cl.delta.target == targetProps) {
-              $$.interpreter.wait(cur._cl.delta.current.transitionDuration + cur._cl.delta.current.pauseDuration);
+              $$.interpreter.wait(cur._cl.delta.current.transitionDuration + cur._cl.delta.current.pauseDuration + 1); // +1 needed for off by one
               break;
             }
           }
@@ -3621,7 +3621,7 @@ class ColorDelta {
       delta = ColorDelta.createTint(delta.get(), fadeDuration); // use tint for current time as target
       $gameVariables.SetTintTarget(delta);
     } else if (cmd.equalsIC('wait')) {
-      $$.interpreter.wait($gameVariables.GetTintTarget().fadeDuration);
+      $$.interpreter.wait($gameVariables.GetTintTarget().fadeDuration + 1); // +1 needed for off by one
     }
   };
 
@@ -3640,7 +3640,7 @@ class ColorDelta {
         let fadeDuration = (args[2] && args[2].equalsIC('cycles') ? 1 : 60) * (+args[1] || 0); // arg is speed or cycles
         $gameTemp._BattleTintTarget = ColorDelta.createBattleTint($gameTemp._BattleTintInitial, fadeDuration);
       } else if (cmd.equalsIC('wait')) {
-        $$.interpreter.wait($gameVariables.GetTintTarget().fadeDuration);
+        $$.interpreter.wait($gameVariables.GetTintTarget().fadeDuration + 1); // +1 needed for off by one
       }
     }
   };

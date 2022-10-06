@@ -1799,6 +1799,7 @@ class ColorDelta {
 
   if (isRMMZ()) { // RMMZ only command interface
     let mapOnOff = a  => a.enabled === "true" ? "on" : "off";
+    let hasWait  = a  => a.wait === "true";
     let tileType = a  => (a.tileType === "terrain" ? "tile" : "region") + (a.lightType ? a.lightType : "block");
     let tintType = () => $gameParty.inBattle() ? "tintbattle" : "tint";
     let timeMode = a  => a.cycles ? 'cycles' : '';
@@ -1826,10 +1827,10 @@ class ColorDelta {
     r("activateById",       function (a) { $$.interpreter = this; f("light",      [mapOnOff(a), a.id]); });
     r("lightColor",         function (a) { $$.interpreter = this; f("light",      ["color", a.id, a.color]); });
     r("resetLightSwitches", function ()  { $$.interpreter = this; f("light",      ["switch", "reset"]); });
-    r("setTint",            function (a) { $$.interpreter = this; f(tintType(), [tintMode(a), a.color, a.fadeSpeed, timeMode(a)]); });
-    r("resetTint",          function (a) { $$.interpreter = this; f(tintType(),   ["reset", a.fadeSpeed, timeMode(a)]); });
+    r("setTint",            function (a) { $$.interpreter = this; f(tintType(),   [tintMode(a), a.color, a.fadeSpeed, timeMode(a)]); if (hasWait(a)) f(tintType(), ["wait"]); });
+    r("resetTint",          function (a) { $$.interpreter = this; f(tintType(),   ["reset", a.fadeSpeed, timeMode(a)]); if (hasWait(a)) f(tintType(), ["wait"]); });
     r("waitTint",           function ()  { $$.interpreter = this; f(tintType(),   ["wait"]); });
-    r("condLight",          function (a) { $$.interpreter = this; f("light",      ["cond", a.id].concat(a.properties.split(/\s+/))); });
+    r("condLight",          function (a) { $$.interpreter = this; f("light",      ["cond", a.id].concat(a.properties.split(/\s+/))); if (hasWait(a)) f("light", ["wait", a.id]); });
     r("condLightWait",      function (a) { $$.interpreter = this; f("light",      ["wait", a.id]); });
   }
 
@@ -3053,12 +3054,12 @@ class ColorDelta {
       if (targetProps) {
         if (targetProps.updateFrame == Graphics.frameCount) {
           // light was scheduled to transition this frame and the deltas haven't been updated to use targets duration
-          $$.interpreter.wait(targetProps.transitionDuration + targetProps.pauseDuration);
+          $$.interpreter.wait(targetProps.transitionDuration + targetProps.pauseDuration + 1); // +1 needed for off by one
         } else { // light was scheduled to transition in a prior frame so lookup how much time is left
           for (let i = 0, len = eventObjId.length; i < len; i++) {
             let cur = events[eventObjId[i]];
             if (cur._cl.delta.target == targetProps) {
-              $$.interpreter.wait(cur._cl.delta.current.transitionDuration + cur._cl.delta.current.pauseDuration);
+              $$.interpreter.wait(cur._cl.delta.current.transitionDuration + cur._cl.delta.current.pauseDuration + 1); // +1 needed for off by one
               break;
             }
           }
@@ -3088,7 +3089,7 @@ class ColorDelta {
       delta = ColorDelta.createTint(delta.get(), fadeDuration); // use tint for current time as target
       $gameVariables.SetTintTarget(delta);
     } else if (cmd.equalsIC('wait')) {
-      $$.interpreter.wait($gameVariables.GetTintTarget().fadeDuration);
+      $$.interpreter.wait($gameVariables.GetTintTarget().fadeDuration + 1); // +1 needed for off by one
     }
   };
 
@@ -3107,7 +3108,7 @@ class ColorDelta {
         let fadeDuration = (args[2] && args[2].equalsIC('cycles') ? 1 : 60) * (+args[1] || 0); // arg is speed or cycles
         $gameTemp._BattleTintTarget = ColorDelta.createBattleTint($gameTemp._BattleTintInitial, fadeDuration);
       } else if (cmd.equalsIC('wait')) {
-        $$.interpreter.wait($gameVariables.GetTintTarget().fadeDuration);
+        $$.interpreter.wait($gameVariables.GetTintTarget().fadeDuration + 1); // +1 needed for off by one
       }
     }
   };
