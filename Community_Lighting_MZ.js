@@ -3028,7 +3028,7 @@ class ColorDelta {
    * @param {Number} flashlength
    * @param {Number} flashwidth
    */
-  Mask_Bitmaps.prototype.radialgradientFlashlight = function (x1, y1, c1, c2, dirAngle, flashlength, flashwidth) {
+  Mask_Bitmaps.prototype.radialgradientFlashlight = function (x1, y1, c1, dirAngle, flashlength, flashwidth) {
     x1 = x1 + lightMaskPadding;
     x1 = x1 - flashlightXoffset;
     y1 = y1 - flashlightYoffset;
