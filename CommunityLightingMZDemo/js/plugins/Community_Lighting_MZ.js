@@ -1629,7 +1629,7 @@ class LightProperties {
       else if (        e.startsWithIC('#'))    this.color      = suffix;
       else if (        e.startsWithIC('a#'))   this.color      = suffix;
       else if (        e.startsWithIC('e'))    this.enable     = Boolean(suffix);
-      else if (        e.startsWithIC('b'))    this.brightness = suffix;
+      else if (        e.startsWithIC('b'))    this.brightness = (suffix / 100).clamp(0, 1);
       else if (        e.startsWithIC('x'))    this.xOffset    = suffix;
       else if (        e.startsWithIC('y'))    this.yOffset    = suffix;
       else if (isOL && e.startsWithIC('r'))    this.radius     = suffix;
@@ -2067,7 +2067,6 @@ class ColorDelta {
   let maxX = (Number(parameters['Screensize X']) || 816) + 2 * lightMaskPadding;
   let maxY = Number(parameters['Screensize Y']) || 624;
   let notetag_reg = RegExp("<" + noteTagKey + ":[ ]*([^>]+)>", "i");
-  let radialColor2 = new VRGBA(useSmootherLights ? "#00000000" : "#000000");
   $$.getFirstComment = function (page) {
     let result = null;
     if (page && page.list[0] != null) {
@@ -2611,8 +2610,7 @@ class ColorDelta {
     let iplayer_radius = Math.floor(player_radius);
 
     if (playerflashlight == true) {
-      this._maskBitmaps.radialgradientFlashlight(x1, y1, playercolor, radialColor2, pd, flashlightlength,
-                                                 flashlightwidth);
+      this._maskBitmaps.radialgradientFlashlight(x1, y1, playercolor, pd, flashlightlength, flashlightwidth);
     }
     if (iplayer_radius > 0) {
       x1 = x1 - flashlightXoffset;
@@ -2623,7 +2621,7 @@ class ColorDelta {
         playercolor.g = Math.max(0, playercolor.g - 50);
         playercolor.b = Math.max(0, playercolor.b - 50);
       }
-      this._maskBitmaps.radialgradientFillRect(x1, y1, 0, iplayer_radius, playercolor, radialColor2, playerflicker,
+      this._maskBitmaps.radialgradientFillRect(x1, y1, 0, iplayer_radius, playercolor, playerflicker,
                                                playerbrightness);
     }
 
@@ -2665,10 +2663,10 @@ class ColorDelta {
           t1.parseProps(['t1', 'p1', 'a#FFFFFF', 'e1', 'b1', 'x1', 'y1', 'r20', 'l20', 'w20', 'a20', '+a20', '-a20']);
           let d0 = new LightDelta(s0, t0, s0).clone(), d1 = new LightDelta(s1, t1, s0).clone();
           d0.next(); d1.next();
-          this._maskBitmaps.radialgradientFillRect(0, 0, 0, 10, VRGBA.minRGBA(), VRGBA.minRGBA(), true, 0, 0);
-          this._maskBitmaps.radialgradientFlashlight(0, 0, VRGBA.minRGBA(), VRGBA.minRGBA(), 0, 20, 20, LightType.Flashlight);
-          this._maskBitmaps.radialgradientFlashlight(0, 0, VRGBA.minRGBA(), VRGBA.minRGBA(), 0, 20, 20, LightType.Conelight);
-          this._maskBitmaps.radialgradientFlashlight(0, 0, VRGBA.minRGBA(), VRGBA.minRGBA(), 0, 20, 20, LightType.Spotlight);
+          this._maskBitmaps.radialgradientFillRect(0, 0, 0, 10, VRGBA.minRGBA(), true, 0, 0);
+          this._maskBitmaps.radialgradientFlashlight(0, 0, VRGBA.minRGBA(), 0, 20, 20, LightType.Flashlight);
+          this._maskBitmaps.radialgradientFlashlight(0, 0, VRGBA.minRGBA(), 0, 20, 20, LightType.Conelight);
+          this._maskBitmaps.radialgradientFlashlight(0, 0, VRGBA.minRGBA(), 0, 20, 20, LightType.Spotlight);
         }
         continue;
       }
@@ -2725,10 +2723,9 @@ class ColorDelta {
             let flashlength = cur.getLightFlashlightLength();
             let flashwidth  = cur.getLightFlashlightWidth();
             if (!isNaN(direction)) ldir = direction;
-            this._maskBitmaps.radialgradientFlashlight(lx1, ly1, color, VRGBA.minRGBA(), ldir, flashlength, flashwidth);
+            this._maskBitmaps.radialgradientFlashlight(lx1, ly1, color, ldir, flashlength, flashwidth);
           } else if (lightType.is(LightType.Light, LightType.Fire)) {
-            this._maskBitmaps.radialgradientFillRect(lx1, ly1, 0, light_radius, color, VRGBA.minRGBA(), objectflicker,
-                                                     brightness, direction);
+            this._maskBitmaps.radialgradientFillRect(lx1, ly1, 0, light_radius, color, objectflicker, brightness, direction);
           }
         }
       }
@@ -2759,8 +2756,7 @@ class ColorDelta {
         tile_color.b = Math.floor(tile_color.b + (60 - $gameTemp._glowAmount)).clamp(0, 255);
         tile_color.a = Math.floor(tile_color.a + (60 - $gameTemp._glowAmount)).clamp(0, 255);
       }
-      this._maskBitmaps.radialgradientFillRect(x1, y1, 0, tile.radius, tile_color, VRGBA.minRGBA(), objectflicker,
-                                               tile.brightness);
+      this._maskBitmaps.radialgradientFillRect(x1, y1, 0, tile.radius, tile_color, objectflicker, tile.brightness);
     });
 
     // Tile blocks
@@ -2837,18 +2833,21 @@ class ColorDelta {
   /**
   * @param {Number} brightness
   * @param {VRGBA} c1
-  * @param {VRGBA} c2
   */
-  CanvasGradient.prototype.addTransparentColorStops = function (brightness, c1, c2) {
-    if (brightness) {
-      if (!useSmootherLights) {
-        let alpha = Math.floor(brightness * 100 * 2.55).toString(16);
-        if (alpha.length < 2) alpha = "0" + alpha;
-        this.addColorStop(0, '#FFFFFF' + alpha);
-      }
-    }
+  CanvasGradient.prototype.addTransparentColorStops = function (brightness, c1) {
+    if (!useSmootherLights) {
+      this.addColorStop(0, c1.toWebHex());
 
-    if (useSmootherLights) {
+      if (brightness) {
+        if (!useSmootherLights) {
+          let c0 = c1.clone();
+          c0.alpha = Math.min(Math.floor(brightness * 100 * 2.55), c0.alpha);
+          this.addColorStop(brightness, c0.toWebHex());
+        }
+      }
+      this.addColorStop(1, VRGBA.minRGBA().toWebHex({ a: c1.a })); // alpha should not be higher than the color
+    }
+    else {
       for (let distanceFromCenter = 0; distanceFromCenter < 1; distanceFromCenter += 0.1) {
         let newRed   = c1.r - (distanceFromCenter * 100 * 2.55);
         let newGreen = c1.g - (distanceFromCenter * 100 * 2.55);
@@ -2857,11 +2856,8 @@ class ColorDelta {
         if (brightness > 0) newAlpha = Math.max(0, brightness - distanceFromCenter);
         this.addColorStop(distanceFromCenter, rgba(~~newRed, ~~newGreen, ~~newBlue, newAlpha));
       }
-    } else {
-      this.addColorStop(brightness, c1.toWebHex());
+      this.addColorStop(1, VRGBA.minRGBA().toWebHex({ a: 0 }));
     }
-
-    this.addColorStop(1, c2.toWebHex());
   };
 
   // *******************  NORMAL BOX SHAPE ***********************************
@@ -2927,12 +2923,11 @@ class ColorDelta {
   * @param {Number}  r1
   * @param {Number} r2
   * @param {VRGBA} c1
-  * @param {VRGBA} c2
   * @param {Boolean} flicker
   * @param {Number} brightness
   * @param {Number} direction
   */
-  Mask_Bitmaps.prototype.radialgradientFillRect = function (x1, y1, r1, r2, c1, c2, flicker, brightness, direction) {
+  Mask_Bitmaps.prototype.radialgradientFillRect = function (x1, y1, r1, r2, c1, flicker, brightness, direction) {
 
     x1 = x1 + lightMaskPadding;
 
@@ -2961,7 +2956,7 @@ class ColorDelta {
       }
 
       let grad = ctxMul.createRadialGradient(x1, y1, r1, x1, y1, r2);
-      grad.addTransparentColorStops(brightness, c1, c2);
+      grad.addTransparentColorStops(brightness, c1);
 
       //ctxMul.save(); // unnecessary significant performance hit
 
@@ -3029,12 +3024,11 @@ class ColorDelta {
    * @param {Number} r1
    * @param {Number} r2
    * @param {VRGBA} c1
-   * @param {VRGBA} c2
    * @param {Number} direction
    * @param {Number} flashlength
    * @param {Number} flashwidth
    */
-  Mask_Bitmaps.prototype.radialgradientFlashlight = function (x1, y1, c1, c2, dirAngle, flashlength, flashwidth) {
+  Mask_Bitmaps.prototype.radialgradientFlashlight = function (x1, y1, c1, dirAngle, flashlength, flashwidth) {
     x1 = x1 + lightMaskPadding;
     x1 = x1 - flashlightXoffset;
     y1 = y1 - flashlightYoffset;
@@ -3049,7 +3043,7 @@ class ColorDelta {
     let grad = ctxMul.createRadialGradient(x1, y1, r1, x1, y1, r2);
     let s = 0x99 / Math.max(0x99 * c1.r, 0x99 * c1.g, 0x99 * c1.b); // scale factor: max should be 0x99
     grad.addColorStop(0, c1.toWebHex({ v: false, r: s * c1.r, g: s * c1.g, b: s * c1.b }));
-    grad.addColorStop(1, c2.toWebHex());
+    grad.addColorStop(1, VRGBA.minRGBA().toWebHex({ a: c1.a })); // alpha should not be higher than the color
     ctxMul.fillStyle = grad;
     ctxMul.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
 
@@ -3163,7 +3157,7 @@ class ColorDelta {
 
       // Draw spot
       grad = ctxMul.createRadialGradient(x1, y1, r1, x1, y1, r2);
-      grad.addTransparentColorStops(0, c1, c2);
+      grad.addTransparentColorStops(0, c1);
       ctxMul.shadowColor = "#000000"; // Clear shadow style outside of check as ctxMul state changes always occur
       ctxMul.shadowBlur = 0;
       if (!c1.v) {
@@ -3188,7 +3182,7 @@ class ColorDelta {
         x1 = x1 + cone * 6 * xScalar; // apply scalars.
         y1 = y1 + cone * 6 * yScalar;
         grad = ctxMul.createRadialGradient(x1, y1, r1, x1, y1, r2);
-        grad.addTransparentColorStops(0, c1, c2);
+        grad.addTransparentColorStops(0, c1);
         ctxMul.fillStyle = grad;
         ctxAdd.fillStyle = grad;
         ctxMul.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
