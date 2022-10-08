@@ -1677,10 +1677,21 @@ class LightDelta {
    */
   constructor(current, target, defaults, fade = true) {
     if (arguments.length == 0) return;
-    this.current = current;
-    this.target  = target;
+    this.current  = current;
+    this.target   = target;
     this.defaults = defaults;
-    this.delta   = new LightProperties();
+    this.delta    = new LightProperties();
+
+    // Assign currents if non-existent
+    if (this.current.color == null)      this.current.color      = this.defaults.color;
+    if (this.current.direction == null)  this.current.direction  = this.defaults.direction;
+    if (this.current.brightness == null) this.current.brightness = this.defaults.brightness;
+    if (this.current.xOffset == null)    this.current.xOffset    = this.defaults.xOffset;
+    if (this.current.yOffset == null)    this.current.yOffset    = this.defaults.yOffset;
+    if (this.current.radius == null)     this.current.radius     = this.defaults.radius;
+    if (this.current.beamLength == null) this.current.beamLength = this.defaults.beamLength;
+    if (this.current.beamWidth == null)  this.current.beamWidth  = this.defaults.beamWidth;
+
     this.createDeltas(fade);
   }
 
@@ -1725,6 +1736,10 @@ class LightDelta {
     // Duplicate target so that any target normalization is local to this LightDelta instance
     let target = this.target.clone();
 
+    // Cache light type
+    let isOL = this.current.isOtherLight();
+    let isFL = this.current.isFlashlight();
+
     // Set current durations or 0 if not fading
     this.current.transitionDuration = fade ? target.transitionDuration : 0;
     this.current.pauseDuration      = fade ? target.pauseDuration : 0;
@@ -1733,40 +1748,39 @@ class LightDelta {
     this.current.enable = target.enable != null ? target.enable : this.defaults.enable;
 
     // For flashlights check the movement direction and normalize the current and target
-    if (this.current.direction != null && target.direction != null && target.clockwise != null) {
+    if (isFL && this.current.direction != null && target.direction != null && target.clockwise != null)
       void (target.clockwise ? normalizeClockwiseMovement() : normalizeCounterClockwiseMovement());
-    }
 
     // Set any null targets to default (normalization for nulls) (allows defaults to gradually transition)
-    if(target.color == null)      target.color      = this.defaults.color;
-    if(target.direction == null)  target.direction  = this.defaults.direction;
-    if(target.brightness == null) target.brightness = this.defaults.brightness;
-    if(target.xOffset == null)    target.xOffset    = this.defaults.xOffset;
-    if(target.yOffset == null)    target.yOffset    = this.defaults.yOffset;
-    if(target.radius == null)     target.radius     = this.defaults.radius;
-    if(target.beamLength == null) target.beamLength = this.defaults.beamLength;
-    if(target.beamWidth == null)  target.beamWidth  = this.defaults.beamWidth;
+    if (target.color == null)              target.color      = this.defaults.color;
+    if (isFL && target.direction == null)  target.direction  = this.defaults.direction;
+    if (target.brightness == null)         target.brightness = this.defaults.brightness;
+    if (target.xOffset == null)            target.xOffset    = this.defaults.xOffset;
+    if (target.yOffset == null)            target.yOffset    = this.defaults.yOffset;
+    if (isOL && target.radius == null)     target.radius     = this.defaults.radius;
+    if (isFL && target.beamLength == null) target.beamLength = this.defaults.beamLength;
+    if (isFL && target.beamWidth == null)  target.beamWidth  = this.defaults.beamWidth;
 
-    // assign deltas if current & targets exist
-    this.delta.color      = createColor (this.current.color,      target.color,      this.current.transitionDuration);
-    this.delta.color      = createColor (this.current.color,      target.color,      this.current.transitionDuration);
-    this.delta.direction  = createNumber(this.current.direction,  target.direction,  this.current.transitionDuration);
-    this.delta.brightness = createNumber(this.current.brightness, target.brightness, this.current.transitionDuration);
-    this.delta.xOffset    = createNumber(this.current.xOffset,    target.xOffset,    this.current.transitionDuration);
-    this.delta.yOffset    = createNumber(this.current.yOffset,    target.yOffset,    this.current.transitionDuration);
-    this.delta.radius     = createNumber(this.current.radius,     target.radius,     this.current.transitionDuration);
-    this.delta.beamLength = createNumber(this.current.beamLength, target.beamLength, this.current.transitionDuration);
-    this.delta.beamWidth  = createNumber(this.current.beamWidth,  target.beamWidth,  this.current.transitionDuration);
+    // assign deltas if current & targets exist (only create deltas if supported by the light type)
+              this.delta.color      = createColor (this.current.color,      target.color,      this.current.transitionDuration);
+              this.delta.color      = createColor (this.current.color,      target.color,      this.current.transitionDuration);
+    if (isFL) this.delta.direction  = createNumber(this.current.direction,  target.direction,  this.current.transitionDuration);
+              this.delta.brightness = createNumber(this.current.brightness, target.brightness, this.current.transitionDuration);
+              this.delta.xOffset    = createNumber(this.current.xOffset,    target.xOffset,    this.current.transitionDuration);
+              this.delta.yOffset    = createNumber(this.current.yOffset,    target.yOffset,    this.current.transitionDuration);
+    if (isOL) this.delta.radius     = createNumber(this.current.radius,     target.radius,     this.current.transitionDuration);
+    if (isFL) this.delta.beamLength = createNumber(this.current.beamLength, target.beamLength, this.current.transitionDuration);
+    if (isFL) this.delta.beamWidth  = createNumber(this.current.beamWidth,  target.beamWidth,  this.current.transitionDuration);
 
     // assign new currents for existing deltas to propagate currents for duration = 0
-    if(this.delta.color != null)      this.current.color      = this.delta.color     .get();
-    if(this.delta.direction != null)  this.current.direction  = this.delta.direction .get();
-    if(this.delta.brightness != null) this.current.brightness = this.delta.brightness.get();
-    if(this.delta.xOffset != null)    this.current.xOffset    = this.delta.xOffset   .get();
-    if(this.delta.yOffset != null)    this.current.yOffset    = this.delta.yOffset   .get();
-    if(this.delta.radius != null)     this.current.radius     = this.delta.radius    .get();
-    if(this.delta.beamLength != null) this.current.beamLength = this.delta.beamLength.get();
-    if(this.delta.beamWidth != null)  this.current.beamWidth  = this.delta.beamWidth .get();
+    if (this.delta.color != null)      this.current.color      = this.delta.color     .get();
+    if (this.delta.direction != null)  this.current.direction  = this.delta.direction .get();
+    if (this.delta.brightness != null) this.current.brightness = this.delta.brightness.get();
+    if (this.delta.xOffset != null)    this.current.xOffset    = this.delta.xOffset   .get();
+    if (this.delta.yOffset != null)    this.current.yOffset    = this.delta.yOffset   .get();
+    if (this.delta.radius != null)     this.current.radius     = this.delta.radius    .get();
+    if (this.delta.beamLength != null) this.current.beamLength = this.delta.beamLength.get();
+    if (this.delta.beamWidth != null)  this.current.beamWidth  = this.delta.beamWidth .get();
   }
 
   /**
@@ -1971,11 +1985,11 @@ class ColorDelta {
   next(scale = 1) {
     if (this.finished()) return this; // lazy-short-circuit
     let current = this.current, target = this.target, delta = this.delta; // reference
-    if(current.v != target.v) current.v = target.v;  // Compute next step & clamp to target, check to avoid recomputing
-    if(current.r != target.r) current.r = Math.minmax(delta.r > 0, current.r + scale * delta.r, target.r);
-    if(current.g != target.g) current.g = Math.minmax(delta.g > 0, current.g + scale * delta.g, target.g);
-    if(current.b != target.b) current.b = Math.minmax(delta.b > 0, current.b + scale * delta.b, target.b);
-    if(current.a != target.a) current.a = Math.minmax(delta.a > 0, current.a + scale * delta.a, target.a);
+    if (current.v != target.v) current.v = target.v;  // Compute next step & clamp to target, check to avoid recomputing
+    if (current.r != target.r) current.r = Math.minmax(delta.r > 0, current.r + scale * delta.r, target.r);
+    if (current.g != target.g) current.g = Math.minmax(delta.g > 0, current.g + scale * delta.g, target.g);
+    if (current.b != target.b) current.b = Math.minmax(delta.b > 0, current.b + scale * delta.b, target.b);
+    if (current.a != target.a) current.a = Math.minmax(delta.a > 0, current.a + scale * delta.a, target.a);
     this.fadeDuration -= 1;
     return this;
   }
@@ -3782,21 +3796,21 @@ Game_Variables.prototype.GetFlashlight = function () {
   return orNullish(this._Community_Lighting_Flashlight, false);
 };
 Game_Variables.prototype.SetFlashlightDensity = function (value) { // don't set if invalid or 0
-  if(+value > 0) this._Community_Lighting_FlashlightDensity = +value;
+  if (+value > 0) this._Community_Lighting_FlashlightDensity = +value;
 };
 Game_Variables.prototype.GetFlashlightDensity = function () {
   let value = +this._Community_Lighting_FlashlightDensity;
   return value || 3; // not undefined, null, NaN, or 0
 };
 Game_Variables.prototype.SetFlashlightLength = function (value) { // don't set if invalid or 0
-  if(+value > 0) this._Community_Lighting_FlashlightLength = +value;
+  if (+value > 0) this._Community_Lighting_FlashlightLength = +value;
 };
 Game_Variables.prototype.GetFlashlightLength = function () {
   let value = +this._Community_Lighting_FlashlightLength;
   return value || 8; // not undefined, null, NaN, or 0
 };
 Game_Variables.prototype.SetFlashlightWidth = function (value) { // don't set if invalid or 0
-  if(+value > 0) this._Community_Lighting_FlashlightWidth = +value;
+  if (+value > 0) this._Community_Lighting_FlashlightWidth = +value;
 };
 Game_Variables.prototype.GetFlashlightWidth = function () {
   let value = +this._Community_Lighting_FlashlightWidth;
