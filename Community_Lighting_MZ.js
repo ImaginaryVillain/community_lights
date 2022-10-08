@@ -2576,7 +2576,7 @@ class ColorDelta {
     let ctxMul = this._maskBitmaps.multiply.context;
     let ctxAdd = this._maskBitmaps.additive.context;
     this._maskBitmaps.multiply.fillRect(0, 0, maxX, maxY, '#000000');
-    this._maskBitmaps.additive.clearRect(0, 0, maxX, maxY);
+    this._maskBitmaps.additive.fillRect(0, 0, maxX, maxY, '#000000');
 
     ctxMul.globalCompositeOperation = 'lighter';
     ctxAdd.globalCompositeOperation = 'lighter';
@@ -2761,6 +2761,7 @@ class ColorDelta {
 
     // Tile blocks
     ctxMul.globalCompositeOperation = "multiply";
+    ctxAdd.globalCompositeOperation = "multiply";
     block_tiles.forEach(tuple => {
       let [tile, x, y] = tuple;
       let x1 = (x - dx) * pw;
@@ -2793,6 +2794,7 @@ class ColorDelta {
       }
     }, this);
     ctxMul.globalCompositeOperation = 'lighter';
+    ctxAdd.globalCompositeOperation = "lighter";
 
     // Compute tint for next frame
     let tintValue = $gameVariables.GetTintTarget().next().get();
@@ -2801,6 +2803,7 @@ class ColorDelta {
 
     // reset drawmode to normal
     ctxMul.globalCompositeOperation = 'source-over';
+    ctxAdd.globalCompositeOperation = 'source-over';
   };
 
   /**
