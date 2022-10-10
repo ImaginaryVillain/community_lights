@@ -2585,8 +2585,11 @@ class ColorDelta {
       let outerHex = c1.toWebHex({ a: Math.round(0.65 * c1.a) });
       let innerHex = c1.toWebHex({ a: Math.round(0.1  * c1.a) });
 
+      let grad = ctxMul.createRadialGradient(0, 0, 0, 1, 1, 1);
+      grad.addColorStop(0, "#000000ff");
+
       // Draw outer beam as a shadow (needs an alpha of non-zero for fillstyle)
-      ctxMul.fillStyle = VRGBA.minRGBA({a: c1.a}); // Clear fillstyle: alpha should not be higher than the color
+      ctxMul.fillStyle = grad; // Clear fillstyle: alpha should not be higher than the color
       ctxMul.shadowColor = outerHex;
       ctxMul.shadowBlur = 20;
       ctxMul.beginPath();
@@ -2598,7 +2601,7 @@ class ColorDelta {
       ctxMul.lineTo(xRightBeamStart, yRightBeamStart);
       ctxMul.fill();
       if (c1.v) {
-        ctxAdd.fillStyle = VRGBA.minRGBA({a: c1.a}); // Clear fillstyle: alpha should not be higher than the color
+        ctxAdd.fillStyle = grad; // Clear fillstyle: alpha should not be higher than the color
         ctxAdd.shadowColor = outerHex;
         ctxAdd.shadowBlur = 20;
         ctxAdd.beginPath();
