@@ -2886,18 +2886,18 @@ class ColorDelta {
    * @param {Number} y2
    * @param {VRGBA} c
    */
-  Mask_Bitmaps.prototype.FillRect = function (x1, y1, x2, y2, c) {
+  Mask_Bitmaps.prototype.FillRect = function (x1, y1, width, height, c) {
     x1 = x1 + lightMaskPadding;
     let hex = c.toWebHex();
     let ctxMul = this.multiply._context;
     //ctxMul.save(); // unnecessary significant performance hit
     ctxMul.fillStyle = hex;
-    ctxMul.fillRect(x1, y1, x2, y2);
+    ctxMul.fillRect(x1, y1, width, height);
     if (isRMMV()) this.multiply._setDirty(); // doesn't exist in RMMZ
     if (c.v) {
       let ctxAdd = this.additive._context; // Additive lighting context
       ctxAdd.fillStyle = hex;
-      ctxAdd.fillRect(x1, y1, x2, y2);
+      ctxAdd.fillRect(x1, y1, width, height);
       if (isRMMV()) this.additive._setDirty(); // doesn't exist in RMMZ
     }
     //ctxMul.restore();
@@ -2911,21 +2911,25 @@ class ColorDelta {
    * @param {Number} yradius
    * @param {VRGBA} c
    */
-  Mask_Bitmaps.prototype.FillEllipse = function (centerX, centerY, xradius, yradius, c) {
-    centerX = centerX + lightMaskPadding;
+  Mask_Bitmaps.prototype.FillEllipse = function (x1, y1, width, height, c) {
+    x1 = x1 + lightMaskPadding;
+    let xradius = width / 2;
+    let yradius = height / 2;
+    let centerX = x1 + xradius;
+    let centerY = y1 + yradius;
     let hex = c.toWebHex();
     let ctxMul = this.multiply._context;
     //ctxMul.save(); // unnecessary significant performance hit
     ctxMul.fillStyle = hex;
     ctxMul.beginPath();
-    ctxMul.ellipse(centerX, centerY, xradius, yradius, 0, 0, M_2PI);
+    ctxMul.ellipse(centerX, centerY, xradius, yradius, 0, 0, M_2PI, true);
     ctxMul.fill();
     if (isRMMV()) this.multiply._setDirty(); // doesn't exist in RMMZ
     if (c.v) {
       let ctxAdd = this.additive._context; // Additive lighting context
       ctxAdd.fillStyle = hex;
       ctxAdd.beginPath();
-      ctxAdd.ellipse(centerX, centerY, xradius, yradius, 0, 0, M_2PI);
+      ctxAdd.ellipse(centerX, centerY, xradius, yradius, 0, 0, M_2PI, true);
       ctxAdd.fill();
       if (isRMMV()) this.additive._setDirty(); // doesn't exist in RMMZ
     }
