@@ -85,7 +85,6 @@ You can post your questions on the related thread on rpgmakerweb: https://forums
 	* support, allowing this plugin to be used with older projects that have
 	* been upgraded from Terrax Lighting so you don't have to go back and
 	* change a bunch of event and map notes.
-
 	*
 	* 2. New with version 4.2+ is the option to place the lighting note tag
 	* anywhere in an event page's comment field instead of the note box, as
@@ -120,9 +119,9 @@ You can post your questions on the related thread on rpgmakerweb: https://forums
 	* --------------------------------------------------------------------------
 	* Events
 	* --------------------------------------------------------------------------
-	* Light radius color [enable] [day|night] [brightness] [direction] [x] [y] [id]
-	* Light radius cycle <color [pauseDuration]>... [enable] [day|night] [brightness] [direction] [x] [y] [id]
-	* Light [radius] [color] [{CycleProps}...] [enable] [day|night] [brightness] [direction] [x] [y] [id]
+	* Light radius color [enable] [day|night] [brightness] [direction] [anglerange] [x] [y] [id]
+	* Light radius cycle <color [pauseDuration]>... [enable] [day|night] [brightness] [direction] [anglerange] [x] [y] [id]
+	* Light [radius] [color] [{CycleProps}...] [enable] [day|night] [brightness] [direction] [anglerange] [x] [y] [id]
 	* - Light
 	* - radius      Any number, optionally preceded by "R" or "r", so 100, R100, r100, etc.
 	* - cycle       Allows any number of color + duration pairs to follow that will be cycled
@@ -144,6 +143,9 @@ You can post your questions on the related thread on rpgmakerweb: https://forums
 	*               D5 n.+e. walls, D6 s.+e. walls, D7 s.+w. walls,
 	*               D8 n.+w. walls, D9 n.-e. corner, D10 s.-e. corner
 	*               D11 s.-w. corner, D12 n.-w. corner  [optional]
+	* - anglerange  Forced direction range in degrees in the format of aN:M where N is the start
+	*               angle and M Is the end angle. Must be preceded by "A" or "a". If omitted,
+	*               direction is used. [optional]
 	* - x           x offset [optional] (0.5: half tile, 1 = full tile, etc)
 	* - y           y offset [optional]
 	* - id          1, 2, potato, etc. An id (alphanumeric) for plugin commands [optional]
@@ -176,9 +178,9 @@ You can post your questions on the related thread on rpgmakerweb: https://forums
 	*               where 1 is on, and 0 is off. Ignored if day|night passed [optional]
 	* - day         Sets the event's light to only show during the day [optional]
 	* - night       Sets the event's light to only show during night time [optional]
-	* - sdir:       Forced direction (optional): 0:auto, 1:up, 2:right, 3:down, 4:left
+	* - sdir        Forced direction: 0:auto, 1:up, 2:right, 3:down, 4:left [optional]
 	*               Can be preceded by "D" or "d", so D4, d4, etc. If omitted, defaults to 0
-	* - angle:      Forced direction in degrees (optional): must be preceded by "A" or "a". If
+	* - angle       Forced direction in degrees. Must be preceded by "A" or "a". If
 	*               omitted, sdir is used. [optional]
 	* - x           x[offset] Work the same as regular light [optional]
 	* - y           y[offset] [optional]
