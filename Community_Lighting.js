@@ -306,9 +306,9 @@ Imported[Community.Lighting.name] = true;
 * --------------------------------------------------------------------------
 * Events
 * --------------------------------------------------------------------------
-* Light radius color [enable] [day|night] [brightness] [direction] [x] [y] [id]
-* Light radius cycle <color [pauseDuration]>... [enable] [day|night] [brightness] [direction] [x] [y] [id]
-* Light [radius] [color] [{CycleProps}...] [enable] [day|night] [brightness] [direction] [x] [y] [id]
+* Light radius color [enable] [day|night] [brightness] [direction] [anglerange] [x] [y] [id]
+* Light radius cycle <color [pauseDuration]>... [enable] [day|night] [brightness] [direction] [anglerange] [x] [y] [id]
+* Light [radius] [color] [{CycleProps}...] [enable] [day|night] [brightness] [direction] [anglerange] [x] [y] [id]
 * - Light
 * - radius      Any number, optionally preceded by "R" or "r", so 100, R100, r100, etc.
 * - cycle       Allows any number of color + duration pairs to follow that will be cycled
@@ -362,9 +362,9 @@ Imported[Community.Lighting.name] = true;
 *               where 1 is on, and 0 is off. Ignored if day|night passed [optional]
 * - day         Sets the event's light to only show during the day [optional]
 * - night       Sets the event's light to only show during night time [optional]
-* - sdir:       Forced direction (optional): 0:auto, 1:up, 2:right, 3:down, 4:left
+* - sdir        Forced direction: 0:auto, 1:up, 2:right, 3:down, 4:left [optional]
 *               Can be preceded by "D" or "d", so D4, d4, etc. If omitted, defaults to 0
-* - angle:      Forced direction in degrees (optional): must be preceded by "A" or "a". If
+* - angle       Forced direction in degrees. Must be preceded by "A" or "a". If
 *               omitted, sdir is used. [optional]
 * - x           x[offset] Work the same as regular light [optional]
 * - y           y[offset] [optional]
@@ -1654,38 +1654,41 @@ class ColorDelta {
     this._cl.type = LightType[tagData.shift()];
     // Handle parsing of light, fire, and flashlight
     if (this._cl.type) {
-      let isFL       = ()          => this._cl.type.is(LightType.Flashlight); // is flashlight
-      let isEq       = (e, s0, s1) => s0 && e.equalsIC(s0)     || s1 && e.equalsIC(s1);
-      let isPre      = (e, p0, p1) => p0 && e.startsWithIC(p0) || p1 && e.startsWithIC(p1);
-      let isPreNum   = (e, p, n)   => p  && e.startsWithIC(p)  && !isNaN(n);
-      let isNul      = (e)         => e == null;
-      let isDayNight = (e)         => isEq(e, "night", "day");
-      let clipNum    = (e)         => orNaN(+e.slice(1)); // clip prefix & convert to number or undefined
+      let isFL       = ()             => this._cl.type.is(LightType.Flashlight); // is flashlight
+      let isEq       = (e, s0, s1)    => s0 && e.equalsIC(s0)     || s1 && e.equalsIC(s1);
+      let isPre      = (e, p0, p1)    => p0 && e.startsWithIC(p0) || p1 && e.startsWithIC(p1);
+      let isPreNum   = (e, p, n0, n1) => p && e.startsWithIC(p) && !isNaN(n0) && (n1 == void (0) || !isNaN(n1));
+      let isNul      = (e)            => e == null;
+      let isDayNight = (e)            => isEq(e, "night", "day");
+      let getNum     = (e)            => orNaN(+e.slice(1).split(":")[0]);
+      let getNum2    = (e)            => orNaN(+e.slice(1).split(":")[1]);
       let cycleIndex, hasCycle = false;
       tagData.forEach((e) => {
-        let n = clipNum(e);
-        if      (!isFL() && isPreNum(e, 'r', n) && isNul(this._cl.radius))     this._cl.radius     = n;
-        else if (!isFL() && !isNaN(+e)          && isNul(this._cl.radius))     this._cl.radius     = +e;
-        else if (isFL()  && !isNaN(+e)          && isNul(this._cl.beamLength)) this._cl.beamLength = +e;
-        else if (isFL()  && !isNaN(+e)          && isNul(this._cl.beamWidth))  this._cl.beamWidth  = +e;
-        else if (isFL()  && isPreNum(e, 'l', n) && isNul(this._cl.beamLength)) this._cl.beamLength = n;
-        else if (isFL()  && isPreNum(e, 'w', n) && isNul(this._cl.beamWidth))  this._cl.beamWidth  = n;
-        else if (           isEq(e, 'cycle')    && isNul(this._cl.color))      hasCycle            = true;
-        else if (           isPre(e, '#', 'a#') && hasCycle)                   cycleIndex = cycleGroups.push([e]) - 2;
-        else if (           !isNaN(+e)          && cycleGroups[cycleIndex])    cycleGroups[cycleIndex] .push('p' + e);
-        else if (           isPre(e, '#', 'a#') && isNul(this._cl.color))      this._cl.color      = new VRGBA(e);
-        else if (           isPreNum(e, 'e', n) && isNul(this._cl.enable))     this._cl.enable     = Boolean(n);
-        else if (           isOn(e)             && isNul(this._cl.enable))     this._cl.enable     = true;
-        else if (           isOff(e)            && isNul(this._cl.enable))     this._cl.enable     = false;
-        else if (           isDayNight(e)       && isNul(this._cl.switch))     this._cl.switch     = e;
-        else if (           isPreNum(e, 'b', n) && isNul(this._cl.brightness)) this._cl.brightness = (n / 100).clamp(0, 1);
-        else if (!isFL() && isPreNum(e, 'd', n) && isNul(this._cl.direction))  this._cl.direction  = n;
-        else if ( isFL() && !isNaN(+e)          && isNul(this._cl.direction))  this._cl.direction  = +e;
-        else if ( isFL() && isPreNum(e, 'd', n) && isNul(this._cl.direction))  this._cl.direction  = CLDirectionMap[n];
-        else if ( isFL() && isPreNum(e, 'a', n) && isNul(this._cl.direction))  this._cl.direction  = Math.PI / 180 * n;
-        else if (           isPreNum(e, 'x', n) && isNul(this._cl.xOffset))    this._cl.xOffset    = n;
-        else if (           isPreNum(e, 'y', n) && isNul(this._cl.yOffset))    this._cl.yOffset    = n;
-        else if (           e.length > 0        && isNul(this._cl.id))         this._cl.id         = e;
+        let n  = getNum(e);
+        let n2 = getNum2(e);
+        if      (!isFL() && isPreNum(e, 'r', n)     && isNul(this._cl.radius))     this._cl.radius     = n;
+        else if (!isFL() && !isNaN(+e)              && isNul(this._cl.radius))     this._cl.radius     = +e;
+        else if (isFL()  && !isNaN(+e)              && isNul(this._cl.beamLength)) this._cl.beamLength = +e;
+        else if (isFL()  && !isNaN(+e)              && isNul(this._cl.beamWidth))  this._cl.beamWidth  = +e;
+        else if (isFL()  && isPreNum(e, 'l', n)     && isNul(this._cl.beamLength)) this._cl.beamLength = n;
+        else if (isFL()  && isPreNum(e, 'w', n)     && isNul(this._cl.beamWidth))  this._cl.beamWidth  = n;
+        else if (           isEq(e, 'cycle')        && isNul(this._cl.color))      hasCycle            = true;
+        else if (           isPre(e, '#', 'a#')     && hasCycle)                   cycleIndex = cycleGroups.push([e]) - 2;
+        else if (           !isNaN(+e)              && cycleGroups[cycleIndex])    cycleGroups[cycleIndex] .push('p' + e);
+        else if (           isPre(e, '#', 'a#')     && isNul(this._cl.color))      this._cl.color      = new VRGBA(e);
+        else if (           isPreNum(e, 'e', n)     && isNul(this._cl.enable))     this._cl.enable     = Boolean(n);
+        else if (           isOn(e)                 && isNul(this._cl.enable))     this._cl.enable     = true;
+        else if (           isOff(e)                && isNul(this._cl.enable))     this._cl.enable     = false;
+        else if (           isDayNight(e)           && isNul(this._cl.switch))     this._cl.switch     = e;
+        else if (           isPreNum(e, 'b', n)     && isNul(this._cl.brightness)) this._cl.brightness = (n / 100).clamp(0, 1);
+        else if (!isFL() && isPreNum(e, 'd', n)     && isNul(this._cl.direction))  this._cl.direction  = n;
+        else if (!isFL() && isPreNum(e, 'a', n, n2) && isNul(this._cl.direction))  this._cl.direction  = [Math.PI / 180 * n, Math.PI / 180 * n2];
+        else if ( isFL() && !isNaN(+e)              && isNul(this._cl.direction))  this._cl.direction  = +e;
+        else if ( isFL() && isPreNum(e, 'd', n)     && isNul(this._cl.direction))  this._cl.direction  = CLDirectionMap[n];
+        else if ( isFL() && isPreNum(e, 'a', n)     && isNul(this._cl.direction))  this._cl.direction  = Math.PI / 180 * n;
+        else if (           isPreNum(e, 'x', n)     && isNul(this._cl.xOffset))    this._cl.xOffset    = n;
+        else if (           isPreNum(e, 'y', n)     && isNul(this._cl.yOffset))    this._cl.yOffset    = n;
+        else if (           e.length > 0            && isNul(this._cl.id))         this._cl.id         = e;
         cycleIndex += 1; // increment index. Valid for 1 iteration after a cycle color is parsed before OOB.
       }, this);
 
@@ -1694,7 +1697,7 @@ class ColorDelta {
       this._cl.color         = orNullish(this._cl.color, VRGBA.minRGBA());
       this._cl.enable        = orBoolean(this._cl.enable, this._cl.id ? false : true);
       this._cl.brightness    = orNaN(this._cl.brightness, 0);
-      this._cl.direction     = orNaN(this._cl.direction, undefined); // must be undefined for later checks
+      this._cl.direction     = orNullish(this._cl.direction, undefined); // must be undefined for later checks
       this._cl.id            = orNullish(this._cl.id, 0); // Alphanumeric
       this._cl.beamLength    = orNaN(this._cl.beamLength, 0);
       this._cl.beamWidth     = orNaN(this._cl.beamWidth, 0);
@@ -2451,49 +2454,63 @@ class ColorDelta {
 
       ctxMul.fillStyle = grad;
       ctxAdd.fillStyle = grad;
+      if (direction.length != 2) { // check if angle range
+        // single directional number
+        direction = Number(direction);
+        let pw = $gameMap.tileWidth() / 2;
+        let ph = $gameMap.tileHeight() / 2;
+        let xS1, yS1, xE1, yE1, xS2, yS2, xE2, yE2;
+        switch (direction) {
+          case 0:
+            xS1=x1-r2;    yS1=y1-r2;    xE1=r2*2;       yE1=r2*2;       break;
+          case 1:
+            xS1=x1-r2;    yS1=y1-ph;    xE1=r2*2;       yE1=r2*2;       break;
+          case 2:
+            xS1=x1-r2;    yS1=y1-r2;    xE1=r2*1+pw;    yE1=r2*2;       break;
+          case 3:
+            xS1=x1-r2;    yS1=y1-r2;    xE1=r2*2;       yE1=r2*1+ph;    break;
+          case 4:
+            xS1=x1-pw;    yS1=y1-r2;    xE1=r2*2;       yE1=r2*2;       break;
+          case 5:
+            xS1=x1-r2;    yS1=y1-ph;    xE1=r2*1+pw;    yE1=r2*1+ph;    break;
+          case 6:
+            xS1=x1-r2;    yS1=y1-r2;    xE1=r2*1+pw;    yE1=r2*1+ph;    break;
+          case 7:
+            xS1=x1-pw;    yS1=y1-r2;    xE1=r2*1+pw;    yE1=r2*1+ph;    break;
+          case 8:
+            xS1=x1-pw;    yS1=y1-ph;    xE1=r2*1+pw;    yE1=r2*1+ph;    break;
+          case 9:
+            xS1=x1-r2;    yS1=y1-ph;    xE1=r2*2;       yE1=r2*2;
+            xS2=x1-r2;    yS2=y1-r2;    xE2=r2*1-pw;    yE2=r2*1-ph;    break;
+          case 10:
+            xS1=x1-r2;    yS1=y1-r2;    xE1=r2*2;       yE1=r2*1+ph;
+            xS2=x1-r2;    yS2=y1+pw;    xE2=r2*1-pw;    yE2=r2*1-ph;    break;
+          case 11:
+            xS1=x1-r2;    yS1=y1-r2;    xE1=r2*2;       yE1=r2*1+ph;
+            xS2=x1+pw;    yS2=y1+pw;    xE2=r2*1-pw;    yE2=r2*1-ph;    break;
+          case 12:
+            xS1=x1-r2;    yS1=y1-ph;    xE1=r2*2;       yE1=r2*2;
+            xS2=x1+pw;    yS2=y1-r2;    xE2=r2*1-pw;    yE2=r2*1-ph;    break;
+        }
 
-      direction = Number(direction);
-      let pw = $gameMap.tileWidth() / 2;
-      let ph = $gameMap.tileHeight() / 2;
-      let xS1, yS1, xE1, yE1, xS2, yS2, xE2, yE2;
-      switch (direction) {
-        case 0:
-          xS1=x1-r2;    yS1=y1-r2;    xE1=r2*2;       yE1=r2*2;       break;
-        case 1:
-          xS1=x1-r2;    yS1=y1-ph;    xE1=r2*2;       yE1=r2*2;       break;
-        case 2:
-          xS1=x1-r2;    yS1=y1-r2;    xE1=r2*1+pw;    yE1=r2*2;       break;
-        case 3:
-          xS1=x1-r2;    yS1=y1-r2;    xE1=r2*2;       yE1=r2*1+ph;    break;
-        case 4:
-          xS1=x1-pw;    yS1=y1-r2;    xE1=r2*2;       yE1=r2*2;       break;
-        case 5:
-          xS1=x1-r2;    yS1=y1-ph;    xE1=r2*1+pw;    yE1=r2*1+ph;    break;
-        case 6:
-          xS1=x1-r2;    yS1=y1-r2;    xE1=r2*1+pw;    yE1=r2*1+ph;    break;
-        case 7:
-          xS1=x1-pw;    yS1=y1-r2;    xE1=r2*1+pw;    yE1=r2*1+ph;    break;
-        case 8:
-          xS1=x1-pw;    yS1=y1-ph;    xE1=r2*1+pw;    yE1=r2*1+ph;    break;
-        case 9:
-          xS1=x1-r2;    yS1=y1-ph;    xE1=r2*2;       yE1=r2*2;
-          xS2=x1-r2;    yS2=y1-r2;    xE2=r2*1-pw;    yE2=r2*1-ph;    break;
-        case 10:
-          xS1=x1-r2;    yS1=y1-r2;    xE1=r2*2;       yE1=r2*1+ph;
-          xS2=x1-r2;    yS2=y1+pw;    xE2=r2*1-pw;    yE2=r2*1-ph;    break;
-        case 11:
-          xS1=x1-r2;    yS1=y1-r2;    xE1=r2*2;       yE1=r2*1+ph;
-          xS2=x1+pw;    yS2=y1+pw;    xE2=r2*1-pw;    yE2=r2*1-ph;    break;
-        case 12:
-          xS1=x1-r2;    yS1=y1-ph;    xE1=r2*2;       yE1=r2*2;
-          xS2=x1+pw;    yS2=y1-r2;    xE2=r2*1-pw;    yE2=r2*1-ph;    break;
-      }
-
-      ctxMul.fillRect(xS1, yS1, xE1, yE1);
-      if (c1.v) ctxAdd.fillRect(xS1, yS1, xE1, yE1);
-      if (direction > 8) {
-        ctxMul.fillRect(xS2, yS2, xE2, yE2);
-        if (c1.v) ctxAdd.fillRect(xS2, yS2, xE2, yE2);
+        ctxMul.fillRect(xS1, yS1, xE1, yE1);
+        if (c1.v) ctxAdd.fillRect(xS1, yS1, xE1, yE1);
+        if (direction > 8) {
+          ctxMul.fillRect(xS2, yS2, xE2, yE2);
+          if (c1.v) ctxAdd.fillRect(xS2, yS2, xE2, yE2);
+        }
+      } else {
+        //angle range
+        ctxMul.beginPath();
+        ctxMul.moveTo(x1, y1);
+        ctxMul.arc(x1, y1, r2, direction[0], direction[1]);
+        ctxMul.fill();
+        if (c1.v) {
+          ctxAdd.beginPath();
+          ctxAdd.moveTo(x1, y1);
+          ctxAdd.arc(x1, y1, r2, direction[0], direction[1]);
+          ctxAdd.fill();
+        }
       }
 
       //ctxMul.restore();
