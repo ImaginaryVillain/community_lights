@@ -1128,9 +1128,9 @@ class LightProperties {
     if (this.yOffset            != null) that.yOffset            = this.yOffset   .clone();
     if (this.radius             != null) that.radius             = this.radius    .clone();
     if (this.clockwise          != null) that.clockwise          = this.clockwise .clone();
-    if (this.direction          != null) that.direction          = this.direction .clone();
     if (this.beamLength         != null) that.beamLength         = this.beamLength.clone();
     if (this.beamWidth          != null) that.beamWidth          = this.beamWidth .clone();
+    if (this.direction          != null) that.direction          = this.direction .clone();
     return that;
   }
 }
@@ -1154,13 +1154,13 @@ class LightDelta {
 
     // Assign currents if non-existent
     if (this.current.color == null)      this.current.color      = this.defaults.color;
-    if (this.current.direction == null)  this.current.direction  = this.defaults.direction;
     if (this.current.brightness == null) this.current.brightness = this.defaults.brightness;
     if (this.current.xOffset == null)    this.current.xOffset    = this.defaults.xOffset;
     if (this.current.yOffset == null)    this.current.yOffset    = this.defaults.yOffset;
     if (this.current.radius == null)     this.current.radius     = this.defaults.radius;
     if (this.current.beamLength == null) this.current.beamLength = this.defaults.beamLength;
     if (this.current.beamWidth == null)  this.current.beamWidth  = this.defaults.beamWidth;
+    if (this.current.direction == null)  this.current.direction  = this.defaults.direction;
 
     this.createDeltas(fade);
   }
@@ -1223,34 +1223,34 @@ class LightDelta {
 
     // Set any null targets to default (normalization for nulls) (allows defaults to gradually transition)
     if (target.color == null)              target.color      = this.defaults.color;
-    if (isFL && target.direction == null)  target.direction  = this.defaults.direction;
     if (target.brightness == null)         target.brightness = this.defaults.brightness;
     if (target.xOffset == null)            target.xOffset    = this.defaults.xOffset;
     if (target.yOffset == null)            target.yOffset    = this.defaults.yOffset;
     if (isOL && target.radius == null)     target.radius     = this.defaults.radius;
     if (isFL && target.beamLength == null) target.beamLength = this.defaults.beamLength;
     if (isFL && target.beamWidth == null)  target.beamWidth  = this.defaults.beamWidth;
+    if (isFL && target.direction == null)  target.direction  = this.defaults.direction;
 
     // assign deltas if current & targets exist (only create deltas if supported by the light type)
               this.delta.color      = createColor (this.current.color,      target.color,      this.current.transitionDuration);
               this.delta.color      = createColor (this.current.color,      target.color,      this.current.transitionDuration);
-    if (isFL) this.delta.direction  = createNumber(this.current.direction,  target.direction,  this.current.transitionDuration);
               this.delta.brightness = createNumber(this.current.brightness, target.brightness, this.current.transitionDuration);
               this.delta.xOffset    = createNumber(this.current.xOffset,    target.xOffset,    this.current.transitionDuration);
               this.delta.yOffset    = createNumber(this.current.yOffset,    target.yOffset,    this.current.transitionDuration);
     if (isOL) this.delta.radius     = createNumber(this.current.radius,     target.radius,     this.current.transitionDuration);
     if (isFL) this.delta.beamLength = createNumber(this.current.beamLength, target.beamLength, this.current.transitionDuration);
     if (isFL) this.delta.beamWidth  = createNumber(this.current.beamWidth,  target.beamWidth,  this.current.transitionDuration);
+    if (isFL) this.delta.direction  = createNumber(this.current.direction,  target.direction,  this.current.transitionDuration);
 
     // assign new currents for existing deltas to propagate currents for duration = 0
     if (this.delta.color != null)      this.current.color      = this.delta.color     .get();
-    if (this.delta.direction != null)  this.current.direction  = this.delta.direction .get();
     if (this.delta.brightness != null) this.current.brightness = this.delta.brightness.get();
     if (this.delta.xOffset != null)    this.current.xOffset    = this.delta.xOffset   .get();
     if (this.delta.yOffset != null)    this.current.yOffset    = this.delta.yOffset   .get();
     if (this.delta.radius != null)     this.current.radius     = this.delta.radius    .get();
     if (this.delta.beamLength != null) this.current.beamLength = this.delta.beamLength.get();
     if (this.delta.beamWidth != null)  this.current.beamWidth  = this.delta.beamWidth .get();
+    if (this.delta.direction != null)  this.current.direction  = this.delta.direction .get();
   }
 
   /**
@@ -1265,13 +1265,13 @@ class LightDelta {
     // only update if transition duration isn't 0 (finished)
     if (this.current.transitionDuration > 0) {
       if (this.delta.color      != null) this.current.color      = this.delta.color     .next().get();
-      if (this.delta.direction  != null) this.current.direction  = this.delta.direction .next().get();
       if (this.delta.brightness != null) this.current.brightness = this.delta.brightness.next().get();
       if (this.delta.xOffset    != null) this.current.xOffset    = this.delta.xOffset   .next().get();
       if (this.delta.yOffset    != null) this.current.yOffset    = this.delta.yOffset   .next().get();
       if (this.delta.radius     != null) this.current.radius     = this.delta.radius    .next().get();
       if (this.delta.beamLength != null) this.current.beamLength = this.delta.beamLength.next().get();
       if (this.delta.beamWidth  != null) this.current.beamWidth  = this.delta.beamWidth .next().get();
+      if (this.delta.direction  != null) this.current.direction  = this.delta.direction .next().get();
       this.current.transitionDuration--;
     } else
       this.current.pauseDuration--;
@@ -1695,21 +1695,21 @@ class ColorDelta {
       }, this);
 
       // normalize parameters
-      this._cl.radius        = orNaN(this._cl.radius, 0);
-      this._cl.color         = orNullish(this._cl.color, VRGBA.minRGBA());
-      this._cl.enable        = orBoolean(this._cl.enable, this._cl.id ? false : true);
-      this._cl.brightness    = orNaN(this._cl.brightness, 0);
-      this._cl.direction     = orNullish(this._cl.direction, undefined); // must be undefined for later checks
-      this._cl.id            = orNullish(this._cl.id, 0); // Alphanumeric
-      this._cl.beamLength    = orNaN(this._cl.beamLength, 0);
-      this._cl.beamWidth     = orNaN(this._cl.beamWidth, 0);
-      this._cl.xOffset       = orNaN(this._cl.xOffset, 0);
-      this._cl.yOffset       = orNaN(this._cl.yOffset, 0);
-      this._cl.cycle         = this._cl.cycle || null;
+      this._cl.radius     = orNaN(this._cl.radius, 0);
+      this._cl.color      = orNullish(this._cl.color, VRGBA.minRGBA());
+      this._cl.enable     = orBoolean(this._cl.enable, this._cl.id ? false : true);
+      this._cl.brightness = orNaN(this._cl.brightness, 0);
+      this._cl.direction  = orNullish(this._cl.direction, undefined); // must be undefined for later checks
+      this._cl.id         = orNullish(this._cl.id, 0); // Alphanumeric
+      this._cl.beamLength = orNaN(this._cl.beamLength, 0);
+      this._cl.beamWidth  = orNaN(this._cl.beamWidth, 0);
+      this._cl.xOffset    = orNaN(this._cl.xOffset, 0);
+      this._cl.yOffset    = orNaN(this._cl.yOffset, 0);
+      this._cl.cycle      = this._cl.cycle || null;
 
       // Store initial light properties
       let props = [this._cl.color, this._cl.enable, this._cl.direction, this._cl.brightness, this._cl.xOffset,
-                   this._cl.yOffset, this._cl.radius, this._cl.beamLength, this._cl.beamWidth];
+                   this._cl.yOffset, this._cl.radius, this._cl.length, this._cl.width];
 
       // create initial properties
       let startProps = new LightProperties(this._cl.type, ...props);
@@ -2108,8 +2108,7 @@ class ColorDelta {
         playercolor.g = Math.max(0, playercolor.g - 50);
         playercolor.b = Math.max(0, playercolor.b - 50);
       }
-      this._maskBitmaps.radialgradientFillRect(x1, y1, 0, iplayer_radius, playercolor, playerflicker,
-                                               playerbrightness);
+      this._maskBitmaps.radialgradientFillRect(x1, y1, iplayer_radius, playercolor, playerflicker, playerbrightness);
     }
 
     // *********************************** DAY NIGHT CYCLE TIMER **************************
@@ -2150,7 +2149,7 @@ class ColorDelta {
           t1.parseProps(['t1', 'p1', 'a#FFFFFF', 'e1', 'b1', 'x1', 'y1', 'r20', 'l20', 'w20', 'a20', '+a20', '-a20']);
           let d0 = new LightDelta(s0, t0, s0).clone(), d1 = new LightDelta(s1, t1, s0).clone();
           d0.next(); d1.next();
-          this._maskBitmaps.radialgradientFillRect(0, 0, 0, 10, VRGBA.minRGBA(), true, 0, 0);
+          this._maskBitmaps.radialgradientFillRect(0, 0, 10, VRGBA.minRGBA(), true, 0, 0);
           this._maskBitmaps.radialgradientFlashlight(0, 0, VRGBA.minRGBA(), 0, 20, 20, LightType.Flashlight);
           this._maskBitmaps.radialgradientFlashlight(0, 0, VRGBA.minRGBA(), 0, 20, 20, LightType.Conelight);
           this._maskBitmaps.radialgradientFlashlight(0, 0, VRGBA.minRGBA(), 0, 20, 20, LightType.Spotlight);
@@ -2174,7 +2173,7 @@ class ColorDelta {
         cur.conditionalLightingNext(); // conditional lighting
         let objectflicker  = lightType.is(LightType.Fire);
         let lightId        = cur.getLightId();
-        let light_radius   = cur.getLightRadius();
+        let radius         = cur.getLightRadius();
         let color          = cur.getLightColor();      // light color
         let direction      = cur.getLightDirection();  // direction
         let brightness     = cur.getLightBrightness(); // brightness
@@ -2212,7 +2211,7 @@ class ColorDelta {
             if (!isNaN(direction)) ldir = direction;
             this._maskBitmaps.radialgradientFlashlight(lx1, ly1, color, ldir, flashlength, flashwidth);
           } else if (lightType.is(LightType.Light, LightType.Fire)) {
-            this._maskBitmaps.radialgradientFillRect(lx1, ly1, 0, light_radius, color, objectflicker, brightness, direction);
+            this._maskBitmaps.radialgradientFillRect(lx1, ly1, radius, color, objectflicker, brightness, direction);
           }
         }
       }
@@ -2243,7 +2242,7 @@ class ColorDelta {
         tile_color.b = Math.floor(tile_color.b + (60 - $gameTemp._glowAmount)).clamp(0, 255);
         tile_color.a = Math.floor(tile_color.a + (60 - $gameTemp._glowAmount)).clamp(0, 255);
       }
-      this._maskBitmaps.radialgradientFillRect(x1, y1, 0, tile.radius, tile_color, objectflicker, tile.brightness);
+      this._maskBitmaps.radialgradientFillRect(x1, y1, tile.radius, tile_color, objectflicker, tile.brightness);
     });
 
     // Tile blocks
@@ -2297,14 +2296,14 @@ class ColorDelta {
    * @method _addSprite
    * @private
    */
-  Lightmask.prototype._addSprite = function (x1, y1, selectedbitmap, blendMode) {
+  Lightmask.prototype._addSprite = function (x, y, selectedbitmap, blendMode) {
 
     let sprite = new Sprite(this.viewport);
     sprite.bitmap = selectedbitmap;
     sprite.opacity = 255;
     sprite.blendMode = blendMode;
-    sprite.x = x1;
-    sprite.y = y1;
+    sprite.x = x;
+    sprite.y = y;
     this._sprites.push(sprite);
     this.addChild(sprite);
     sprite.rotation = 0;
@@ -2322,26 +2321,26 @@ class ColorDelta {
   // *******************  ADD COLOR STOPS ***********************************
   /**
   * @param {Number} brightness
-  * @param {VRGBA} c1
+  * @param {VRGBA}  c
   */
-  CanvasGradient.prototype.addTransparentColorStops = function (brightness, c1) {
+  CanvasGradient.prototype.addTransparentColorStops = function (brightness, c) {
     if (!useSmootherLights) {
-      this.addColorStop(0, c1.toWebHex());
+      this.addColorStop(0, c.toWebHex());
 
       if (brightness) {
         if (!useSmootherLights) {
-          let c0 = c1.clone();
+          let c0 = c.clone();
           c0.alpha = Math.min(Math.floor(brightness * 100 * 2.55), c0.alpha);
           this.addColorStop(brightness, c0.toWebHex());
         }
       }
-      this.addColorStop(1, VRGBA.minRGBA().toWebHex({ a: c1.a })); // alpha should not be higher than the color
+      this.addColorStop(1, VRGBA.minRGBA().toWebHex({ a: c.a })); // alpha should not be higher than the color
     }
     else {
       for (let distanceFromCenter = 0; distanceFromCenter < 1; distanceFromCenter += 0.1) {
-        let newRed   = c1.r - (distanceFromCenter * 100 * 2.55);
-        let newGreen = c1.g - (distanceFromCenter * 100 * 2.55);
-        let newBlue  = c1.b - (distanceFromCenter * 100 * 2.55);
+        let newRed   = c.r - (distanceFromCenter * 100 * 2.55);
+        let newGreen = c.g - (distanceFromCenter * 100 * 2.55);
+        let newBlue  = c.b - (distanceFromCenter * 100 * 2.55);
         let newAlpha = 1 - distanceFromCenter;
         if (brightness > 0) newAlpha = Math.max(0, brightness - distanceFromCenter);
         this.addColorStop(distanceFromCenter, rgba(~~newRed, ~~newGreen, ~~newBlue, newAlpha));
@@ -2353,24 +2352,24 @@ class ColorDelta {
   // *******************  NORMAL BOX SHAPE ***********************************
   /**
    *
-   * @param {Number} x1
-   * @param {Number} y1
-   * @param {Number} x2
-   * @param {Number} y2
-   * @param {VRGBA} c
+   * @param {Number} x
+   * @param {Number} y
+   * @param {Number} width
+   * @param {Number} height
+   * @param {VRGBA}  c
    */
-  Mask_Bitmaps.prototype.FillRect = function (x1, y1, width, height, c) {
-    x1 = x1 + lightMaskPadding;
+  Mask_Bitmaps.prototype.FillRect = function (x, y, width, height, c) {
+    x = x + lightMaskPadding;
     let hex = c.toWebHex();
     let ctxMul = this.multiply._context;
     //ctxMul.save(); // unnecessary significant performance hit
     ctxMul.fillStyle = hex;
-    ctxMul.fillRect(x1, y1, width, height);
+    ctxMul.fillRect(x, y, width, height);
     if (isRMMV()) this.multiply._setDirty(); // doesn't exist in RMMZ
     if (c.v) {
       let ctxAdd = this.additive._context; // Additive lighting context
       ctxAdd.fillStyle = hex;
-      ctxAdd.fillRect(x1, y1, width, height);
+      ctxAdd.fillRect(x, y, width, height);
       if (isRMMV()) this.additive._setDirty(); // doesn't exist in RMMZ
     }
     //ctxMul.restore();
@@ -2378,18 +2377,18 @@ class ColorDelta {
 
   // *******************  CIRCLE/OVAL SHAPE ***********************************
   /**
-   * @param {Number} centerX
-   * @param {Number} centerY
-   * @param {Number} xradius
-   * @param {Number} yradius
-   * @param {VRGBA} c
+   * @param {Number} x
+   * @param {Number} y
+   * @param {Number} width
+   * @param {Number} height
+   * @param {VRGBA}  c
    */
-  Mask_Bitmaps.prototype.FillEllipse = function (x1, y1, width, height, c) {
-    x1 = x1 + lightMaskPadding;
+  Mask_Bitmaps.prototype.FillEllipse = function (x, y, width, height, c) {
+    x = x + lightMaskPadding;
     let xradius = width / 2;
     let yradius = height / 2;
-    let centerX = x1 + xradius;
-    let centerY = y1 + yradius;
+    let centerX = x + xradius;
+    let centerY = y + yradius;
     let hex = c.toWebHex();
     let ctxMul = this.multiply._context;
     //ctxMul.save(); // unnecessary significant performance hit
@@ -2412,26 +2411,25 @@ class ColorDelta {
   // *******************  NORMAL LIGHT SHAPE ***********************************
   /**
   *
-  * @param {Number} x1
-  * @param {Number} y1
-  * @param {Number}  r1
-  * @param {Number} r2
-  * @param {VRGBA} c1
+  * @param {Number} x
+  * @param {Number} y
+  * @param {Number} r
+  * @param {VRGBA}  c
   * @param {Boolean} flicker
   * @param {Number} brightness
   * @param {Number} direction
   */
-  Mask_Bitmaps.prototype.radialgradientFillRect = function (x1, y1, r1, r2, c1, flicker, brightness, direction) {
+  Mask_Bitmaps.prototype.radialgradientFillRect = function (x, y, r, c, flicker, brightness, direction) {
 
-    x1 = x1 + lightMaskPadding;
+    x = x + lightMaskPadding;
 
     // clipping
-    let nx1 = Number(x1);
-    let ny1 = Number(y1);
-    let nr2 = Number(r2);
+    let nx = Number(x);
+    let ny = Number(y);
+    let nr = Number(r);
 
     // if not clipped
-    if (!(nx1 - nr2 > maxX || ny1 - nr2 > maxY || nx1 + nr2 < 0 || nx1 + nr2 < 0)) {
+    if (!(nx - nr > maxX || ny - nr > maxY || nx + nr < 0 || nx + nr < 0)) {
       if (!brightness) brightness = 0.0;
       if (!direction) direction = 0;
 
@@ -2444,13 +2442,13 @@ class ColorDelta {
         let gradrnd = Math.floor((Math.random() * flickerradiusshift) + 1);
         let colorrnd = Math.floor((Math.random() * flickercolorshift) - (flickercolorshift / 2));
 
-        c1.g = (c1.g + colorrnd).clamp(0, 255);
-        r2 = r2 - gradrnd;
-        if (r2 < 0) r2 = 0;
+        c.g = (c.g + colorrnd).clamp(0, 255);
+        r = r - gradrnd;
+        if (r < 0) r = 0;
       }
 
-      let grad = ctxMul.createRadialGradient(x1, y1, r1, x1, y1, r2);
-      grad.addTransparentColorStops(brightness, c1);
+      let grad = ctxMul.createRadialGradient(x, y, 0, x, y, r);
+      grad.addTransparentColorStops(brightness, c);
 
       //ctxMul.save(); // unnecessary significant performance hit
 
@@ -2464,53 +2462,53 @@ class ColorDelta {
         let xS1, yS1, xE1, yE1, xS2, yS2, xE2, yE2;
         switch (direction) {
           case 0:
-            xS1=x1-r2;    yS1=y1-r2;    xE1=r2*2;       yE1=r2*2;       break;
+            xS1=x-r;    yS1=y-r;     xE1=r*2;       yE1=r*2;       break;
           case 1:
-            xS1=x1-r2;    yS1=y1-ph;    xE1=r2*2;       yE1=r2*2;       break;
+            xS1=x-r;    yS1=y-ph;    xE1=r*2;       yE1=r*2;       break;
           case 2:
-            xS1=x1-r2;    yS1=y1-r2;    xE1=r2*1+pw;    yE1=r2*2;       break;
+            xS1=x-r;    yS1=y-r;     xE1=r*1+pw;    yE1=r*2;       break;
           case 3:
-            xS1=x1-r2;    yS1=y1-r2;    xE1=r2*2;       yE1=r2*1+ph;    break;
+            xS1=x-r;    yS1=y-r;     xE1=r*2;       yE1=r*1+ph;    break;
           case 4:
-            xS1=x1-pw;    yS1=y1-r2;    xE1=r2*2;       yE1=r2*2;       break;
+            xS1=x-pw;   yS1=y-r;     xE1=r*2;       yE1=r*2;       break;
           case 5:
-            xS1=x1-r2;    yS1=y1-ph;    xE1=r2*1+pw;    yE1=r2*1+ph;    break;
+            xS1=x-r;    yS1=y-ph;    xE1=r*1+pw;    yE1=r*1+ph;    break;
           case 6:
-            xS1=x1-r2;    yS1=y1-r2;    xE1=r2*1+pw;    yE1=r2*1+ph;    break;
+            xS1=x-r;    yS1=y-r;     xE1=r*1+pw;    yE1=r*1+ph;    break;
           case 7:
-            xS1=x1-pw;    yS1=y1-r2;    xE1=r2*1+pw;    yE1=r2*1+ph;    break;
+            xS1=x-pw;   yS1=y-r;     xE1=r*1+pw;    yE1=r*1+ph;    break;
           case 8:
-            xS1=x1-pw;    yS1=y1-ph;    xE1=r2*1+pw;    yE1=r2*1+ph;    break;
+            xS1=x-pw;   yS1=y-ph;    xE1=r*1+pw;    yE1=r*1+ph;    break;
           case 9:
-            xS1=x1-r2;    yS1=y1-ph;    xE1=r2*2;       yE1=r2*2;
-            xS2=x1-r2;    yS2=y1-r2;    xE2=r2*1-pw;    yE2=r2*1-ph;    break;
+            xS1=x-r;    yS1=y-ph;    xE1=r*2;       yE1=r*2;
+            xS2=x-r;    yS2=y-r;     xE2=r*1-pw;    yE2=r*1-ph;    break;
           case 10:
-            xS1=x1-r2;    yS1=y1-r2;    xE1=r2*2;       yE1=r2*1+ph;
-            xS2=x1-r2;    yS2=y1+pw;    xE2=r2*1-pw;    yE2=r2*1-ph;    break;
+            xS1=x-r;    yS1=y-r;     xE1=r*2;       yE1=r*1+ph;
+            xS2=x-r;    yS2=y+pw;    xE2=r*1-pw;    yE2=r*1-ph;    break;
           case 11:
-            xS1=x1-r2;    yS1=y1-r2;    xE1=r2*2;       yE1=r2*1+ph;
-            xS2=x1+pw;    yS2=y1+pw;    xE2=r2*1-pw;    yE2=r2*1-ph;    break;
+            xS1=x-r;    yS1=y-r;     xE1=r*2;       yE1=r*1+ph;
+            xS2=x+pw;   yS2=y+pw;    xE2=r*1-pw;    yE2=r*1-ph;    break;
           case 12:
-            xS1=x1-r2;    yS1=y1-ph;    xE1=r2*2;       yE1=r2*2;
-            xS2=x1+pw;    yS2=y1-r2;    xE2=r2*1-pw;    yE2=r2*1-ph;    break;
+            xS1=x-r;    yS1=y-ph;    xE1=r*2;       yE1=r*2;
+            xS2=x+pw;   yS2=y-r;     xE2=r*1-pw;    yE2=r*1-ph;    break;
         }
 
         ctxMul.fillRect(xS1, yS1, xE1, yE1);
-        if (c1.v) ctxAdd.fillRect(xS1, yS1, xE1, yE1);
+        if (c.v) ctxAdd.fillRect(xS1, yS1, xE1, yE1);
         if (direction > 8) {
           ctxMul.fillRect(xS2, yS2, xE2, yE2);
-          if (c1.v) ctxAdd.fillRect(xS2, yS2, xE2, yE2);
+          if (c.v) ctxAdd.fillRect(xS2, yS2, xE2, yE2);
         }
       } else {
         //angle range
         ctxMul.beginPath();
-        ctxMul.moveTo(x1, y1);
-        ctxMul.arc(x1, y1, r2, direction[0], direction[1]);
+        ctxMul.moveTo(x, y);
+        ctxMul.arc(x, y, r, direction[0], direction[1]);
         ctxMul.fill();
-        if (c1.v) {
+        if (c.v) {
           ctxAdd.beginPath();
-          ctxAdd.moveTo(x1, y1);
-          ctxAdd.arc(x1, y1, r2, direction[0], direction[1]);
+          ctxAdd.moveTo(x, y);
+          ctxAdd.arc(x, y, r, direction[0], direction[1]);
           ctxAdd.fill();
         }
       }
@@ -2518,7 +2516,7 @@ class ColorDelta {
       //ctxMul.restore();
       if (isRMMV()) {
         this.multiply._setDirty(); // doesn't exist in RMMZ
-        if (c1.v) this.additive._setDirty(); // doesn't exist in RMMZ
+        if (c.v) this.additive._setDirty(); // doesn't exist in RMMZ
       }
     }
   };
@@ -2527,19 +2525,17 @@ class ColorDelta {
   // ********************************** FLASHLIGHT *************************************
   /**
    *
-   * @param {Number} x1
-   * @param {Number} y1
-   * @param {Number} r1
-   * @param {Number} r2
-   * @param {VRGBA} c1
+   * @param {Number} x
+   * @param {Number} y
+   * @param {VRGBA} c
    * @param {Number} direction
    * @param {Number} flashlength
    * @param {Number} flashwidth
    */
-  Mask_Bitmaps.prototype.radialgradientFlashlight = function (x1, y1, c1, dirAngle, flashlength, flashwidth) {
-    x1 = x1 + lightMaskPadding;
-    x1 = x1 - flashlightXoffset;
-    y1 = y1 - flashlightYoffset;
+  Mask_Bitmaps.prototype.radialgradientFlashlight = function (x, y, c, dirAngle, flashlength, flashwidth) {
+    x = x + lightMaskPadding;
+    x = x - flashlightXoffset;
+    y = y - flashlightYoffset;
     let ctxMul = this.multiply._context;
     let ctxAdd = this.additive._context; // Additive lighting context
 
@@ -2548,12 +2544,12 @@ class ColorDelta {
     // small dim glove around player
     // there's no additive light globe for flashlights because it looks bad
     let r1 = 1; let r2 = 40;
-    let grad = ctxMul.createRadialGradient(x1, y1, r1, x1, y1, r2);
-    let s = 0x99 / Math.max(0x99 * c1.r, 0x99 * c1.g, 0x99 * c1.b); // scale factor: max should be 0x99
-    grad.addColorStop(0, c1.toWebHex({ v: false, r: s * c1.r, g: s * c1.g, b: s * c1.b }));
-    grad.addColorStop(1, VRGBA.minRGBA().toWebHex({ a: c1.a })); // alpha should not be higher than the color
+    let grad = ctxMul.createRadialGradient(x, y, r1, x, y, r2);
+    let s = 0x99 / Math.max(0x99 * c.r, 0x99 * c.g, 0x99 * c.b); // scale factor: max should be 0x99
+    grad.addColorStop(0, c.toWebHex({ v: false, r: s * c.r, g: s * c.g, b: s * c.b }));
+    grad.addColorStop(1, VRGBA.minRGBA().toWebHex({ a: c.a })); // alpha should not be higher than the color
     ctxMul.fillStyle = grad;
-    ctxMul.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
+    ctxMul.fillRect(x - r2, y - r2, r2 * 2, r2 * 2);
 
     // flashlight
     let flashlightdensity = $gameVariables.GetFlashlightDensity();
@@ -2568,16 +2564,16 @@ class ColorDelta {
       r2 = Math.max((flashlength - 1) * flashwidth, 0);
 
       // Compute beam left start coordinates
-      let xLeftBeamStart = x1 - (r2 / 7) * Math.sin(dirAngle);
-      let yLeftBeamStart = y1 + (r2 / 7) * Math.cos(dirAngle);
+      let xLeftBeamStart = x - (r2 / 7) * Math.sin(dirAngle);
+      let yLeftBeamStart = y + (r2 / 7) * Math.cos(dirAngle);
 
       // Compute beam right start coordinates
-      let xRightBeamStart = x1 + (r2 / 7) * Math.sin(dirAngle);
-      let yRightBeamStart = y1 - (r2 / 7) * Math.cos(dirAngle);
+      let xRightBeamStart = x + (r2 / 7) * Math.sin(dirAngle);
+      let yRightBeamStart = y - (r2 / 7) * Math.cos(dirAngle);
 
       // Compute beam start control point coordinates
-      let xStartCtrlPoint = x1 - (r2 / 4.5) * Math.cos(dirAngle);
-      let yStartCtrlPoint = y1 - (r2 / 4.5) * Math.sin(dirAngle);
+      let xStartCtrlPoint = x - (r2 / 4.5) * Math.cos(dirAngle);
+      let yStartCtrlPoint = y - (r2 / 4.5) * Math.sin(dirAngle);
 
       // Compute beam distance
       let endPointDistance = distance - r2 / 2;
@@ -2605,8 +2601,8 @@ class ColorDelta {
       let yRightCtrlPoint = yRightBeamStart + endCtrlPointDistance * Math.sin(rightBeamAngle);
 
       // Grab web colors for beam
-      let outerHex = c1.toWebHex({ a: Math.round(0.65 * c1.a) });
-      let innerHex = c1.toWebHex({ a: Math.round(0.1  * c1.a) });
+      let outerHex = c.toWebHex({ a: Math.round(0.65 * c.a) });
+      let innerHex = c.toWebHex({ a: Math.round(0.1  * c.a) });
 
       let grad = ctxMul.createRadialGradient(0, 0, 0, 1, 1, 1);
       grad.addColorStop(0, "#000000ff");
@@ -2623,7 +2619,7 @@ class ColorDelta {
                            yRightBeamEnd);
       ctxMul.lineTo(xRightBeamStart, yRightBeamStart);
       ctxMul.fill();
-      if (c1.v) {
+      if (c.v) {
         ctxAdd.fillStyle = grad; // Clear fillstyle: alpha should not be higher than the color
         ctxAdd.shadowColor = outerHex;
         ctxAdd.shadowBlur = 20;
@@ -2648,7 +2644,7 @@ class ColorDelta {
                            yRightBeamEnd);
       ctxMul.lineTo(xRightBeamStart, yRightBeamStart);
       ctxMul.fill();
-      if (c1.v) {
+      if (c.v) {
         // Draw inner beam as a shadow
         ctxAdd.shadowColor = innerHex;
         ctxAdd.shadowBlur = 1;
@@ -2663,23 +2659,23 @@ class ColorDelta {
       }
 
       // Compute spot location
-      x1 += distance * Math.cos(dirAngle);
-      y1 += distance * Math.sin(dirAngle);
+      x += distance * Math.cos(dirAngle);
+      y += distance * Math.sin(dirAngle);
 
       // Draw spot
-      grad = ctxMul.createRadialGradient(x1, y1, r1, x1, y1, r2);
-      grad.addTransparentColorStops(0, c1);
+      grad = ctxMul.createRadialGradient(x, y, r1, x, y, r2);
+      grad.addTransparentColorStops(0, c);
       ctxMul.shadowColor = "#000000"; // Clear shadow style outside of check as ctxMul state changes always occur
       ctxMul.shadowBlur = 0;
-      if (!c1.v) {
+      if (!c.v) {
         ctxMul.fillStyle = grad;
-        ctxMul.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
-        ctxMul.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
+        ctxMul.fillRect(x - r2, y - r2, r2 * 2, r2 * 2);
+        ctxMul.fillRect(x - r2, y - r2, r2 * 2, r2 * 2);
       } else {
         ctxAdd.shadowColor = "#000000"; // Clear shadow style inside of check as ctxAdd state changes are conditional
         ctxAdd.shadowBlur = 0;
         ctxAdd.fillStyle = grad;
-        ctxAdd.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2); // single call as to not blur things so much.
+        ctxAdd.fillRect(x - r2, y - r2, r2 * 2, r2 * 2); // single call as to not blur things so much.
       }
     } else { // Circular flashlight
       // Compute diagonal length scalars.
@@ -2690,25 +2686,25 @@ class ColorDelta {
       for (let cone = 0; cone < flashlength; cone++) {
         r1 = cone * flashlightdensity;
         r2 = cone * flashwidth;
-        x1 = x1 + cone * 6 * xScalar; // apply scalars.
-        y1 = y1 + cone * 6 * yScalar;
-        grad = ctxMul.createRadialGradient(x1, y1, r1, x1, y1, r2);
-        grad.addTransparentColorStops(0, c1);
+        x = x + cone * 6 * xScalar; // apply scalars.
+        y = y + cone * 6 * yScalar;
+        grad = ctxMul.createRadialGradient(x, y, r1, x, y, r2);
+        grad.addTransparentColorStops(0, c);
         ctxMul.fillStyle = grad;
         ctxAdd.fillStyle = grad;
-        ctxMul.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
-        if (c1.v) ctxAdd.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
+        ctxMul.fillRect(x - r2, y - r2, r2 * 2, r2 * 2);
+        if (c.v) ctxAdd.fillRect(x - r2, y - r2, r2 * 2, r2 * 2);
       }
       ctxMul.fillStyle = grad;
       ctxAdd.fillStyle = grad;
-      ctxMul.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
-      if (c1.v) ctxAdd.fillRect(x1 - r2, y1 - r2, r2 * 2, r2 * 2);
+      ctxMul.fillRect(x - r2, y - r2, r2 * 2, r2 * 2);
+      if (c.v) ctxAdd.fillRect(x - r2, y - r2, r2 * 2, r2 * 2);
     }
 
     //ctxMul.restore();
     if (isRMMV()) {
       this.multiply._setDirty(); // doesn't exist in RMMZ
-      if (c1.v) this.additive._setDirty(); // doesn't exist in RMMZ
+      if (c.v) this.additive._setDirty(); // doesn't exist in RMMZ
     }
   };
 
