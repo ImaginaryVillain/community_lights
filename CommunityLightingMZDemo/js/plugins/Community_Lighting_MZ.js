@@ -841,7 +841,9 @@ Imported[Community.Lighting.name] = true;
 * Light radius cycle <color [pauseDuration]>... [enable] [day|night] [brightness] [direction] [anglerange] [x] [y] [id]
 * Light [radius] [color] [{CycleProps}...] [enable] [day|night] [brightness] [direction] [anglerange] [x] [y] [id]
 * - Light
-* - radius      Any number, optionally preceded by "R" or "r", so 100, R100, r100, etc.
+* - radius      For a circular radius this can be any number, optionally preceded by "R" or
+*               "r", so 100, R100, r100, etc. For an elliptical radius, must be any number
+*               preceded by xr or XR, and yr or YR, so "xr100 yr150", "XR100 yr150", etc.
 * - cycle       Allows any number of color + duration pairs to follow that will be cycled
 *               through before repeating from the beginning. See the examples below for usage.
 *               In Terrax Lighting, there was a hard limit of 4, but now there is no limit.
@@ -911,7 +913,14 @@ Imported[Community.Lighting.name] = true;
 * Example note tags:
 *
 * <cl: light 250 #ffffff>
+* <cl: light r250 #ffffff>
 * Creates a basic light
+*
+* <cl: light xr250 yr300 #ffffff>
+* Creates a basic elliptical light
+*
+* <cl: light r250 a180:360 #ffffff>
+* Creates a basic light that displays from 180 degrees to 360 degrees (north facing).
 *
 * <cl: light 300 cycle #ff0000 15 #ffff00 15 #00ff00 15 #00ffff 15 #0000ff 15>
 * <cl: light r300 {#ff0000 p15} {#ffff00} {#00ff00} {#00ffff} {#0000ff}>
@@ -1542,11 +1551,12 @@ class LightProperties {
    * @param {Number}    brightness
    * @param {Number}    xOffset
    * @param {Number}    yOffset
-   * @param {Number}    radius
+   * @param {Number}    xRadius
+   * @param {Number}    yRadius
    * @param {Number}    beamLength
    * @param {Number}    beamWidth
    */
-  constructor(type, color, enable, direction, brightness, xOffset, yOffset, radius, beamLength, beamWidth) {
+  constructor(type, color, enable, direction, brightness, xOffset, yOffset, xRadius, yRadius, beamLength, beamWidth) {
     // Always define in case durations aren't passed to targets
     this.transitionDuration = 0;
     this.pauseDuration      = 0;
@@ -1562,7 +1572,8 @@ class LightProperties {
     // light type dependent properties
     let isOL = this.isOtherLight();
     let isFL = this.isFlashlight();
-    if (isOL) this.radius     = radius;
+    if (isOL) this.xRadius    = xRadius;
+    if (isOL) this.yRadius    = yRadius;
     if (isFL) this.clockwise  = true;
     if (isFL) this.direction  = direction;
     if (isFL) this.beamLength = beamLength;
@@ -1596,9 +1607,11 @@ class LightProperties {
       else if (        e.equalsIC('a#')) { this.color      = void (0); return; }
       else if (        e.equalsIC('e'))  { this.enable     = void (0); return; }
       else if (        e.equalsIC('b'))  { this.brightness = void (0); return; }
+      else if (isOL && e.equalsIC('r'))  { this.xRadius    = void (0); return; }
+      else if (isOL && e.equalsIC('xr')) { this.xRadius    = void (0); return; }
+      else if (isOL && e.equalsIC('yr')) { this.yRadius    = void (0); return; }
       else if (        e.equalsIC('x'))  { this.xOffset    = void (0); return; }
       else if (        e.equalsIC('y'))  { this.yOffset    = void (0); return; }
-      else if (isOL && e.equalsIC('r'))  { this.radius     = void (0); return; }
       else if (isFL && e.equalsIC('l'))  { this.beamLength = void (0); return; }
       else if (isFL && e.equalsIC('w'))  { this.beamWidth  = void (0); return; }
       else if (isFL && e.equalsIC('a'))  { this.clockwise  = this.direction = void (0); return; }
@@ -1632,9 +1645,11 @@ class LightProperties {
       else if (        e.startsWithIC('a#'))   this.color      = suffix;
       else if (        e.startsWithIC('e'))    this.enable     = Boolean(suffix);
       else if (        e.startsWithIC('b'))    this.brightness = (suffix / 100).clamp(0, 1);
+      else if (isOL && e.startsWithIC('r'))    this.xRadius    = suffix;
+      else if (isOL && e.startsWithIC('xr'))   this.xRadius    = suffix;
+      else if (isOL && e.startsWithIC('yr'))   this.yRadius    = suffix;
       else if (        e.startsWithIC('x'))    this.xOffset    = suffix;
       else if (        e.startsWithIC('y'))    this.yOffset    = suffix;
-      else if (isOL && e.startsWithIC('r'))    this.radius     = suffix;
       else if (isFL && e.startsWithIC('l'))    this.beamLength = suffix;
       else if (isFL && e.startsWithIC('w'))    this.beamWidth  = suffix;
       else if (isFL && e.startsWithIC('a'))  { this.clockwise  = true;  this.direction = M_PI_180 * suffix; }
@@ -1658,7 +1673,8 @@ class LightProperties {
     if (this.brightness         != null) that.brightness         = this.brightness.clone();
     if (this.xOffset            != null) that.xOffset            = this.xOffset   .clone();
     if (this.yOffset            != null) that.yOffset            = this.yOffset   .clone();
-    if (this.radius             != null) that.radius             = this.radius    .clone();
+    if (this.xRadius            != null) that.xRadius            = this.xRadius   .clone();
+    if (this.yRadius            != null) that.yRadius            = this.yRadius   .clone();
     if (this.clockwise          != null) that.clockwise          = this.clockwise .clone();
     if (this.beamLength         != null) that.beamLength         = this.beamLength.clone();
     if (this.beamWidth          != null) that.beamWidth          = this.beamWidth .clone();
@@ -1689,7 +1705,8 @@ class LightDelta {
     if (this.current.brightness == null) this.current.brightness = this.defaults.brightness;
     if (this.current.xOffset == null)    this.current.xOffset    = this.defaults.xOffset;
     if (this.current.yOffset == null)    this.current.yOffset    = this.defaults.yOffset;
-    if (this.current.radius == null)     this.current.radius     = this.defaults.radius;
+    if (this.current.xRadius == null)    this.current.xRadius    = this.defaults.xRadius;
+    if (this.current.yRadius == null)    this.current.yRadius    = this.defaults.yRadius;
     if (this.current.beamLength == null) this.current.beamLength = this.defaults.beamLength;
     if (this.current.beamWidth == null)  this.current.beamWidth  = this.defaults.beamWidth;
     if (this.current.direction == null)  this.current.direction  = this.defaults.direction;
@@ -1758,7 +1775,8 @@ class LightDelta {
     if (target.brightness == null)         target.brightness = this.defaults.brightness;
     if (target.xOffset == null)            target.xOffset    = this.defaults.xOffset;
     if (target.yOffset == null)            target.yOffset    = this.defaults.yOffset;
-    if (isOL && target.radius == null)     target.radius     = this.defaults.radius;
+    if (isOL && target.xRadius == null)    target.xRadius    = this.defaults.xRadius;
+    if (isOL && target.yRadius == null)    target.yRadius    = this.defaults.yRadius;
     if (isFL && target.beamLength == null) target.beamLength = this.defaults.beamLength;
     if (isFL && target.beamWidth == null)  target.beamWidth  = this.defaults.beamWidth;
     if (isFL && target.direction == null)  target.direction  = this.defaults.direction;
@@ -1769,7 +1787,8 @@ class LightDelta {
               this.delta.brightness = createNumber(this.current.brightness, target.brightness, this.current.transitionDuration);
               this.delta.xOffset    = createNumber(this.current.xOffset,    target.xOffset,    this.current.transitionDuration);
               this.delta.yOffset    = createNumber(this.current.yOffset,    target.yOffset,    this.current.transitionDuration);
-    if (isOL) this.delta.radius     = createNumber(this.current.radius,     target.radius,     this.current.transitionDuration);
+    if (isOL) this.delta.xRadius    = createNumber(this.current.xRadius,    target.xRadius,    this.current.transitionDuration);
+    if (isOL) this.delta.yRadius    = createNumber(this.current.yRadius,    target.yRadius,    this.current.transitionDuration);
     if (isFL) this.delta.beamLength = createNumber(this.current.beamLength, target.beamLength, this.current.transitionDuration);
     if (isFL) this.delta.beamWidth  = createNumber(this.current.beamWidth,  target.beamWidth,  this.current.transitionDuration);
     if (isFL) this.delta.direction  = createNumber(this.current.direction,  target.direction,  this.current.transitionDuration);
@@ -1779,7 +1798,8 @@ class LightDelta {
     if (this.delta.brightness != null) this.current.brightness = this.delta.brightness.get();
     if (this.delta.xOffset != null)    this.current.xOffset    = this.delta.xOffset   .get();
     if (this.delta.yOffset != null)    this.current.yOffset    = this.delta.yOffset   .get();
-    if (this.delta.radius != null)     this.current.radius     = this.delta.radius    .get();
+    if (this.delta.xRadius !=null)     this.current.xRadius    = this.delta.xRadius   .get();
+    if (this.delta.yRadius !=null)     this.current.yRadius    = this.delta.yRadius   .get();
     if (this.delta.beamLength != null) this.current.beamLength = this.delta.beamLength.get();
     if (this.delta.beamWidth != null)  this.current.beamWidth  = this.delta.beamWidth .get();
     if (this.delta.direction != null)  this.current.direction  = this.delta.direction .get();
@@ -1800,7 +1820,8 @@ class LightDelta {
       if (this.delta.brightness != null) this.current.brightness = this.delta.brightness.next().get();
       if (this.delta.xOffset    != null) this.current.xOffset    = this.delta.xOffset   .next().get();
       if (this.delta.yOffset    != null) this.current.yOffset    = this.delta.yOffset   .next().get();
-      if (this.delta.radius     != null) this.current.radius     = this.delta.radius    .next().get();
+      if (this.delta.xRadius    != null) this.current.xRadius    = this.delta.xRadius   .next().get();
+      if (this.delta.yRadius    != null) this.current.yRadius    = this.delta.yRadius   .next().get();
       if (this.delta.beamLength != null) this.current.beamLength = this.delta.beamLength.next().get();
       if (this.delta.beamWidth  != null) this.current.beamWidth  = this.delta.beamWidth .next().get();
       if (this.delta.direction  != null) this.current.direction  = this.delta.direction .next().get();
@@ -2194,14 +2215,16 @@ class ColorDelta {
       let isPreNum   = (e, p, n0, n1) => p && e.startsWithIC(p) && !isNaN(n0) && (n1 == void (0) || !isNaN(n1));
       let isNul      = (e)            => e == null;
       let isDayNight = (e)            => isEq(e, "night", "day");
-      let getNum     = (e)            => orNaN(+e.slice(1).split(":")[0]);
-      let getNum2    = (e)            => orNaN(+e.slice(1).split(":")[1]);
+      let getNum     = (e)            => orNaN(+e.slice(1).split(":")[0], +e.slice(2).split(":")[0]);
+      let getNum2    = (e)            => orNaN(+e.slice(1).split(":")[1], +e.slice(2).split(":")[1]);
       let cycleIndex, hasCycle = false;
       tagData.forEach((e) => {
         let n  = getNum(e);
         let n2 = getNum2(e);
-        if      (!isFL() && isPreNum(e, 'r', n)     && isNul(this._cl.radius))     this._cl.radius     = n;
-        else if (!isFL() && !isNaN(+e)              && isNul(this._cl.radius))     this._cl.radius     = +e;
+        if      (!isFL() && isPreNum(e, 'r', n)     && isNul(this._cl.xRadius))    this._cl.xRadius    = n;
+        else if (!isFL() && isPreNum(e, 'xr', n)    && isNul(this._cl.xRadius))    this._cl.xRadius    = n;
+        else if (!isFL() && isPreNum(e, 'yr', n)    && isNul(this._cl.yRadius))    this._cl.yRadius    = n;
+        else if (!isFL() && !isNaN(+e)              && isNul(this._cl.xRadius))    this._cl.xRadius    = n;
         else if (isFL()  && !isNaN(+e)              && isNul(this._cl.beamLength)) this._cl.beamLength = +e;
         else if (isFL()  && !isNaN(+e)              && isNul(this._cl.beamWidth))  this._cl.beamWidth  = +e;
         else if (isFL()  && isPreNum(e, 'l', n)     && isNul(this._cl.beamLength)) this._cl.beamLength = n;
@@ -2227,7 +2250,8 @@ class ColorDelta {
       }, this);
 
       // normalize parameters
-      this._cl.radius     = orNaN(this._cl.radius, 0);
+      this._cl.xRadius    = orNaN(this._cl.xRadius, 0);
+      this._cl.yRadius    = orNaN(this._cl.yRadius, 0);
       this._cl.color      = orNullish(this._cl.color, VRGBA.minRGBA());
       this._cl.enable     = orBoolean(this._cl.enable, this._cl.id ? false : true);
       this._cl.brightness = orNaN(this._cl.brightness, 0);
@@ -2241,7 +2265,7 @@ class ColorDelta {
 
       // Store initial light properties
       let props = [this._cl.color, this._cl.enable, this._cl.direction, this._cl.brightness, this._cl.xOffset,
-                   this._cl.yOffset, this._cl.radius, this._cl.length, this._cl.width];
+                   this._cl.yOffset, this._cl.xRadius, this._cl.yRadius, this._cl.length, this._cl.width];
 
       // create initial properties
       let startProps = new LightProperties(this._cl.type, ...props);
@@ -2295,7 +2319,8 @@ class ColorDelta {
            (this._cl.switch.equalsIC("day")   && !$$.isNight());
   };
   Game_Event.prototype.getLightType             = function () { return this._cl.type; };
-  Game_Event.prototype.getLightRadius           = function () { return this._cl.delta.current.radius; };
+  Game_Event.prototype.getLightXRadius          = function () { return this._cl.delta.current.xRadius; };
+  Game_Event.prototype.getLightYRadius          = function () { return this._cl.delta.current.yRadius; };
   Game_Event.prototype.getLightColor            = function () { return this._cl.delta.current.color.clone(); };
   Game_Event.prototype.getLightBrightness       = function () { return this._cl.delta.current.brightness; };
   Game_Event.prototype.getLightDirection        = function () { return this._cl.delta.current.direction; };
@@ -2619,14 +2644,12 @@ class ColorDelta {
     }
 
     let playerflashlight = $gameVariables.GetFlashlight();
-    let playercolor = $gameVariables.GetPlayerColor();
+    let playercolor      = $gameVariables.GetPlayerColor();
     let flashlightlength = $gameVariables.GetFlashlightLength();
-    let flashlightwidth = $gameVariables.GetFlashlightWidth();
-    let playerflicker = $gameVariables.GetFire();
+    let flashlightwidth  = $gameVariables.GetFlashlightWidth();
+    let playerflicker    = $gameVariables.GetFire();
     let playerbrightness = $gameVariables.GetPlayerBrightness();
-
-
-    let iplayer_radius = Math.floor(player_radius);
+    let iplayer_radius   = Math.floor(player_radius);
 
     if (playerflashlight == true) {
       this._maskBitmaps.radialgradientFlashlight(x1, y1, playercolor, pd, flashlightlength, flashlightwidth);
@@ -2640,7 +2663,7 @@ class ColorDelta {
         playercolor.g = Math.max(0, playercolor.g - 50);
         playercolor.b = Math.max(0, playercolor.b - 50);
       }
-      this._maskBitmaps.radialgradientFillRect(x1, y1, iplayer_radius, playercolor, playerflicker, playerbrightness);
+      this._maskBitmaps.radialgradientFillRect(x1, y1, iplayer_radius, null, playercolor, playerflicker, playerbrightness);
     }
 
     // *********************************** DAY NIGHT CYCLE TIMER **************************
@@ -2681,7 +2704,7 @@ class ColorDelta {
           t1.parseProps(['t1', 'p1', 'a#FFFFFF', 'e1', 'b1', 'x1', 'y1', 'r20', 'l20', 'w20', 'a20', '+a20', '-a20']);
           let d0 = new LightDelta(s0, t0, s0).clone(), d1 = new LightDelta(s1, t1, s0).clone();
           d0.next(); d1.next();
-          this._maskBitmaps.radialgradientFillRect(0, 0, 10, VRGBA.minRGBA(), true, 0, 0);
+          this._maskBitmaps.radialgradientFillRect(0, 0, 10, 10, VRGBA.minRGBA(), true, 0, 0);
           this._maskBitmaps.radialgradientFlashlight(0, 0, VRGBA.minRGBA(), 0, 20, 20, LightType.Flashlight);
           this._maskBitmaps.radialgradientFlashlight(0, 0, VRGBA.minRGBA(), 0, 20, 20, LightType.Conelight);
           this._maskBitmaps.radialgradientFlashlight(0, 0, VRGBA.minRGBA(), 0, 20, 20, LightType.Spotlight);
@@ -2705,7 +2728,6 @@ class ColorDelta {
         cur.conditionalLightingNext(); // conditional lighting
         let objectflicker  = lightType.is(LightType.Fire);
         let lightId        = cur.getLightId();
-        let radius         = cur.getLightRadius();
         let color          = cur.getLightColor();      // light color
         let direction      = cur.getLightDirection();  // direction
         let brightness     = cur.getLightBrightness(); // brightness
@@ -2743,7 +2765,9 @@ class ColorDelta {
             if (!isNaN(direction)) ldir = direction;
             this._maskBitmaps.radialgradientFlashlight(lx1, ly1, color, ldir, flashlength, flashwidth);
           } else if (lightType.is(LightType.Light, LightType.Fire)) {
-            this._maskBitmaps.radialgradientFillRect(lx1, ly1, radius, color, objectflicker, brightness, direction);
+            let xRadius = cur.getLightXRadius();
+            let yRadius = cur.getLightYRadius();
+            this._maskBitmaps.radialgradientFillRect(lx1, ly1, xRadius, yRadius, color, objectflicker, brightness, direction);
           }
         }
       }
@@ -2774,7 +2798,7 @@ class ColorDelta {
         tile_color.b = Math.floor(tile_color.b + (60 - $gameTemp._glowAmount)).clamp(0, 255);
         tile_color.a = Math.floor(tile_color.a + (60 - $gameTemp._glowAmount)).clamp(0, 255);
       }
-      this._maskBitmaps.radialgradientFillRect(x1, y1, tile.radius, tile_color, objectflicker, tile.brightness);
+      this._maskBitmaps.radialgradientFillRect(x1, y1, tile.radius, null, tile_color, objectflicker, tile.brightness);
     });
 
     // Tile blocks
@@ -2945,25 +2969,30 @@ class ColorDelta {
   *
   * @param {Number} x
   * @param {Number} y
-  * @param {Number} r
+  * @param {Number} xr
+  * @param {Number} yr
   * @param {VRGBA}  c
   * @param {Boolean} flicker
   * @param {Number} brightness
   * @param {Number} direction
   */
-  Mask_Bitmaps.prototype.radialgradientFillRect = function (x, y, r, c, flicker, brightness, direction) {
+  Mask_Bitmaps.prototype.radialgradientFillRect = function (x, y, xr, yr, c, flicker, brightness, direction) {
 
     x = x + lightMaskPadding;
+    if (!yr) yr = xr; // use xradius if y not avaliable or 0
 
     // clipping
     let nx = Number(x);
     let ny = Number(y);
-    let nr = Number(r);
+    let nxr = Number(xr);
+    let nyr = Number(yr);
 
     // if not clipped
-    if (!(nx - nr > maxX || ny - nr > maxY || nx + nr < 0 || nx + nr < 0)) {
+    if (!(nx - nxr > maxX || ny - nyr > maxY || nx + nxr < 0 || ny + nyr < 0)) {
       if (!brightness) brightness = 0.0;
       if (!direction) direction = 0;
+
+      let r = Math.max(xr, yr); // use the larger radius as the drawing radius
 
       let ctxMul = this.multiply._context;
       let ctxAdd = this.additive._context;  // Additive lighting context
@@ -2992,47 +3021,122 @@ class ColorDelta {
         let pw = $gameMap.tileWidth() / 2;
         let ph = $gameMap.tileHeight() / 2;
         let xS1, yS1, xE1, yE1, xS2, yS2, xE2, yE2;
+        let xP, yP; // pivot
         switch (direction) {
           case 0:
-            xS1=x-r;    yS1=y-r;     xE1=r*2;       yE1=r*2;       break;
-          case 1:
-            xS1=x-r;    yS1=y-ph;    xE1=r*2;       yE1=r*2;       break;
-          case 2:
-            xS1=x-r;    yS1=y-r;     xE1=r*1+pw;    yE1=r*2;       break;
-          case 3:
-            xS1=x-r;    yS1=y-r;     xE1=r*2;       yE1=r*1+ph;    break;
-          case 4:
-            xS1=x-pw;   yS1=y-r;     xE1=r*2;       yE1=r*2;       break;
-          case 5:
-            xS1=x-r;    yS1=y-ph;    xE1=r*1+pw;    yE1=r*1+ph;    break;
-          case 6:
-            xS1=x-r;    yS1=y-r;     xE1=r*1+pw;    yE1=r*1+ph;    break;
-          case 7:
-            xS1=x-pw;   yS1=y-r;     xE1=r*1+pw;    yE1=r*1+ph;    break;
-          case 8:
-            xS1=x-pw;   yS1=y-ph;    xE1=r*1+pw;    yE1=r*1+ph;    break;
-          case 9:
-            xS1=x-r;    yS1=y-ph;    xE1=r*2;       yE1=r*2;
-            xS2=x-r;    yS2=y-r;     xE2=r*1-pw;    yE2=r*1-ph;    break;
-          case 10:
-            xS1=x-r;    yS1=y-r;     xE1=r*2;       yE1=r*1+ph;
-            xS2=x-r;    yS2=y+pw;    xE2=r*1-pw;    yE2=r*1-ph;    break;
-          case 11:
-            xS1=x-r;    yS1=y-r;     xE1=r*2;       yE1=r*1+ph;
-            xS2=x+pw;   yS2=y+pw;    xE2=r*1-pw;    yE2=r*1-ph;    break;
-          case 12:
-            xS1=x-r;    yS1=y-ph;    xE1=r*2;       yE1=r*2;
-            xS2=x+pw;   yS2=y-r;     xE2=r*1-pw;    yE2=r*1-ph;    break;
+            xS1 = x - r;    yS1 = y - r;
+            xE1 = r * 2;    yE1 = r * 2;
+            xP  = x;        yP  = y;
+            break;
+          case 1: // north wall
+            xS1 = x - r;    yS1 = y - ph;
+            xE1 = r * 2;    yE1 = r * 2;
+            xP  = x;        yP  = yS1;
+            break;
+          case 2: // east wall
+            xS1 = x - r;    yS1 = y - r;
+            xE1 = r + pw;   yE1 = r * 2;
+            xP  = x + pw;   yP  = y;
+            break;
+          case 3: // south wall
+            xS1 = x - r;    yS1 = y - r;
+            xE1 = r * 2;    yE1 = r + ph;
+            xP  = x;        yP  = y + ph;
+            break;
+          case 4: // west wall
+            xS1 = x - pw;   yS1 = y - r;
+            xE1 = r * 2;    yE1 = r * 2;
+            xP  = xS1;      yP  = y;
+            break;
+          case 5: // north east wall
+            xS1 = x - r;    yS1 = y - ph;
+            xE1 = r + pw;   yE1 = r + ph;
+            xP  = x + pw;   yP  = yS1;
+            break;
+          case 6: // south east wall
+            xS1 = x - r;    yS1 = y - r;
+            xE1 = r + pw;   yE1 = r + ph;
+            xP  = x + pw;   yP  = y + ph;
+            break;
+          case 7: // south west wall
+            xS1 = x - pw;   yS1 = y - r;
+            xE1 = r + pw;   yE1 = r + ph;
+            xP  = xS1;      yP  = y + ph;
+            break;
+          case 8: // north west wall
+            xS1 = x - pw;   yS1 = y - ph;
+            xE1 = r + pw;   yE1 = r + ph;
+            xP  = xS1;      yP  = yS1;
+            break;
+          case 9: // north east corner
+            xS1 = x - r;    yS1 = y - ph;
+            xE1 = r * 2;    yE1 = r * 2;
+            xS2 = x - r;    yS2 = y - r;
+            xE2 = r - pw;   yE2 = r - ph;
+            xP  = x - pw;   yP = yS1;
+            break;
+          case 10: // south east corner
+            xS1 = x - r;    yS1 = y - r;
+            xE1 = r * 2;    yE1 = r + ph;
+            xS2 = x - r;    yS2 = y + ph;
+            xE2 = r - pw;   yE2 = r - ph;
+            xP =  x - pw;   yP = yS2;
+            break;
+          case 11: // south west corner
+            xS1 = x - r;    yS1 = y - r;
+            xE1 = r * 2;    yE1 = r + ph;
+            xS2 = x + pw;   yS2 = y + ph;
+            xE2 = r - pw;   yE2 = r - ph;
+            xP  = xS2;      yP  = yS2;
+            break;
+          case 12: // north west corner
+            xS1 = x - r;    yS1 = y - ph;
+            xE1 = r * 2;    yE1 = r * 2;
+            xS2 = x + pw;   yS2 = y - r;
+            xE2 = r - pw;   yE2 = r - ph;
+            xP  = xS2;      yP  = yS1;
+            break;
         }
 
+        // elliptical lights (transformation: scaling + shift)
+        if (xr > yr) {
+          let scale = yr / xr;
+          ctxMul.setTransform(1, 0, 0, scale, 0, yP - scale * yP);
+          ctxAdd.setTransform(1, 0, 0, scale, 0, yP - scale * yP);
+        } else if (yr > xr) {
+          let scale = xr / yr;
+          ctxMul.setTransform(scale, 0, 0, 1, xP - scale * xP, 0);
+          ctxAdd.setTransform(scale, 0, 0, 1, xP - scale * xP, 0);
+        }
+
+        // Draw light
         ctxMul.fillRect(xS1, yS1, xE1, yE1);
         if (c.v) ctxAdd.fillRect(xS1, yS1, xE1, yE1);
         if (direction > 8) {
           ctxMul.fillRect(xS2, yS2, xE2, yE2);
           if (c.v) ctxAdd.fillRect(xS2, yS2, xE2, yE2);
         }
+
+        // Undo elliptical light transformation
+        if (xr != yr) {
+          ctxMul.resetTransform();
+          ctxAdd.resetTransform();
+        }
       } else {
         //angle range
+
+        // elliptical lights (transformation: scaling + shift)
+        if (xr > yr) {
+          let scale = yr / xr;
+          ctxMul.setTransform(1, 0, 0, scale, 0, y - scale * y);
+          ctxAdd.setTransform(1, 0, 0, scale, 0, y - scale * y);
+        } else if (yr > xr) {
+          let scale = xr / yr;
+          ctxMul.setTransform(scale, 0, 0, 1, x - scale * x, 0);
+          ctxAdd.setTransform(scale, 0, 0, 1, x - scale * x, 0);
+        }
+
+        // draw light
         ctxMul.beginPath();
         ctxMul.moveTo(x, y);
         ctxMul.arc(x, y, r, direction[0], direction[1]);
@@ -3043,6 +3147,12 @@ class ColorDelta {
           ctxAdd.arc(x, y, r, direction[0], direction[1]);
           ctxAdd.fill();
         }
+
+        // Undo elliptical light transformation
+        if (xr != yr) {
+          ctxMul.resetTransform();
+          ctxAdd.resetTransform();
+        }
       }
 
       //ctxMul.restore();
@@ -3052,7 +3162,6 @@ class ColorDelta {
       }
     }
   };
-
 
   // ********************************** FLASHLIGHT *************************************
   /**
@@ -3377,7 +3486,6 @@ class ColorDelta {
     return true;
   };
 
-
   // ALIASED FROM RPG OBJECTS TO ADD LIGHTING TO CONFIG MENU
   ConfigManager.cLighting = true;
 
@@ -3520,7 +3628,6 @@ class ColorDelta {
       }
     });
   };
-
 
   $$.ReloadTagArea = function () {
     // *************************** TILE TAG LIGHTSOURCES & BLOCKS *********

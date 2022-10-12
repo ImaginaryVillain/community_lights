@@ -123,7 +123,9 @@ You can post your questions on the related thread on rpgmakerweb: https://forums
 	* Light radius cycle <color [pauseDuration]>... [enable] [day|night] [brightness] [direction] [anglerange] [x] [y] [id]
 	* Light [radius] [color] [{CycleProps}...] [enable] [day|night] [brightness] [direction] [anglerange] [x] [y] [id]
 	* - Light
-	* - radius      Any number, optionally preceded by "R" or "r", so 100, R100, r100, etc.
+	* - radius      For a circular radius this can be any number, optionally preceded by "R" or
+	*               "r", so 100, R100, r100, etc. For an elliptical radius, must be any number
+	*               preceded by xr or XR, and yr or YR, so "xr100 yr150", "XR100 yr150", etc.
 	* - cycle       Allows any number of color + duration pairs to follow that will be cycled
 	*               through before repeating from the beginning. See the examples below for usage.
 	*               In Terrax Lighting, there was a hard limit of 4, but now there is no limit.
@@ -193,7 +195,14 @@ You can post your questions on the related thread on rpgmakerweb: https://forums
 	* Example note tags:
 	*
 	* <cl: light 250 #ffffff>
+	* <cl: light r250 #ffffff>
 	* Creates a basic light
+	*
+	* <cl: light xr250 yr300 #ffffff>
+	* Creates a basic elliptical light
+	*
+	* <cl: light r250 a180:360 #ffffff>
+	* Creates a basic light that displays from 180 degrees to 360 degrees (north facing).
 	*
 	* <cl: light 300 cycle #ff0000 15 #ffff00 15 #00ff00 15 #00ffff 15 #0000ff 15>
 	* <cl: light r300 {#ff0000 p15} {#ffff00} {#00ff00} {#00ffff} {#0000ff}>
