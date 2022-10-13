@@ -2916,15 +2916,19 @@ class ColorDelta {
    */
   Mask_Bitmaps.prototype.FillRect = function (x, y, width, height, c) {
     x = x + lightMaskPadding;
-    let hex = c.toWebHex();
     let ctxMul = this.multiply._context;
     //ctxMul.save(); // unnecessary significant performance hit
-    ctxMul.fillStyle = hex;
+
+    // gradients have smoother color transitions for transparent colors (a < 255) in chrome
+    let grad = ctxMul.createRadialGradient(0, 0, 0, 1, 1, 1);
+    grad.addColorStop(0, c.toWebHex());
+
+    ctxMul.fillStyle = grad;
     ctxMul.fillRect(x, y, width, height);
     if (isRMMV()) this.multiply._setDirty(); // doesn't exist in RMMZ
     if (c.v) {
       let ctxAdd = this.additive._context; // Additive lighting context
-      ctxAdd.fillStyle = hex;
+      ctxAdd.fillStyle = grad;
       ctxAdd.fillRect(x, y, width, height);
       if (isRMMV()) this.additive._setDirty(); // doesn't exist in RMMZ
     }
@@ -2945,17 +2949,21 @@ class ColorDelta {
     let yradius = height / 2;
     let centerX = x + xradius;
     let centerY = y + yradius;
-    let hex = c.toWebHex();
     let ctxMul = this.multiply._context;
     //ctxMul.save(); // unnecessary significant performance hit
-    ctxMul.fillStyle = hex;
+
+    // gradients have smoother color transitions for transparent colors (a < 255) in chrome
+    let grad = ctxMul.createRadialGradient(0, 0, 0, 1, 1, 1);
+    grad.addColorStop(0, c.toWebHex());
+
+    ctxMul.fillStyle = grad;
     ctxMul.beginPath();
     ctxMul.ellipse(centerX, centerY, xradius, yradius, 0, 0, M_2PI, true);
     ctxMul.fill();
     if (isRMMV()) this.multiply._setDirty(); // doesn't exist in RMMZ
     if (c.v) {
       let ctxAdd = this.additive._context; // Additive lighting context
-      ctxAdd.fillStyle = hex;
+      ctxAdd.fillStyle = grad;
       ctxAdd.beginPath();
       ctxAdd.ellipse(centerX, centerY, xradius, yradius, 0, 0, M_2PI, true);
       ctxAdd.fill();
@@ -3245,11 +3253,12 @@ class ColorDelta {
       let outerHex = c.toWebHex({ a: Math.round(0.65 * c.a) });
       let innerHex = c.toWebHex({ a: Math.round(0.1  * c.a) });
 
+      // gradients have smoother color transitions for transparent colors (a < 255) in chrome
       let grad = ctxMul.createRadialGradient(0, 0, 0, 1, 1, 1);
       grad.addColorStop(0, "#000000ff");
 
       // Draw outer beam as a shadow (needs an alpha of non-zero for fillstyle)
-      ctxMul.fillStyle = grad; // Clear fillstyle: alpha should not be higher than the color
+      ctxMul.fillStyle = grad;
       ctxMul.shadowColor = outerHex;
       ctxMul.shadowBlur = 20;
       ctxMul.beginPath();
@@ -3261,7 +3270,7 @@ class ColorDelta {
       ctxMul.lineTo(xRightBeamStart, yRightBeamStart);
       ctxMul.fill();
       if (c.v) {
-        ctxAdd.fillStyle = grad; // Clear fillstyle: alpha should not be higher than the color
+        ctxAdd.fillStyle = grad;
         ctxAdd.shadowColor = outerHex;
         ctxAdd.shadowBlur = 20;
         ctxAdd.beginPath();
