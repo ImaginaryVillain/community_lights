@@ -26,7 +26,7 @@ var Community = Community || {};
 Community.Lighting = Community.Lighting || {};
 Community.Lighting.name = "Community_Lighting_MZ";
 Community.Lighting.parameters = PluginManager.parameters(Community.Lighting.name);
-Community.Lighting.version = 4.6;
+Community.Lighting.version = 5.0;
 var Imported = Imported || {};
 Imported[Community.Lighting.name] = true;
 /*:
