@@ -1697,7 +1697,18 @@ class LightDelta {
     if (arguments.length == 0) return;
     this.current  = current;
     this.target   = target;
-    this.defaults = defaults;
+    this.defaults = { // clone defaults to avoid self-loops (which breaks saving)
+      color      : defaults.color.clone(),
+      brightness : defaults.brightness,
+      xOffset    : defaults.xOffset,
+      yOffset    : defaults.yOffset,
+      xRadius    : defaults.xRadius,
+      yRadius    : defaults.yRadius,
+      beamLength : defaults.beamLength,
+      beamWidth  : defaults.beamWidth,
+      direction  : defaults.direction
+    };
+
     this.delta    = new LightProperties();
 
     // Assign currents if non-existent
@@ -2296,15 +2307,11 @@ class ColorDelta {
         let targetProps = lightArray[this._cl.id];                                  // get target prop reference
         this._cl.delta  = new LightDelta(startProps, targetProps, this._cl, false); // create light delta object
       }
-      // Non-conditional light
-      else {
-        this._cl.delta = { current: this._cl };// really just a self reference
-      }
     }
   };
   Game_Event.prototype.cycleLightingNext = function () {
     let cycleList = this.getLightCycle();
-    if (cycleList && this._cl.delta.finished()) {
+    if (cycleList && this._cl.delta && this._cl.delta.finished()) {
       let delta = cycleList.shift();  // pop delta from front
       this._cl.delta = delta.clone(); // duplicate delta
       cycleList.push(delta);          // push delta on back
@@ -2314,21 +2321,21 @@ class ColorDelta {
     if (this.getLightCycle() || this.getLightId()) this._cl.delta.next();
   };
   Game_Event.prototype.getLightEnabled          = function () {
-    if (!this._cl.switch) return this._cl.delta.current.enable;
+    if (!this._cl.switch) return this._cl.delta && this._cl.delta.current.enable || this._cl.enable;
     return (this._cl.switch.equalsIC("night") && $$.isNight()) ||
            (this._cl.switch.equalsIC("day")   && !$$.isNight());
   };
   Game_Event.prototype.getLightType             = function () { return this._cl.type; };
-  Game_Event.prototype.getLightXRadius          = function () { return this._cl.delta.current.xRadius; };
-  Game_Event.prototype.getLightYRadius          = function () { return this._cl.delta.current.yRadius; };
-  Game_Event.prototype.getLightColor            = function () { return this._cl.delta.current.color.clone(); };
-  Game_Event.prototype.getLightBrightness       = function () { return this._cl.delta.current.brightness; };
-  Game_Event.prototype.getLightDirection        = function () { return this._cl.delta.current.direction; };
+  Game_Event.prototype.getLightXRadius          = function () { return this._cl.delta && this._cl.delta.current.xRadius       || this._cl.xRadius; };
+  Game_Event.prototype.getLightYRadius          = function () { return this._cl.delta && this._cl.delta.current.yRadius       || this._cl.yRadius; };
+  Game_Event.prototype.getLightColor            = function () { return this._cl.delta && this._cl.delta.current.color.clone() || this._cl.color.clone(); };
+  Game_Event.prototype.getLightBrightness       = function () { return this._cl.delta && this._cl.delta.current.brightness    || this._cl.brightness; };
+  Game_Event.prototype.getLightDirection        = function () { return this._cl.delta && this._cl.delta.current.direction     || this._cl.direction ; };
   Game_Event.prototype.getLightId               = function () { return this._cl.id; };
-  Game_Event.prototype.getLightFlashlightLength = function () { return this._cl.delta.current.beamLength; };
-  Game_Event.prototype.getLightFlashlightWidth  = function () { return this._cl.delta.current.beamWidth; };
-  Game_Event.prototype.getLightXOffset          = function () { return this._cl.delta.current.xOffset; };
-  Game_Event.prototype.getLightYOffset          = function () { return this._cl.delta.current.yOffset; };
+  Game_Event.prototype.getLightFlashlightLength = function () { return this._cl.delta && this._cl.delta.current.beamLength    || this._cl.beamLength; };
+  Game_Event.prototype.getLightFlashlightWidth  = function () { return this._cl.delta && this._cl.delta.current.beamWidth     || this._cl.beamWidth; };
+  Game_Event.prototype.getLightXOffset          = function () { return this._cl.delta && this._cl.delta.current.xOffset       || this._cl.xOffset; };
+  Game_Event.prototype.getLightYOffset          = function () { return this._cl.delta && this._cl.delta.current.yOffset       || this._cl.yOffset; };
   Game_Event.prototype.getLightCycle            = function () { return this._cl.cycle; };
 
   let _Game_Interpreter_pluginCommand = Game_Interpreter.prototype.pluginCommand;
