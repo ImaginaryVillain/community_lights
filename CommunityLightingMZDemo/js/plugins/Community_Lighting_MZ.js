@@ -2055,6 +2055,7 @@ class ColorDelta {
   }
 
   let cachedFunctions = false; // used pre-call some functions to force js engine to cache them early
+  let GameLoaded = true;
   let ReloadMapEventsRequired = false;
   let colorcycle_count = [1000];
   let colorcycle_timer = [1000];
@@ -2173,6 +2174,12 @@ class ColorDelta {
     let result = $$.hours() + ":" + $$.minutes().padZero(2);
     if (showSeconds) result = result + ":" + $$.seconds().padZero(2);
     return result;
+  };
+
+  let _DataManager_loadGame = DataManager.loadGame;
+  DataManager.loadGame = function (savefileId) {
+    GameLoaded = true; // mark the game as newly loaded to construct things properly _UpdateMask later
+    return _DataManager_loadGame.call(this, savefileId);
   };
 
   /**
@@ -2574,7 +2581,7 @@ class ColorDelta {
     let map_id = $gameMap.mapId();
     if (map_id != $gameVariables.GetOldMapId()) {
       $gameVariables.SetOldMapId(map_id);
-
+      $gameVariables._cl = {}; // empty init game var light data on map load
       // recalc tile and region tags.
       $$.ReloadTagArea();
 
@@ -2593,8 +2600,8 @@ class ColorDelta {
     // No lighting on maps less than 1 || Plugin deactivated in options || Plugin deactivated by plugin command
     if (map_id <= 0 || !options_lighting_on || !$gameVariables.GetScriptActive()) return;
 
-    // reload map when a refresh is requested (event erase, page change, or _events object change)
-    if (ReloadMapEventsRequired) {
+    // reload map when a refresh is requested (event erase, page change, or _events object change) or game loaded
+    if (ReloadMapEventsRequired || GameLoaded) {
       ReloadMapEventsRequired = false;
       $$.ReloadMapEvents();
     }
@@ -2719,7 +2726,10 @@ class ColorDelta {
         continue;
       }
 
-      if (cur._cl == null) cur.initLightData();
+      if (cur._cl == null) {
+        cur.initLightData();
+        $gameVariables._cl[evid] = cur._cl; // store the current light data in gamevars so it gets saved
+      }
 
       let lightsOnRadius = $gameVariables.GetActiveRadius();
       if (lightsOnRadius > 0) {
@@ -3543,6 +3553,26 @@ class ColorDelta {
     }
   };
 
+  // Reconstruct types after game load
+  $$.ReconstructTypes = function (variable) {
+    for (let property_name in variable) {
+      let property = variable[property_name];
+      if (property == null || typeof property != "object") continue;
+
+      if (property["@"] == VRGBA.name)
+        Object.setPrototypeOf(property, VRGBA.prototype);
+      else if (property["@"] == LightProperties.name)
+        Object.setPrototypeOf(property, LightProperties.prototype);
+      else if (property["@"] == ColorDelta.name)
+        Object.setPrototypeOf(property, ColorDelta.prototype);
+      else if (property["@"] == LightDelta.name)
+        Object.setPrototypeOf(property, LightDelta.prototype);
+      else if (property["@"] == NumberDelta.name)
+        Object.setPrototypeOf(property, NumberDelta.prototype);
+        $$.ReconstructTypes(property);
+    }
+  };
+
   $$.ReloadMapEvents = function () {
     //**********************fill up new map-array *************************
     eventObjId = [];
@@ -3550,6 +3580,8 @@ class ColorDelta {
     events = $gameMap.events(); // cache because events() API calls filter for each call
     event_stacknumber = [];
     event_eventcount = events.length;
+
+    if (GameLoaded) $$.ReconstructTypes($gameVariables); // on game loaded, we need to reconstruct the stored types
 
     for (let i = 0; i < event_eventcount; i++) {
       if (events[i]) {
@@ -3565,8 +3597,17 @@ class ColorDelta {
 
           }
         }
+
+        // on game loaded, restore light event data
+        if (GameLoaded && $gameVariables._cl && $gameVariables._cl[events[i]._eventId]) {
+          events[i]._cl = $gameVariables._cl[events[i]._eventId];
+        }
       }
     }
+    
+    // Mark game as not loaded
+    GameLoaded = false;
+
     // *********************************** DAY NIGHT Setting **************************
     let mapNote = $dataMap.note ? $dataMap.note.split("\n") : [];
     mapNote.forEach((note) => {
