@@ -2242,7 +2242,7 @@ class ColorDelta {
         if      (!isFL() && isPreNum(e, 'r', n)     && isNul(this._cl.xRadius))    this._cl.xRadius    = n;
         else if (!isFL() && isPreNum(e, 'xr', n)    && isNul(this._cl.xRadius))    this._cl.xRadius    = n;
         else if (!isFL() && isPreNum(e, 'yr', n)    && isNul(this._cl.yRadius))    this._cl.yRadius    = n;
-        else if (!isFL() && !isNaN(+e)              && isNul(this._cl.xRadius))    this._cl.xRadius    = n;
+        else if (!isFL() && !isNaN(+e)              && isNul(this._cl.xRadius))    this._cl.xRadius    = +e;
         else if (isFL()  && !isNaN(+e)              && isNul(this._cl.beamLength)) this._cl.beamLength = +e;
         else if (isFL()  && !isNaN(+e)              && isNul(this._cl.beamWidth))  this._cl.beamWidth  = +e;
         else if (isFL()  && isPreNum(e, 'l', n)     && isNul(this._cl.beamLength)) this._cl.beamLength = n;
@@ -2328,21 +2328,21 @@ class ColorDelta {
     if (this.getLightCycle() || this.getLightId()) this._cl.delta.next();
   };
   Game_Event.prototype.getLightEnabled          = function () {
-    if (!this._cl.switch) return this._cl.delta && this._cl.delta.current.enable || this._cl.enable;
+    if (!this._cl.switch) return this._cl.delta ? this._cl.delta.current.enable : this._cl.enable;
     return (this._cl.switch.equalsIC("night") && $$.isNight()) ||
            (this._cl.switch.equalsIC("day")   && !$$.isNight());
   };
   Game_Event.prototype.getLightType             = function () { return this._cl.type; };
-  Game_Event.prototype.getLightXRadius          = function () { return this._cl.delta && this._cl.delta.current.xRadius       || this._cl.xRadius; };
-  Game_Event.prototype.getLightYRadius          = function () { return this._cl.delta && this._cl.delta.current.yRadius       || this._cl.yRadius; };
-  Game_Event.prototype.getLightColor            = function () { return this._cl.delta && this._cl.delta.current.color.clone() || this._cl.color.clone(); };
-  Game_Event.prototype.getLightBrightness       = function () { return this._cl.delta && this._cl.delta.current.brightness    || this._cl.brightness; };
-  Game_Event.prototype.getLightDirection        = function () { return this._cl.delta && this._cl.delta.current.direction     || this._cl.direction ; };
+  Game_Event.prototype.getLightXRadius          = function () { return this._cl.delta ? this._cl.delta.current.xRadius       : this._cl.xRadius; };
+  Game_Event.prototype.getLightYRadius          = function () { return this._cl.delta ? this._cl.delta.current.yRadius       : this._cl.yRadius; };
+  Game_Event.prototype.getLightColor            = function () { return this._cl.delta ? this._cl.delta.current.color.clone() : this._cl.color.clone(); };
+  Game_Event.prototype.getLightBrightness       = function () { return this._cl.delta ? this._cl.delta.current.brightness    : this._cl.brightness; };
+  Game_Event.prototype.getLightDirection        = function () { return this._cl.delta ? this._cl.delta.current.direction     : this._cl.direction ; };
   Game_Event.prototype.getLightId               = function () { return this._cl.id; };
-  Game_Event.prototype.getLightFlashlightLength = function () { return this._cl.delta && this._cl.delta.current.beamLength    || this._cl.beamLength; };
-  Game_Event.prototype.getLightFlashlightWidth  = function () { return this._cl.delta && this._cl.delta.current.beamWidth     || this._cl.beamWidth; };
-  Game_Event.prototype.getLightXOffset          = function () { return this._cl.delta && this._cl.delta.current.xOffset       || this._cl.xOffset; };
-  Game_Event.prototype.getLightYOffset          = function () { return this._cl.delta && this._cl.delta.current.yOffset       || this._cl.yOffset; };
+  Game_Event.prototype.getLightFlashlightLength = function () { return this._cl.delta ? this._cl.delta.current.beamLength    : this._cl.beamLength; };
+  Game_Event.prototype.getLightFlashlightWidth  = function () { return this._cl.delta ? this._cl.delta.current.beamWidth     : this._cl.beamWidth; };
+  Game_Event.prototype.getLightXOffset          = function () { return this._cl.delta ? this._cl.delta.current.xOffset       : this._cl.xOffset; };
+  Game_Event.prototype.getLightYOffset          = function () { return this._cl.delta ? this._cl.delta.current.yOffset       : this._cl.yOffset; };
   Game_Event.prototype.getLightCycle            = function () { return this._cl.cycle; };
 
   let _Game_Interpreter_pluginCommand = Game_Interpreter.prototype.pluginCommand;
