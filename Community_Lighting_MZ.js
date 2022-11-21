@@ -1425,6 +1425,7 @@ class VRGBA {
    * @returns {VRGBA}
    */
   constructor(vOrHex, rOrDefault = "#000000ff", g = undefined, b = undefined, a = 0xff) {
+    this.name = VRGBA.name;
     if (arguments.length == 0) return;                           // return if no arguments (allows construction).
     else if (typeof vOrHex === "boolean")                        // Passed v, r, g, b, a
       [this.v, this.r,           this.g,  this.b,  this.a] =     // - assign
@@ -1557,6 +1558,7 @@ class LightProperties {
    * @param {Number}    beamWidth
    */
   constructor(type, color, enable, direction, brightness, xOffset, yOffset, xRadius, yRadius, beamLength, beamWidth) {
+    this.name = LightProperties.name;
     // Always define in case durations aren't passed to targets
     this.transitionDuration = 0;
     this.pauseDuration      = 0;
@@ -1694,10 +1696,22 @@ class LightDelta {
    * @param {LightProperties} target
    */
   constructor(current, target, defaults, fade = true) {
+    this.name = LightDelta.name;
     if (arguments.length == 0) return;
     this.current  = current;
     this.target   = target;
-    this.defaults = defaults;
+    this.defaults = { // clone defaults to avoid self-loops (which breaks saving)
+      color      : defaults.color.clone(),
+      brightness : defaults.brightness,
+      xOffset    : defaults.xOffset,
+      yOffset    : defaults.yOffset,
+      xRadius    : defaults.xRadius,
+      yRadius    : defaults.yRadius,
+      beamLength : defaults.beamLength,
+      beamWidth  : defaults.beamWidth,
+      direction  : defaults.direction
+    };
+
     this.delta    = new LightProperties();
 
     // Assign currents if non-existent
@@ -1850,6 +1864,7 @@ class NumberDelta {
    * @returns {NumberDelta}
    */
   constructor(start, target, duration) {
+    this.name = NumberDelta.name;
     if (arguments.length == 0) return;
     let delta = target == start ? 0 : (target - start) / duration;
     [this.current, this.target, this.duration, this.lazyEquals, this.delta] = [start, target, duration, false, delta];
@@ -1920,6 +1935,7 @@ class ColorDelta {
    * @returns {ColorDelta}
    */
   constructor(start, target = start, fadeDuration = 0, useTicksRemaining = false) {
+    this.name = ColorDelta.name;
     if (arguments.length == 0) return;
     this.current       = start.clone();           // - deep copy
     this.target        = target.clone();          // - deep copy
@@ -2044,6 +2060,7 @@ class ColorDelta {
   }
 
   let cachedFunctions = false; // used pre-call some functions to force js engine to cache them early
+  let GameLoaded = true;
   let ReloadMapEventsRequired = false;
   let colorcycle_count = [1000];
   let colorcycle_timer = [1000];
@@ -2164,6 +2181,13 @@ class ColorDelta {
     return result;
   };
 
+  let _DataManager_extractSaveContents = DataManager.extractSaveContents;
+  DataManager.extractSaveContents = function (contents) {
+    GameLoaded = true; // mark the game as newly loaded to construct things properly _UpdateMask later
+    _DataManager_extractSaveContents.call(this, contents);
+    return;
+  };
+
   /**
   * Tests the value at the specified index of the $gameTemp object for equality with the
   * passed in value and sets it. Returns true if the values match, or false otherwise.
@@ -2224,7 +2248,7 @@ class ColorDelta {
         if      (!isFL() && isPreNum(e, 'r', n)     && isNul(this._cl.xRadius))    this._cl.xRadius    = n;
         else if (!isFL() && isPreNum(e, 'xr', n)    && isNul(this._cl.xRadius))    this._cl.xRadius    = n;
         else if (!isFL() && isPreNum(e, 'yr', n)    && isNul(this._cl.yRadius))    this._cl.yRadius    = n;
-        else if (!isFL() && !isNaN(+e)              && isNul(this._cl.xRadius))    this._cl.xRadius    = n;
+        else if (!isFL() && !isNaN(+e)              && isNul(this._cl.xRadius))    this._cl.xRadius    = +e;
         else if (isFL()  && !isNaN(+e)              && isNul(this._cl.beamLength)) this._cl.beamLength = +e;
         else if (isFL()  && !isNaN(+e)              && isNul(this._cl.beamWidth))  this._cl.beamWidth  = +e;
         else if (isFL()  && isPreNum(e, 'l', n)     && isNul(this._cl.beamLength)) this._cl.beamLength = n;
@@ -2296,15 +2320,11 @@ class ColorDelta {
         let targetProps = lightArray[this._cl.id];                                  // get target prop reference
         this._cl.delta  = new LightDelta(startProps, targetProps, this._cl, false); // create light delta object
       }
-      // Non-conditional light
-      else {
-        this._cl.delta = { current: this._cl };// really just a self reference
-      }
     }
   };
   Game_Event.prototype.cycleLightingNext = function () {
     let cycleList = this.getLightCycle();
-    if (cycleList && this._cl.delta.finished()) {
+    if (cycleList && this._cl.delta && this._cl.delta.finished()) {
       let delta = cycleList.shift();  // pop delta from front
       this._cl.delta = delta.clone(); // duplicate delta
       cycleList.push(delta);          // push delta on back
@@ -2314,21 +2334,21 @@ class ColorDelta {
     if (this.getLightCycle() || this.getLightId()) this._cl.delta.next();
   };
   Game_Event.prototype.getLightEnabled          = function () {
-    if (!this._cl.switch) return this._cl.delta.current.enable;
+    if (!this._cl.switch) return this._cl.delta ? this._cl.delta.current.enable : this._cl.enable;
     return (this._cl.switch.equalsIC("night") && $$.isNight()) ||
            (this._cl.switch.equalsIC("day")   && !$$.isNight());
   };
   Game_Event.prototype.getLightType             = function () { return this._cl.type; };
-  Game_Event.prototype.getLightXRadius          = function () { return this._cl.delta.current.xRadius; };
-  Game_Event.prototype.getLightYRadius          = function () { return this._cl.delta.current.yRadius; };
-  Game_Event.prototype.getLightColor            = function () { return this._cl.delta.current.color.clone(); };
-  Game_Event.prototype.getLightBrightness       = function () { return this._cl.delta.current.brightness; };
-  Game_Event.prototype.getLightDirection        = function () { return this._cl.delta.current.direction; };
+  Game_Event.prototype.getLightXRadius          = function () { return this._cl.delta ? this._cl.delta.current.xRadius       : this._cl.xRadius; };
+  Game_Event.prototype.getLightYRadius          = function () { return this._cl.delta ? this._cl.delta.current.yRadius       : this._cl.yRadius; };
+  Game_Event.prototype.getLightColor            = function () { return this._cl.delta ? this._cl.delta.current.color.clone() : this._cl.color.clone(); };
+  Game_Event.prototype.getLightBrightness       = function () { return this._cl.delta ? this._cl.delta.current.brightness    : this._cl.brightness; };
+  Game_Event.prototype.getLightDirection        = function () { return this._cl.delta ? this._cl.delta.current.direction     : this._cl.direction ; };
   Game_Event.prototype.getLightId               = function () { return this._cl.id; };
-  Game_Event.prototype.getLightFlashlightLength = function () { return this._cl.delta.current.beamLength; };
-  Game_Event.prototype.getLightFlashlightWidth  = function () { return this._cl.delta.current.beamWidth; };
-  Game_Event.prototype.getLightXOffset          = function () { return this._cl.delta.current.xOffset; };
-  Game_Event.prototype.getLightYOffset          = function () { return this._cl.delta.current.yOffset; };
+  Game_Event.prototype.getLightFlashlightLength = function () { return this._cl.delta ? this._cl.delta.current.beamLength    : this._cl.beamLength; };
+  Game_Event.prototype.getLightFlashlightWidth  = function () { return this._cl.delta ? this._cl.delta.current.beamWidth     : this._cl.beamWidth; };
+  Game_Event.prototype.getLightXOffset          = function () { return this._cl.delta ? this._cl.delta.current.xOffset       : this._cl.xOffset; };
+  Game_Event.prototype.getLightYOffset          = function () { return this._cl.delta ? this._cl.delta.current.yOffset       : this._cl.yOffset; };
   Game_Event.prototype.getLightCycle            = function () { return this._cl.cycle; };
 
   let _Game_Interpreter_pluginCommand = Game_Interpreter.prototype.pluginCommand;
@@ -2567,7 +2587,7 @@ class ColorDelta {
     let map_id = $gameMap.mapId();
     if (map_id != $gameVariables.GetOldMapId()) {
       $gameVariables.SetOldMapId(map_id);
-
+      $gameVariables._cl = {}; // empty init game var light data on map load
       // recalc tile and region tags.
       $$.ReloadTagArea();
 
@@ -2586,8 +2606,8 @@ class ColorDelta {
     // No lighting on maps less than 1 || Plugin deactivated in options || Plugin deactivated by plugin command
     if (map_id <= 0 || !options_lighting_on || !$gameVariables.GetScriptActive()) return;
 
-    // reload map when a refresh is requested (event erase, page change, or _events object change)
-    if (ReloadMapEventsRequired) {
+    // reload map when a refresh is requested (event erase, page change, or _events object change) or game loaded
+    if (ReloadMapEventsRequired || GameLoaded) {
       ReloadMapEventsRequired = false;
       $$.ReloadMapEvents();
     }
@@ -2712,7 +2732,10 @@ class ColorDelta {
         continue;
       }
 
-      if (cur._cl == null) cur.initLightData();
+      if (cur._cl == null) {
+        cur.initLightData();
+        $gameVariables._cl[evid] = cur._cl; // store the current light data in gamevars so it gets saved
+      }
 
       let lightsOnRadius = $gameVariables.GetActiveRadius();
       if (lightsOnRadius > 0) {
@@ -3536,6 +3559,25 @@ class ColorDelta {
     }
   };
 
+  // Reconstruct types after game load
+  $$.ReconstructTypes = function (variable) {
+    for (let property_name in variable) {
+      let property = variable[property_name];
+      if (property == null || typeof property != "object") continue;
+      if (property.name == VRGBA.name)
+        Object.setPrototypeOf(property, VRGBA.prototype);
+      else if (property.name == LightProperties.name)
+        Object.setPrototypeOf(property, LightProperties.prototype);
+      else if (property.name == ColorDelta.name)
+        Object.setPrototypeOf(property, ColorDelta.prototype);
+      else if (property.name == LightDelta.name)
+        Object.setPrototypeOf(property, LightDelta.prototype);
+      else if (property.name == NumberDelta.name)
+        Object.setPrototypeOf(property, NumberDelta.prototype);
+        $$.ReconstructTypes(property);
+    }
+  };
+
   $$.ReloadMapEvents = function () {
     //**********************fill up new map-array *************************
     eventObjId = [];
@@ -3543,6 +3585,8 @@ class ColorDelta {
     events = $gameMap.events(); // cache because events() API calls filter for each call
     event_stacknumber = [];
     event_eventcount = events.length;
+
+    if (GameLoaded) $$.ReconstructTypes($gameVariables); // on game loaded, we need to reconstruct the stored types
 
     for (let i = 0; i < event_eventcount; i++) {
       if (events[i]) {
@@ -3558,8 +3602,17 @@ class ColorDelta {
 
           }
         }
+
+        // on game loaded, restore light event data
+        if (GameLoaded && $gameVariables._cl && $gameVariables._cl[events[i]._eventId]) {
+          events[i]._cl = $gameVariables._cl[events[i]._eventId];
+        }
       }
     }
+    
+    // Mark game as not loaded
+    GameLoaded = false;
+
     // *********************************** DAY NIGHT Setting **************************
     let mapNote = $dataMap.note ? $dataMap.note.split("\n") : [];
     mapNote.forEach((note) => {
