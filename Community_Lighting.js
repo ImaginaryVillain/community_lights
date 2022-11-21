@@ -2054,6 +2054,7 @@ class ColorDelta {
     // ****** DETECT MAP CHANGES ********
     let map_id = $gameMap.mapId();
     if (map_id != $gameVariables.GetOldMapId()) {
+      daynightTintEnabled = false; // reset daynight tint on map load
       $gameVariables.SetOldMapId(map_id);
       $gameVariables._cl = {}; // empty init game var light data on map load
       // recalc tile and region tags.
