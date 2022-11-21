@@ -893,6 +893,7 @@ class VRGBA {
    * @returns {VRGBA}
    */
   constructor(vOrHex, rOrDefault = "#000000ff", g = undefined, b = undefined, a = 0xff) {
+    this.name = VRGBA.name;
     if (arguments.length == 0) return;                           // return if no arguments (allows construction).
     else if (typeof vOrHex === "boolean")                        // Passed v, r, g, b, a
       [this.v, this.r,           this.g,  this.b,  this.a] =     // - assign
@@ -1025,6 +1026,7 @@ class LightProperties {
    * @param {Number}    beamWidth
    */
   constructor(type, color, enable, direction, brightness, xOffset, yOffset, xRadius, yRadius, beamLength, beamWidth) {
+    this.name = LightProperties.name;
     // Always define in case durations aren't passed to targets
     this.transitionDuration = 0;
     this.pauseDuration      = 0;
@@ -1162,6 +1164,7 @@ class LightDelta {
    * @param {LightProperties} target
    */
   constructor(current, target, defaults, fade = true) {
+    this.name = LightDelta.name;
     if (arguments.length == 0) return;
     this.current  = current;
     this.target   = target;
@@ -1329,6 +1332,7 @@ class NumberDelta {
    * @returns {NumberDelta}
    */
   constructor(start, target, duration) {
+    this.name = NumberDelta.name;
     if (arguments.length == 0) return;
     let delta = target == start ? 0 : (target - start) / duration;
     [this.current, this.target, this.duration, this.lazyEquals, this.delta] = [start, target, duration, false, delta];
@@ -1399,6 +1403,7 @@ class ColorDelta {
    * @returns {ColorDelta}
    */
   constructor(start, target = start, fadeDuration = 0, useTicksRemaining = false) {
+    this.name = ColorDelta.name;
     if (arguments.length == 0) return;
     this.current       = start.clone();           // - deep copy
     this.target        = target.clone();          // - deep copy
@@ -1644,10 +1649,11 @@ class ColorDelta {
     return result;
   };
 
-  let _DataManager_loadGame = DataManager.loadGame;
-  DataManager.loadGame = function (savefileId) {
+  let _DataManager_extractSaveContents = DataManager.extractSaveContents;
+  DataManager.extractSaveContents = function (contents) {
     GameLoaded = true; // mark the game as newly loaded to construct things properly _UpdateMask later
-    return _DataManager_loadGame.call(this, savefileId);
+    _DataManager_extractSaveContents.call(this, contents);
+    return;
   };
 
   /**
@@ -3026,16 +3032,15 @@ class ColorDelta {
     for (let property_name in variable) {
       let property = variable[property_name];
       if (property == null || typeof property != "object") continue;
-
-      if (property["@"] == VRGBA.name)
+      if (property.name == VRGBA.name)
         Object.setPrototypeOf(property, VRGBA.prototype);
-      else if (property["@"] == LightProperties.name)
+      else if (property.name == LightProperties.name)
         Object.setPrototypeOf(property, LightProperties.prototype);
-      else if (property["@"] == ColorDelta.name)
+      else if (property.name == ColorDelta.name)
         Object.setPrototypeOf(property, ColorDelta.prototype);
-      else if (property["@"] == LightDelta.name)
+      else if (property.name == LightDelta.name)
         Object.setPrototypeOf(property, LightDelta.prototype);
-      else if (property["@"] == NumberDelta.name)
+      else if (property.name == NumberDelta.name)
         Object.setPrototypeOf(property, NumberDelta.prototype);
         $$.ReconstructTypes(property);
     }
