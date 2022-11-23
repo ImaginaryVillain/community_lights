@@ -3029,10 +3029,17 @@ class ColorDelta {
   };
 
   // Reconstruct types after game load
-  $$.ReconstructTypes = function (variable) {
+  $$.ReconstructTypes = function (variable, cl_name_check) {
     for (let property_name in variable) {
       let property = variable[property_name];
+
+      // Check for CL names at root to avoid checking non-cl game variables to avoid any incompatibility issues
+      if(cl_name_check && !property_name.startsWithIC("_Community_Lighting") && !property_name.startsWith("_cl")) continue;
+
+      // Make sure the type is an actual object (we only need to reconstruct objects)
       if (property == null || typeof property != "object") continue;
+
+      // Compare type names
       if (property.name == VRGBA.name)
         Object.setPrototypeOf(property, VRGBA.prototype);
       else if (property.name == LightProperties.name)
@@ -3043,7 +3050,7 @@ class ColorDelta {
         Object.setPrototypeOf(property, LightDelta.prototype);
       else if (property.name == NumberDelta.name)
         Object.setPrototypeOf(property, NumberDelta.prototype);
-        $$.ReconstructTypes(property);
+        $$.ReconstructTypes(property, false); // no need to do name checks for inner-objects
     }
   };
 
@@ -3055,7 +3062,7 @@ class ColorDelta {
     event_stacknumber = [];
     event_eventcount = events.length;
 
-    if (GameLoaded) $$.ReconstructTypes($gameVariables); // on game loaded, we need to reconstruct the stored types
+    if (GameLoaded) $$.ReconstructTypes($gameVariables, true); // on game loaded, we need to reconstruct the stored types
 
     for (let i = 0; i < event_eventcount; i++) {
       if (events[i]) {
@@ -3424,11 +3431,11 @@ Game_Variables.prototype.SetOldMapId = function (value) {
   this._Community_Lighting_OldMapId = value;
 };
 Game_Variables.prototype.SetTint = function (value) {
-  this._Community_Tint_Value = value.clone();
+  this._Community_Lighting_Tint_Value = value.clone();
 };
 Game_Variables.prototype.GetTint = function () {
-  if (!this._Community_Tint_Value) this._Community_Tint_Value = VRGBA.minRGBA();
-  return this._Community_Tint_Value.clone();
+  if (!this._Community_Lighting_Tint_Value) this._Community_Lighting_Tint_Value = VRGBA.minRGBA();
+  return this._Community_Lighting_Tint_Value.clone();
 };
 Game_Variables.prototype.SetTintAtHour = function (hour, color) {
   let result = this.GetDaynightColorArray()[Math.max((+hour || 0), 0)];
@@ -3443,11 +3450,11 @@ Game_Variables.prototype.GetTintByTime = function (inc = 0) {
   return result ? result.color.clone() : VRGBA.minRGBA();
 };
 Game_Variables.prototype.SetTintTarget = function (delta) {
-  this._Community_TintTarget = delta;
+  this._Community_Lighting_TintTarget = delta;
 };
 Game_Variables.prototype.GetTintTarget = function () {
-  if (!this._Community_TintTarget) this._Community_TintTarget = new ColorDelta(this.GetTint());
-  return this._Community_TintTarget;
+  if (!this._Community_Lighting_TintTarget) this._Community_Lighting_TintTarget = new ColorDelta(this.GetTint());
+  return this._Community_Lighting_TintTarget;
 };
 Game_Variables.prototype.SetFlashlight = function (value) {
   this._Community_Lighting_Flashlight = value;
