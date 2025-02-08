@@ -3431,7 +3431,9 @@ Game_Variables.prototype.SetOldMapId = function (value) {
   this._Community_Lighting_OldMapId = value;
 };
 Game_Variables.prototype.SetTint = function (value) {
-  this._Community_Lighting_Tint_Value = value.clone();
+  if (value) {
+    this._Community_Lighting_Tint_Value = value.clone();
+  }
 };
 Game_Variables.prototype.GetTint = function () {
   if (!this._Community_Lighting_Tint_Value) this._Community_Lighting_Tint_Value = VRGBA.minRGBA();
