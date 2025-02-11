@@ -2081,6 +2081,11 @@ class ColorDelta {
   let player_radius             = +parameters['Player radius'] || 0;
   let reset_each_map            = orBoolean(parameters['Reset Lights'], false);
   let noteTagKey                = parameters["Note Tag Key"] !== "" ? parameters["Note Tag Key"] : false;
+  /**
+  The code for saving daynightHours and daynightMinutes is VITAL to the use of this plugin and should never have been removed!
+  **/
+  let dayNightSaveHours         = +parameters['Save DaynightHours'] || 0; 
+  let dayNightSaveMinutes       = +parameters['Save DaynightMinutes'] || 0;
   let dayNightSaveSeconds       = +parameters['Save DaynightSeconds'] || 0;
   let dayNightSaveNight         = +parameters["Save Night Switch"] || 0;
   let dayNightNoAutoshadow      = orBoolean(parameters["No Autoshadow During Night"], false);
